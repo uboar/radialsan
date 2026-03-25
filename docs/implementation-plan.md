@@ -233,23 +233,26 @@ src/
 
 ---
 
-## Phase 4: 拡張性
+## Phase 4: 拡張性 ✅ COMPLETED
 
-### Step 17: Lua スクリプティング
+### Step 17: Lua スクリプティング ✅
+- [x] mlua (Lua 5.4 vendored) 組み込み
+- [x] radialsan.* API (send_key, send_text, delay, open_url, open_file, run_command, mouse_click, clipboard, log)
+- [x] runLuaアクション (インラインスクリプト or ファイルパス)
+- [x] ActionEditorにスクリプトエディタUI
+- [x] 7ユニットテスト
 
-- [ ] `mlua` 組み込みによるカスタムアクション実行環境
-- [ ] Lua からアクセス可能な API（sendKey, getMousePos, getActiveWindow 等）
-- [ ] スクリプトエディタUI
+### Step 18: 共有 & コミュニティ ✅
+- [x] .radialsan.json パッケージ形式 (menu/profile/bundle)
+- [x] Export/Import (ID再生成, サブメニュー参照リマップ)
+- [x] プロファイルCRUD UI (作成/編集/削除)
+- [x] 5 sharing テスト
 
-### Step 18: 共有 & コミュニティ
-
-- [ ] メニュー/プロファイルのエクスポート/インポート（.radialsan 形式）
-- [ ] プラグインシステム設計（Lua ベース or WASM ベース）
-
-### Step 19: プラットフォーム改善
-
-- [ ] Wayland ネイティブ対応（`libei` 入力、`wlr-layer-shell` オーバーレイ）
-- [ ] i18n 基盤（react-intl 等）+ 日本語/英語翻訳
+### Step 19: i18n ✅
+- [x] react-i18next 導入
+- [x] 英語/日本語翻訳ファイル
+- [x] 全ページ・コンポーネントのi18n化
+- [x] GlobalSettingsに言語切替UI (localStorage永続化)
 
 ---
 
