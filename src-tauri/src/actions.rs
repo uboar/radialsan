@@ -219,13 +219,17 @@ pub fn execute_action(action_type: &str, params: &serde_json::Value) -> Result<(
     match action_type {
         "sendKey" => execute_send_key(params),
         "sendText" => execute_send_text(params),
+        "mouseClick" => execute_mouse_click(params),
         "openUrl" => execute_open_url(params),
         "openFolder" => execute_open_folder(params),
         "openFile" => execute_open_file(params),
         "runCommand" => execute_run_command(params),
+        "runScript" => execute_run_script(params),
         "clipboard" => execute_clipboard(params),
+        "mediaControl" => execute_media_control(params),
         "noop" => Ok(()),
         "delay" => execute_delay(params),
+        "submenu" => Ok(()), // Handled by frontend
         other => Err(ActionError::UnsupportedAction(other.to_string())),
     }
 }
@@ -365,6 +369,119 @@ fn execute_clipboard(params: &serde_json::Value) -> Result<(), ActionError> {
     execute_send_key(&key_params)
 }
 
+fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
+    let button = params.get("button")
+        .and_then(|v| v.as_str())
+        .unwrap_or("left");
+    let clicks = params.get("clicks")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1) as usize;
+    let modifiers: Vec<String> = params.get("modifiers")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    let mut enigo = enigo::Enigo::new(&enigo::Settings::default())
+        .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+
+    use enigo::{Keyboard, Mouse, Direction, Button};
+
+    // Press modifiers
+    for m in &modifiers {
+        let key = match m.to_lowercase().as_str() {
+            "ctrl" | "control" => enigo::Key::Control,
+            "shift" => enigo::Key::Shift,
+            "alt" => enigo::Key::Alt,
+            "meta" | "cmd" | "win" => enigo::Key::Meta,
+            _ => continue,
+        };
+        enigo.key(key, Direction::Press)
+            .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+    }
+
+    // Click
+    let btn = match button {
+        "right" => Button::Right,
+        "middle" => Button::Middle,
+        _ => Button::Left,
+    };
+
+    for _ in 0..clicks {
+        enigo.button(btn, Direction::Click)
+            .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+    }
+
+    // Release modifiers in reverse
+    for m in modifiers.iter().rev() {
+        let key = match m.to_lowercase().as_str() {
+            "ctrl" | "control" => enigo::Key::Control,
+            "shift" => enigo::Key::Shift,
+            "alt" => enigo::Key::Alt,
+            "meta" | "cmd" | "win" => enigo::Key::Meta,
+            _ => continue,
+        };
+        enigo.key(key, Direction::Release)
+            .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+    }
+
+    Ok(())
+}
+
+fn execute_media_control(params: &serde_json::Value) -> Result<(), ActionError> {
+    let action = params.get("action")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ActionError::InvalidParams("missing 'action' field".into()))?;
+
+    use enigo::{Keyboard, Direction, Key};
+
+    // Key::MediaStop is not available on macOS in enigo 0.2
+    #[cfg(target_os = "macos")]
+    if action == "stop" {
+        return Err(ActionError::UnsupportedAction(
+            "mediaControl 'stop' is not supported on macOS".into(),
+        ));
+    }
+
+    let key = match action {
+        "play" | "pause" | "playPause" => Key::MediaPlayPause,
+        "next" => Key::MediaNextTrack,
+        "prev" | "previous" => Key::MediaPrevTrack,
+        #[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
+        "stop" => Key::MediaStop,
+        "volumeUp" => Key::VolumeUp,
+        "volumeDown" => Key::VolumeDown,
+        "mute" => Key::VolumeMute,
+        other => return Err(ActionError::InvalidParams(format!("unknown media action: {}", other))),
+    };
+
+    let mut enigo = enigo::Enigo::new(&enigo::Settings::default())
+        .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+
+    enigo.key(key, Direction::Click)
+        .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+
+    Ok(())
+}
+
+fn execute_run_script(params: &serde_json::Value) -> Result<(), ActionError> {
+    let interpreter = params.get("interpreter")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ActionError::InvalidParams("missing 'interpreter' field".into()))?;
+    let script_path = params.get("scriptPath")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ActionError::InvalidParams("missing 'scriptPath' field".into()))?;
+    let args: Vec<String> = params.get("args")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    std::process::Command::new(interpreter)
+        .arg(script_path)
+        .args(&args)
+        .spawn()
+        .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+
+    Ok(())
+}
+
 fn execute_delay(params: &serde_json::Value) -> Result<(), ActionError> {
     let ms = params
         .get("ms")
@@ -462,5 +579,31 @@ mod tests {
     fn test_execute_send_key_missing_params() {
         let params = serde_json::json!({});
         assert!(execute_action("sendKey", &params).is_err());
+    }
+
+    #[test]
+    fn test_execute_submenu_noop() {
+        // submenu is handled by frontend, rust side should just return Ok
+        assert!(execute_action("submenu", &serde_json::json!({"menuId": "m1"})).is_ok());
+    }
+
+    #[test]
+    fn test_execute_run_script_missing_params() {
+        assert!(execute_action("runScript", &serde_json::json!({})).is_err());
+        assert!(execute_action("runScript", &serde_json::json!({"interpreter": "python"})).is_err());
+    }
+
+    #[test]
+    fn test_execute_media_control_invalid_action() {
+        let params = serde_json::json!({"action": "invalidMedia"});
+        let result = execute_action("mediaControl", &params);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_execute_media_control_missing_action() {
+        let params = serde_json::json!({});
+        let result = execute_action("mediaControl", &params);
+        assert!(result.is_err());
     }
 }

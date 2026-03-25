@@ -1,13 +1,14 @@
 pub mod actions;
 pub mod commands;
 pub mod input_listener;
+pub mod profiles;
 pub mod settings;
 pub mod tray;
 
 use commands::AppState;
 use input_listener::{HotkeyBinding, InputEvent, InputListener};
 use settings::Settings;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
 pub fn run() {
@@ -48,11 +49,14 @@ pub fn run() {
             }
 
             // Start input listener and bridge events to frontend
-            let listener = InputListener::new(quick_tap_ms);
+            let listener = Arc::new(InputListener::new(quick_tap_ms));
             listener.update_bindings(bindings.clone());
 
             let app_handle = app.handle().clone();
             let rx = listener.start();
+
+            // Start profile monitor (polls active window and switches bindings)
+            profiles::start_profile_monitor(app.handle().clone(), Arc::clone(&listener));
 
             std::thread::spawn(move || {
                 bridge_input_events(rx, &app_handle);
