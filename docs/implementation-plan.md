@@ -1,199 +1,48 @@
 # radialsan 実装計画
 
-## Phase 1: Core Menu (MVP)
+## Phase 1: Core Menu (MVP) ✅ COMPLETED
 
-### Step 1: プロジェクトスキャフォールド
+### Step 1: プロジェクトスキャフォールド ✅
 
-**目的**: Tauri v2 + React (TypeScript) のプロジェクト基盤を構築する
+- [x] Tauri v2 + React + TypeScript プロジェクト生成
+- [x] 2ウィンドウ構成 (main + overlay)
+- [x] Vite マルチページ設定、Vitest セットアップ
 
-**作業内容**:
-- [ ] `cargo create-tauri-app` で Tauri v2 + React + TypeScript プロジェクト生成
-- [ ] `tauri.conf.json` に2ウィンドウ構成を定義
-  - `main`: 設定UI（デフォルト非表示、トレイから開く）
-  - `overlay`: フルスクリーン・透明・枠なし・最前面
-- [ ] React ルーティング設定（`/main` と `/overlay` の2エントリポイント）
-- [ ] ESLint + Prettier 設定
-- [ ] Vitest セットアップ
-- [ ] GitHub Actions CI ワークフロー（Rust テスト + React テスト + ビルド、3OS マトリクス）
+### Step 2: 設定データモデル ✅
+- [x] Rust: Settings/Profile/Menu/Slice/Action 構造体 (serde, camelCase)
+- [x] Default実装 (4スライス: Copy/Paste/Undo/Redo, CapsLockホットキー)
+- [x] JSON読み書き + プロファイルマッチング (contains/exact/regex)
+- [x] TypeScript型定義 (types/settings.ts)
+- [x] 6ユニットテスト
 
-**成果物**:
-```
-radialsan/
-├── src/                          # React フロントエンド
-│   ├── main.tsx                  # メインウィンドウ エントリポイント
-│   ├── overlay.tsx               # オーバーレイ エントリポイント
-│   ├── App.tsx                   # 設定UI ルート
-│   ├── components/
-│   │   └── PieMenu/
-│   │       ├── PieMenu.tsx       # Canvas ラジアルメニューコンポーネント
-│   │       ├── PieMenuRenderer.ts # Canvas 描画ロジック
-│   │       └── geometry.ts       # 角度計算・ヒット判定ユーティリティ
-│   ├── types/
-│   │   └── settings.ts           # 設定型定義
-│   └── hooks/
-│       └── useTauriEvents.ts     # Tauri イベントリスナーフック
-├── src-tauri/
-│   ├── src/
-│   │   ├── main.rs               # Tauri エントリポイント
-│   │   ├── lib.rs                # モジュール宣言
-│   │   ├── input_listener.rs     # rdev グローバル入力リスナー
-│   │   ├── actions.rs            # アクション実行エンジン
-│   │   ├── settings.rs           # 設定読み書き
-│   │   ├── tray.rs               # システムトレイ
-│   │   └── commands.rs           # Tauri IPC コマンド
-│   ├── Cargo.toml
-│   └── tauri.conf.json
-├── tests/
-│   └── fixtures/                 # テストデータ
-├── docs/
-│   └── implementation-plan.md    # この文書
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── vitest.config.ts
-```
+### Step 3: グローバル入力リスナー ✅
+- [x] rdev::listen 専用スレッド (KeyPress/KeyRelease/MouseMove)
+- [x] ホットキー文字列パーサ (A-Z, 0-9, F1-F12, CapsLock, Mouse4/5, 修飾キー組み合わせ)
+- [x] クイックタップ判定、修飾キー状態追跡
+- [x] InputEvent (ShowMenu/HideMenu/MouseMove) チャネル送信
+- [x] 8ユニットテスト
 
----
+### Step 4: Canvas ラジアルメニュー描画 ✅
+- [x] geometry.ts: angleFromCenter, getSliceAtPoint, polarToCartesian 等
+- [x] PieMenuRenderer.ts: Canvas描画クラス (スライス, ラベル, ホバーハイライト)
+- [x] PieMenu.tsx: Tauriイベント連携 React コンポーネント
+- [x] Overlay.tsx, useTauriEvents.ts 更新
+- [x] 26 Vitestユニットテスト
 
-### Step 2: 設定データモデル
+### Step 5: アクション実行エンジン ✅
+- [x] actions.rs: execute_action ディスパッチャ (sendKey, openUrl, runCommand, clipboard, delay等)
+- [x] キー文字列パーサ + enigo連携
+- [x] commands.rs: Tauri IPCコマンド (execute_slice_actions, get_default_settings)
+- [x] 11ユニットテスト
 
-**目的**: 設定の型定義と読み書きロジックを実装する
+### Step 6: システムトレイ & ウィンドウ管理 ✅
+- [x] tray.rs: トレイアイコン + メニュー (Open Settings / Quit)
+- [x] lib.rs: 全コンポーネント統合 (設定, 入力リスナー, イベントブリッジ, トレイ)
+- [x] mainウィンドウ閉じる→非表示、overlayのカーソルイベント制御
 
-**Rust 側**:
-- [ ] `settings.rs`: `Settings`, `Profile`, `Menu`, `Slice`, `Action` 構造体を `serde` で定義
-- [ ] デフォルト設定の生成 (`Default` trait 実装)
-- [ ] JSON ファイルの読み込み / 保存（`app_data_dir()` 配下）
-- [ ] 設定ファイル未存在時のデフォルト生成
-- [ ] ユニットテスト: シリアライズ/デシリアライズ往復、不正入力ハンドリング
-
-**TypeScript 側**:
-- [ ] `types/settings.ts`: Rust 構造体と対応する TypeScript 型を定義
-- [ ] `zod` スキーマによる実行時バリデーション（オプション）
-
-**テスト**:
-- `fixtures/settings_default.json` — デフォルト設定
-- `fixtures/settings_minimal.json` — 最小構成
-- `fixtures/settings_invalid_missing_field.json` — フィールド欠損
-
----
-
-### Step 3: グローバル入力リスナー
-
-**目的**: ホットキーの press/release を検出し、イベントを発行する
-
-**作業内容**:
-- [ ] `input_listener.rs`: `rdev::listen` を専用スレッドで起動
-- [ ] `KeyPress` / `KeyRelease` イベントのフィルタリング（登録済みホットキーのみ）
-- [ ] 修飾キーの状態追跡（Ctrl/Shift/Alt/Meta の押下状態）
-- [ ] キー文字列 (`"CapsLock"`, `"Ctrl+Space"`) → `rdev::Key` への変換マップ
-- [ ] クイックタップ判定（press → release が `quickTapThresholdMs` 以内なら無視）
-- [ ] `AppHandle` 経由で Tauri イベント発行:
-  - `radialsan://show-menu { menuId, cursorX, cursorY }`
-  - `radialsan://hide-menu`
-- [ ] マウスカーソル位置の取得（メニュー表示位置用）
-
-**テスト**:
-- キー文字列パースのユニットテスト
-- 修飾キー正規化のテスト
-- クイックタップ閾値判定のテスト（モック時刻使用）
-
-**注意事項**:
-- macOS ではアクセシビリティ権限が必要。権限未付与時のエラーメッセージを実装
-- `rdev::listen` はブロッキングなので必ず `std::thread::spawn` で実行
-
----
-
-### Step 4: Canvas ラジアルメニュー描画
-
-**目的**: オーバーレイウィンドウ上に Canvas でラジアルメニューを描画する
-
-**作業内容**:
-- [ ] `geometry.ts`: 数学ユーティリティ
-  - `calcSliceAngle(numSlices)` → 各スライスの角度幅
-  - `getSliceAtPoint(x, y, cx, cy, numSlices, innerR, outerR, deadR)` → スライスインデックス or null
-  - `polarToCartesian(cx, cy, r, angle)` → `{x, y}`
-  - `angleBetween(x1, y1, x2, y2)` → ラジアン
-- [ ] `PieMenuRenderer.ts`: Canvas 描画クラス
-  - 円環の描画（`arc` パス）
-  - スライスの分割描画（各スライスに fill + stroke）
-  - ホバースライスのハイライト
-  - アイコン描画（テキストアイコン、将来的に画像アイコン）
-  - ラベルテキスト描画（スライス外周に配置）
-- [ ] `PieMenu.tsx`: React コンポーネント
-  - Canvas ref のセットアップ
-  - `mousemove` イベントでホバースライス更新 → 再描画
-  - `requestAnimationFrame` ベースの描画ループ
-  - Tauri イベント `show-menu` 受信でメニュー表示
-  - Tauri イベント `hide-menu` 受信で非表示 + 選択結果送信
-- [ ] `overlay.tsx`: オーバーレイウィンドウのルート
-  - 全画面透明背景
-  - `PieMenu` コンポーネントのマウント
-
-**テスト**:
-- `geometry.ts` の全関数に対するユニットテスト（境界値含む）
-- 2, 4, 8, 12 スライスでの角度計算検証
-- デッドゾーン内 → null、リング内 → 正しいスライス番号
-
----
-
-### Step 5: アクション実行エンジン
-
-**目的**: 選択されたスライスのアクションを実行する
-
-**作業内容**:
-- [ ] `actions.rs`: アクション実行ディスパッチャ
-  - `execute_action(action: Action)` → `Result<(), ActionError>`
-  - `sendKey`: `enigo` で修飾キー + キーのシミュレーション
-  - `openURL`: `open::that(url)` でデフォルトブラウザ起動
-  - `openFile` / `openFolder`: `open::that(path)`
-  - `runCommand`: `std::process::Command` で外部コマンド実行
-- [ ] `commands.rs`: Tauri IPC コマンド
-  - `#[tauri::command] fn execute_action(action: Action) -> Result<(), String>`
-  - `#[tauri::command] fn get_settings() -> Result<Settings, String>`
-- [ ] `sendKey` のキー文字列パーサ
-  - `"ctrl+c"` → `[Key::Control (down), Key::C (press), Key::Control (up)]`
-  - 複数キーの連続送信対応
-
-**テスト**:
-- キー文字列パースのユニットテスト（`"ctrl+shift+a"`, `"F5"`, `"alt+tab"` 等）
-- 不正なキー文字列に対するエラーハンドリング
-- アクションディスパッチの型マッチングテスト
-
----
-
-### Step 6: システムトレイ & ウィンドウ管理
-
-**目的**: トレイアイコンとウィンドウのライフサイクルを管理する
-
-**作業内容**:
-- [ ] `tray.rs`: システムトレイ
-  - トレイアイコン表示
-  - メニュー: 「設定を開く」「終了」
-  - 「設定を開く」→ main ウィンドウを表示
-- [ ] `main.rs`: アプリ初期化
-  - 設定読み込み
-  - 入力リスナースレッド起動
-  - トレイ初期化
-  - overlay ウィンドウの `setIgnoreCursorEvents` 制御
-- [ ] main ウィンドウの閉じるボタン → 非表示（終了せずトレイに格納）
-
----
-
-### Step 7: Phase 1 統合 & 受け入れテスト
-
-**目的**: 全コンポーネントを結合し、エンドツーエンドで動作確認する
-
-**作業内容**:
-- [ ] ハードコードされたテスト用メニュー（4スライス: Copy/Paste/Undo/Redo）で統合テスト
-- [ ] 受け入れテスト実施:
-  1. `cargo tauri dev` で起動
-  2. トレイアイコン表示確認
-  3. ホットキー押下 → メニュー表示
-  4. マウスホバー → ハイライト
-  5. ホットキー離す → アクション実行
-  6. デッドゾーンで離す → 未実行で閉じる
-- [ ] 3OS での動作確認（手動 or CI）
-- [ ] パフォーマンス計測（メニュー表示レイテンシ < 50ms 目標）
+### Step 7: Phase 1 統合 ✅
+- [x] cargo test 25/25, vitest 26/26, tsc OK, cargo build OK
+- [x] デフォルトメニュー (Copy/Paste/Undo/Redo) でエンドツーエンド統合
 
 ---
 
@@ -201,35 +50,160 @@ radialsan/
 
 ### Step 8: 設定UI基盤
 
-- [ ] React Router でメインウィンドウのページ構成（概要/メニュー編集/プロファイル/設定）
-- [ ] 設定の読み込み・保存の Tauri コマンド連携
-- [ ] UI コンポーネントライブラリ選定・導入（shadcn/ui 等）
+**目的**: メインウィンドウに設定UIのフレームワークを構築する
+
+**作業内容**:
+- [ ] 依存追加: `react-router-dom`, `zustand`, `tailwindcss`, `@radix-ui/react-*` (shadcn/ui互換)
+- [ ] Tailwind CSS セットアップ (postcss, tailwind.config)
+- [ ] React Router でページ構成:
+  - `/` — ダッシュボード（メニュー一覧）
+  - `/menu/:id` — メニューエディタ
+  - `/profiles` — プロファイル管理
+  - `/settings` — グローバル設定
+- [ ] サイドバーナビゲーション コンポーネント
+- [ ] Zustand ストア: `useSettingsStore` (Tauri IPC連携)
+  - `settings`, `loadSettings()`, `saveSettings()`, `updateMenu()`, `updateProfile()`
+- [ ] 設定ファイル永続化: Rust側 `save_settings` コマンドで `app_data_dir()` に書き込み
+- [ ] Tauri capabilities に `fs` パーミッション追加
+
+**新規ファイル**:
+```
+src/
+  stores/
+    settingsStore.ts          # Zustand ストア
+  components/
+    Layout/
+      Sidebar.tsx             # サイドバーナビゲーション
+      Layout.tsx              # メインレイアウト
+    ui/                       # 共通UIコンポーネント (Button, Input, Card等)
+  pages/
+    Dashboard.tsx             # メニュー一覧
+    MenuEditor.tsx            # メニューエディタページ
+    Profiles.tsx              # プロファイル管理ページ
+    GlobalSettings.tsx        # グローバル設定ページ
+```
+
+---
 
 ### Step 9: ビジュアルエディタ
 
-- [ ] メニュー一覧表示 & 新規作成
-- [ ] Canvas プレビュー付きスライスエディタ
-- [ ] スライスのドラッグ＆ドロップ並べ替え
-- [ ] アクション設定フォーム（アクション型ごとのUI）
-- [ ] 外観カスタマイズパネル（色、半径、フォント）
+**目的**: GUIでラジアルメニューを作成・編集できるビジュアルエディタを実装する
 
-### Step 10: プロファイルシステム
+**作業内容**:
+- [ ] メニュー一覧ページ (Dashboard.tsx)
+  - カード形式でメニュー表示（名前、スライス数、プレビュー）
+  - 「新規メニュー作成」ボタン → ID自動生成、デフォルト設定で作成
+  - メニュー削除（確認ダイアログ付き）
+- [ ] メニューエディタページ (MenuEditor.tsx)
+  - 左パネル: Canvas メニュープレビュー（PieMenuRenderer再利用）
+  - 右パネル: プロパティエディタ
+- [ ] スライスリスト コンポーネント
+  - スライス一覧（ラベル + アイコン表示）
+  - スライス追加（+ボタン）/ 削除（×ボタン）
+  - ドラッグ＆ドロップ並べ替え（@dnd-kit/sortable）
+  - スライス選択 → 詳細編集パネル表示
+- [ ] スライス詳細編集パネル
+  - ラベル入力
+  - アイコン入力（テキスト入力、Phase3でピッカー化）
+  - アクション設定: アクション型セレクト → 型に応じた入力フォーム
+    - sendKey: キー入力フィールド（"ctrl+c"形式）
+    - openUrl: URL入力
+    - openFile/openFolder: パス入力
+    - runCommand: コマンド + 引数 + cwd + shell チェック
+    - submenu: メニューIDセレクト
+    - clipboard: copy/cut/paste ラジオ
+    - noop: パラメータなし
+- [ ] 外観カスタマイズパネル
+  - innerRadius / outerRadius スライダー
+  - カラーピッカー（背景色、スライス色、ホバー色、ボーダー色）
+  - フォント設定、ラベルサイズ
+  - リアルタイムプレビュー更新
+- [ ] 設定変更の自動保存 (debounce 500ms)
 
-- [ ] `profiles.rs`: `x-win` によるアクティブウィンドウ監視（ポーリング 500ms）
-- [ ] プロファイルマッチングエンジン（matchRules 評価）
-- [ ] プロファイル切替時のホットキーマッピング更新
-- [ ] プロファイル管理UI（作成/編集/削除/優先順位変更）
+**新規ファイル**:
+```
+src/
+  pages/
+    MenuEditor.tsx
+  components/
+    Editor/
+      SliceList.tsx           # スライス一覧 + DnD
+      SliceEditor.tsx         # スライス詳細編集
+      ActionEditor.tsx        # アクション設定フォーム
+      AppearancePanel.tsx     # 外観カスタマイズ
+      MenuPreview.tsx         # Canvas プレビュー
+```
+
+---
+
+### Step 10: プロファイルシステム (Rust + UI)
+
+**目的**: アクティブウィンドウに応じてメニューを自動切替するプロファイルシステム
+
+**Rust 側**:
+- [ ] `x-win` クレート追加 (Cargo.toml)
+- [ ] `profiles.rs`: アクティブウィンドウ監視モジュール
+  - 500ms間隔ポーリングでフォアグラウンドウィンドウのタイトル+プロセス名取得
+  - プロファイルマッチング (settings.rs の `get_active_profile` 活用)
+  - プロファイル変更時に `radialsan://profile-changed` イベント発行
+  - ホットキーバインディングの動的更新 (`InputListener::update_bindings`)
+- [ ] `lib.rs` に profiles ポーリングスレッドを追加
+
+**React UI 側**:
+- [ ] プロファイル管理ページ (Profiles.tsx)
+  - プロファイル一覧（名前、マッチルール、バインドされたホットキー）
+  - プロファイル作成/編集/削除
+  - プロファイル優先順位変更（上下ドラッグ）
+- [ ] プロファイル編集フォーム
+  - 名前入力
+  - マッチルール: field (processName/windowTitle) + mode (contains/exact/regex) + value
+  - ホットキーバインディング: hotkey + menuId のペア一覧
+  - ホットキー入力コンポーネント（キー押下でキャプチャ）
+- [ ] デフォルトプロファイルは削除不可、マッチルール編集不可
+
+**新規ファイル**:
+```
+src-tauri/src/profiles.rs
+src/
+  pages/Profiles.tsx
+  components/
+    Profiles/
+      ProfileList.tsx
+      ProfileEditor.tsx
+      HotkeyInput.tsx         # キー押下でホットキーキャプチャ
+      MatchRuleEditor.tsx
+```
+
+---
 
 ### Step 11: サブメニュー
 
-- [ ] サブメニュー遷移ロジック（Canvas側）
-- [ ] 「戻る」操作の実装
-- [ ] エディタでのサブメニューリンク設定UI
+**目的**: スライス選択で別のラジアルメニューを展開する階層メニュー
+
+**Canvas 側**:
+- [ ] PieMenu.tsx: サブメニュー遷移ロジック
+  - submenuアクション持ちスライスにホバー + 外径超え → 子メニュー展開
+  - メニュースタック管理 (親メニュー情報を保持)
+  - 「戻る」: Escape or 中心方向マウス移動 → 親メニューに復帰
+  - 最大深度チェック (maxSubmenuDepth)
+- [ ] PieMenuRenderer: サブメニューインジケータ描画（▶マーク）
+
+**エディタ側**:
+- [ ] ActionEditor: submenu型選択時にメニューIDドロップダウン
+- [ ] 循環参照チェック（A→B→A を禁止）
+
+---
 
 ### Step 12: 残りのアクション実装
 
-- [ ] `sendText`, `mouseClick`, `clipboard`, `mediaControl`
-- [ ] アクションシーケンス実行（配列内を順次処理、`delay` 対応）
+**目的**: Phase 1で未実装のアクション型を追加する
+
+- [ ] `sendText`: enigo.text() によるテキスト入力
+- [ ] `mouseClick`: enigo でマウスボタンシミュレーション (left/right/middle, 修飾キー付き)
+- [ ] `mediaControl`: enigo でメディアキー送信 (play/pause/next/prev/volumeUp/volumeDown/mute)
+- [ ] `runScript`: interpreter + scriptPath + args でスクリプト実行
+- [ ] アクションシーケンス: commands.rs で配列を順次実行（delay挟み込み対応）- 既に実装済み確認
+- [ ] 各アクションのユニットテスト追加
 
 ---
 
