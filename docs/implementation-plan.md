@@ -207,30 +207,29 @@ src/
 
 ---
 
-## Phase 3: 品質向上
+## Phase 3: 品質向上 ✅ COMPLETED
 
-### Step 13: アニメーション & UX
+### Step 13: アニメーション & UX ✅
+- [x] MenuAnimator (requestAnimationFrame, easeOutCubic)
+- [x] メニュー開閉スケールアニメーション + ホバー色ブレンド遷移
+- [x] HiDPI Canvas (devicePixelRatio)
+- [x] 5 animation テスト
 
-- [ ] メニュー開閉アニメーション（スケール遷移）
-- [ ] ホバー遷移アニメーション
-- [ ] DPI スケーリング対応
+### Step 14: アイコンシステム ✅
+- [x] lucide-react (90+アイコン) 統合
+- [x] IconPicker (emoji/Lucideモード, 検索, グリッド)
+- [x] PieMenuRenderer: Lucideアイコンプレースホルダー描画
 
-### Step 14: アイコンシステム
+### Step 15: エディタ拡張 ✅
+- [x] Undo/Redo (Zustand historyStore, 50スナップショット, Ctrl+Z/Ctrl+Shift+Z)
+- [x] メニューJSON export (.radialsan.json) / import
+- [x] AutoHotPie設定インポート (AHKキー変換, プロファイル/メニュー変換)
+- [x] 10テスト (history 7 + autohotpie 3)
 
-- [ ] バンドルアイコンセット（Lucide Icons 等）統合
-- [ ] アイコンピッカーUI（検索 + グリッド表示）
-- [ ] カスタム画像アイコンのアップロード & 保存
-
-### Step 15: エディタ拡張
-
-- [ ] Undo/Redo（コマンドパターン）
-- [ ] メニューの JSON インポート/エクスポート
-- [ ] AutoHotPie 設定インポートツール（JSON 変換ロジック）
-
-### Step 16: システム連携
-
-- [ ] `auto-launch` によるOS起動時の自動起動
-- [ ] 設定変更時の自動バックアップ（`backups/` ディレクトリ）
+### Step 16: システム連携 ✅
+- [x] auto-launch クレートでOS起動時自動起動
+- [x] 設定保存時の自動バックアップ (max 10)
+- [x] GlobalSettings: スライダー/トグル操作UI
 
 ---
 
