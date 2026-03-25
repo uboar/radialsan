@@ -21,6 +21,7 @@ export interface PieMenuRenderConfig {
 export interface SliceRenderData {
   label: string;
   icon: string;
+  isSubmenu?: boolean;
 }
 
 export class PieMenuRenderer {
@@ -103,6 +104,15 @@ export class PieMenuRenderer {
       this.ctx.font = `${i === hoveredIndex ? 'bold ' : ''}${labelSize}px ${labelFont}`;
       this.ctx.fillStyle = labelColor;
       this.ctx.fillText(slices[i].label, pos.x, pos.y + iconSize * 0.4);
+
+      // Draw submenu indicator.
+      if (slices[i].isSubmenu) {
+        const angle = getSliceCenterAngle(i, slices.length);
+        const indicatorPos = polarToCartesian(cx, cy, outerRadius - 10, angle);
+        this.ctx.font = `${labelSize * 0.8}px ${labelFont}`;
+        this.ctx.fillStyle = labelColor;
+        this.ctx.fillText('▶', indicatorPos.x, indicatorPos.y);
+      }
     }
   }
 

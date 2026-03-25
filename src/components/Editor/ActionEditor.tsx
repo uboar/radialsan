@@ -208,19 +208,36 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       )}
 
       {action.type === 'submenu' && menuIds && (
-        <div>
-          <label className="block text-xs text-zinc-400 mb-1">Target Menu</label>
-          <select
-            value={(params.menuId as string) || ''}
-            onChange={(e) => updateParam('menuId', e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Select a menu...</option>
-            {menuIds.map((id) => (
-              <option key={id} value={id}>{id}</option>
-            ))}
-          </select>
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Target Menu</label>
+            <select
+              value={(params.menuId as string) || ''}
+              onChange={(e) => updateParam('menuId', e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">Select a menu...</option>
+              {menuIds.map((id) => (
+                <option key={id} value={id}>{id}</option>
+              ))}
+            </select>
+          </div>
+          {menuIds.length === 0 && (
+            <p className="text-xs text-amber-400">
+              No other menus available. Create another menu to use as a submenu target. The current menu is excluded to prevent circular references.
+            </p>
+          )}
+          {(params.menuId as string) && !menuIds.includes(params.menuId as string) && (
+            <p className="text-xs text-red-400">
+              Warning: The selected menu ID is not in the available menus list. This may cause a circular reference or point to a deleted menu.
+            </p>
+          )}
         </div>
+      )}
+      {action.type === 'submenu' && !menuIds && (
+        <p className="text-xs text-zinc-500">
+          Submenu selection is not available in this context.
+        </p>
       )}
     </div>
   );
