@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { PieMenuRenderer, PieMenuRenderConfig, SliceRenderData } from './PieMenuRenderer';
 import { getSliceAtPoint, distance, angleFromCenter, getSliceIndex } from './geometry';
+import { MenuAnimator } from './animation';
 
 interface MenuState {
   visible: boolean;
@@ -52,6 +53,7 @@ async function loadSubmenu(
 export const PieMenu: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<PieMenuRenderer | null>(null);
+  const animatorRef = useRef<MenuAnimator | null>(null);
   const [menuState, setMenuState] = useState<MenuState | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const hoveredSliceRef = useRef<number | null>(null);
@@ -320,19 +322,41 @@ export const PieMenu: React.FC = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [menuState?.visible]);
 
-  // Render canvas.
+  // Animator-driven render canvas.
   useEffect(() => {
-    if (!canvasRef.current || !menuState?.visible) return;
+    if (!canvasRef.current || !menuState?.visible) {
+      animatorRef.current?.destroy();
+      return;
+    }
 
     const canvas = canvasRef.current;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    ctx.scale(dpr, dpr);
 
-    rendererRef.current = new PieMenuRenderer(ctx, menuState.config);
-    rendererRef.current.render(menuState.slices, hoveredSlice);
-  }, [menuState, hoveredSlice]);
+    const renderer = new PieMenuRenderer(ctx, menuState.config);
+    rendererRef.current = renderer;
+
+    const animator = new MenuAnimator((state) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      renderer.renderAnimated(menuState.slices, hoveredSliceRef.current, state);
+    }, 100, 80);
+
+    animatorRef.current = animator;
+    animator.show(menuState.slices.length);
+
+    return () => animator.destroy();
+  }, [menuState?.visible, menuState?.centerX, menuState?.centerY, menuState?.slices]);
+
+  // Propagate hover changes to animator.
+  useEffect(() => {
+    animatorRef.current?.setHovered(hoveredSlice);
+  }, [hoveredSlice]);
 
   if (!menuState?.visible) return null;
 

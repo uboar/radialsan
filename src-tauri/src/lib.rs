@@ -32,6 +32,8 @@ pub fn run() {
             commands::save_settings,
             commands::execute_slice_actions,
             commands::get_default_settings,
+            commands::get_auto_launch_enabled,
+            commands::set_auto_launch_enabled,
         ])
         .setup(move |app| {
             // Set up system tray

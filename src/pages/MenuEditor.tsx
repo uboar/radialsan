@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useHistoryStore } from '../stores/historyStore';
 import { MenuPreview } from '../components/Editor/MenuPreview';
 import { SliceList } from '../components/Editor/SliceList';
 import { SliceEditor } from '../components/Editor/SliceEditor';
@@ -10,7 +11,8 @@ import type { Slice } from '../types/settings';
 export const MenuEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { settings, updateMenu, saveSettings, deleteMenu, loadSettings } = useSettingsStore();
+  const { settings, updateMenu, saveSettings, deleteMenu, loadSettings, setSettings } = useSettingsStore();
+  const { pushSnapshot, undo, redo, canUndo, canRedo } = useHistoryStore();
   const [selectedSliceId, setSelectedSliceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'slices' | 'appearance'>('slices');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -35,6 +37,30 @@ export const MenuEditor: React.FC = () => {
     };
   }, []);
 
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        const restored = undo();
+        if (restored) {
+          setSettings(restored);
+          saveSettings();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        const restored = redo();
+        if (restored) {
+          setSettings(restored);
+          saveSettings();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, setSettings, saveSettings]);
+
   if (!settings || !menu) return <div className="text-zinc-400">Menu not found</div>;
 
   const selectedSlice = menu.slices.find((s) => s.id === selectedSliceId);
@@ -43,16 +69,19 @@ export const MenuEditor: React.FC = () => {
   const menuIds = settings.menus.filter((m) => m.id !== id).map((m) => m.id);
 
   const handleMenuNameChange = (name: string) => {
+    pushSnapshot(settings);
     updateMenu(id!, { name });
     debouncedSave();
   };
 
   const handleSliceReorder = (slices: Slice[]) => {
+    pushSnapshot(settings);
     updateMenu(id!, { slices });
     debouncedSave();
   };
 
   const handleAddSlice = () => {
+    pushSnapshot(settings);
     const newSlice: Slice = {
       id: `s_${Date.now()}`,
       label: `Action ${menu.slices.length + 1}`,
@@ -65,6 +94,7 @@ export const MenuEditor: React.FC = () => {
   };
 
   const handleDeleteSlice = (sliceId: string) => {
+    pushSnapshot(settings);
     const newSlices = menu.slices.filter((s) => s.id !== sliceId);
     updateMenu(id!, { slices: newSlices });
     if (selectedSliceId === sliceId) setSelectedSliceId(null);
@@ -73,6 +103,7 @@ export const MenuEditor: React.FC = () => {
 
   const handleSliceChange = (updates: Partial<Slice>) => {
     if (!selectedSliceId) return;
+    pushSnapshot(settings);
     const newSlices = menu.slices.map((s) =>
       s.id === selectedSliceId ? { ...s, ...updates } : s
     );
@@ -82,6 +113,7 @@ export const MenuEditor: React.FC = () => {
 
   const handleAppearanceChange = (updates: Partial<typeof appearance>) => {
     const { updateGlobalSettings } = useSettingsStore.getState();
+    pushSnapshot(settings);
     updateGlobalSettings({ appearance: { ...appearance, ...updates } });
     debouncedSave();
   };
@@ -110,6 +142,24 @@ export const MenuEditor: React.FC = () => {
           onChange={(e) => handleMenuNameChange(e.target.value)}
           className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1"
         />
+        <div className="flex items-center gap-1 ml-2">
+          <button
+            onClick={() => { const s = undo(); if (s) { setSettings(s); saveSettings(); } }}
+            disabled={!canUndo()}
+            className="px-2 py-1 text-sm rounded bg-zinc-800 disabled:opacity-30 hover:bg-zinc-700 disabled:cursor-not-allowed"
+            title="Undo (Ctrl+Z)"
+          >
+            ↶
+          </button>
+          <button
+            onClick={() => { const s = redo(); if (s) { setSettings(s); saveSettings(); } }}
+            disabled={!canRedo()}
+            className="px-2 py-1 text-sm rounded bg-zinc-800 disabled:opacity-30 hover:bg-zinc-700 disabled:cursor-not-allowed"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            ↷
+          </button>
+        </div>
         <button
           onClick={handleDeleteMenu}
           className="ml-auto text-sm text-zinc-500 hover:text-red-400 transition-colors"

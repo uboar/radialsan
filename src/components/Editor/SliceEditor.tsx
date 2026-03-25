@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActionEditor } from './ActionEditor';
+import { IconPicker } from './IconPicker';
 import type { Slice, Action } from '../../types/settings';
 
 interface SliceEditorProps {
@@ -31,12 +32,7 @@ export const SliceEditor: React.FC<SliceEditorProps> = ({ slice, onChange, menuI
 
       <div>
         <label className="block text-xs text-zinc-400 mb-1">Icon (emoji or text)</label>
-        <input
-          type="text"
-          value={slice.icon}
-          onChange={(e) => onChange({ icon: e.target.value })}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-        />
+        <IconPicker value={slice.icon} onChange={(icon) => onChange({ icon })} />
       </div>
 
       <div className="border-t border-zinc-800 pt-4">

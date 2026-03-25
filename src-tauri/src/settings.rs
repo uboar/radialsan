@@ -337,6 +337,31 @@ impl Settings {
         Ok(())
     }
 
+    /// Create a backup of the current settings file
+    pub fn backup(app_data_dir: &Path) -> Result<(), SettingsError> {
+        let settings_path = app_data_dir.join(SETTINGS_FILE);
+        if !settings_path.exists() {
+            return Ok(()); // Nothing to backup
+        }
+
+        let backup_dir = app_data_dir.join("backups");
+        std::fs::create_dir_all(&backup_dir).map_err(SettingsError::Io)?;
+
+        // Backup filename with unix timestamp
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let backup_path = backup_dir.join(format!("settings_{}.json", timestamp));
+
+        std::fs::copy(&settings_path, &backup_path).map_err(SettingsError::Io)?;
+
+        // Keep only last 10 backups
+        cleanup_old_backups(&backup_dir, 10)?;
+
+        Ok(())
+    }
+
     pub fn get_menu_by_id(&self, id: &str) -> Option<&PieMenu> {
         self.menus.iter().find(|m| m.id == id)
     }
@@ -359,6 +384,27 @@ impl Settings {
             .or_else(|| self.profiles.first())
             .expect("settings must have at least one profile")
     }
+}
+
+fn cleanup_old_backups(backup_dir: &Path, max_backups: usize) -> Result<(), SettingsError> {
+    let mut entries: Vec<_> = std::fs::read_dir(backup_dir)
+        .map_err(SettingsError::Io)?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "json"))
+        .collect();
+
+    // Sort by modified time (oldest first)
+    entries.sort_by_key(|e| e.metadata().and_then(|m| m.modified()).ok());
+
+    // Remove oldest if over limit
+    while entries.len() > max_backups {
+        if let Some(entry) = entries.first() {
+            let _ = std::fs::remove_file(entry.path());
+        }
+        entries.remove(0);
+    }
+
+    Ok(())
 }
 
 fn profile_matches(profile: &Profile, window_title: &str, process_name: &str) -> bool {

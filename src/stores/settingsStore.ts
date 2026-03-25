@@ -9,6 +9,9 @@ interface SettingsStore {
   loadSettings: () => Promise<void>;
   saveSettings: () => Promise<void>;
 
+  // Direct state replacement (used for undo/redo)
+  setSettings: (settings: Settings) => void;
+
   // Menu operations
   addMenu: (menu: PieMenu) => void;
   updateMenu: (menuId: string, updates: Partial<PieMenu>) => void;
@@ -52,6 +55,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       set({ error: String(e) });
     }
   },
+
+  setSettings: (settings) => set({ settings }),
 
   addMenu: (menu) => set((state) => {
     if (!state.settings) return state;
