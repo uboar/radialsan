@@ -18,6 +18,7 @@ const ACTION_TYPES = [
   { value: 'runScript', label: 'Run Script' },
   { value: 'clipboard', label: 'Clipboard' },
   { value: 'mediaControl', label: 'Media Control' },
+  { value: 'runLua', label: 'Lua Script' },
   { value: 'submenu', label: 'Submenu' },
   { value: 'noop', label: 'No Action' },
 ];
@@ -207,6 +208,24 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
         </div>
       )}
 
+      {action.type === 'runLua' && (
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Lua Script</label>
+            <textarea
+              value={params.script as string || ''}
+              onChange={(e) => updateParam('script', e.target.value)}
+              placeholder={'-- Example:\nradialsan.send_key("ctrl+c")\nradialsan.delay(100)\nradialsan.send_key("ctrl+v")'}
+              rows={6}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500 resize-y"
+            />
+          </div>
+          <p className="text-xs text-zinc-500">
+            Available API: radialsan.send_key(), send_text(), delay(), open_url(), open_file(), run_command(), mouse_click(), clipboard(), log()
+          </p>
+        </div>
+      )}
+
       {action.type === 'submenu' && menuIds && (
         <div className="space-y-2">
           <div>
@@ -255,6 +274,7 @@ function getDefaultParams(type: string): Record<string, unknown> {
     case 'runScript': return { interpreter: '', scriptPath: '' };
     case 'clipboard': return { action: 'copy' };
     case 'mediaControl': return { action: 'playPause' };
+    case 'runLua': return { script: '' };
     case 'submenu': return { menuId: '' };
     default: return {};
   }

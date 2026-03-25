@@ -21,6 +21,7 @@ export type ActionType =
   | "openFile"
   | "runCommand"
   | "runScript"
+  | "runLua"
   | "clipboard"
   | "mediaControl"
   | "submenu"

@@ -1,6 +1,7 @@
 pub mod actions;
 pub mod commands;
 pub mod input_listener;
+pub mod lua_engine;
 pub mod profiles;
 pub mod settings;
 pub mod tray;

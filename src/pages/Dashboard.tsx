@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { convertAutoHotPieSettings } from '../utils/autohotpieImport';
+import { exportMenu, exportBundle, parseRadialsanPackage, pickJsonFile } from '../utils/sharing';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { PieMenu } from '../types/settings';
 
 export const Dashboard: React.FC = () => {
-  const { settings, loading, loadSettings, addMenu, saveSettings } = useSettingsStore();
+  const { settings, loading, loadSettings, addMenu, addProfile, saveSettings } = useSettingsStore();
+  const { t } = useTranslation();
 
   useEffect(() => { loadSettings(); }, [loadSettings]);
 
@@ -25,45 +28,44 @@ export const Dashboard: React.FC = () => {
   const handleExport = (menu: PieMenu, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const json = JSON.stringify(menu, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${menu.name.replace(/\s+/g, '_')}.radialsan.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportMenu(menu);
   };
 
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const menu = JSON.parse(text);
-        // Validate basic structure
-        if (!menu.name || !Array.isArray(menu.slices)) {
-          alert('Invalid menu file format');
-          return;
+  const handleImport = async () => {
+    try {
+      const text = await pickJsonFile();
+      const data = JSON.parse(text);
+
+      if (data.format === 'radialsan') {
+        // Radialsan package format
+        const pkg = parseRadialsanPackage(text);
+        for (const menu of pkg.menus) {
+          addMenu(menu);
         }
-        // Generate new ID to avoid conflicts
-        menu.id = `menu_${Date.now()}`;
-        // Generate new slice IDs
-        menu.slices = menu.slices.map((s: any, i: number) => ({
-          ...s,
-          id: `s_${Date.now()}_${i}`,
-        }));
-        addMenu(menu);
-        saveSettings();
-      } catch {
-        alert('Failed to parse menu file');
+        if (pkg.profiles) {
+          for (const profile of pkg.profiles) {
+            addProfile(profile);
+          }
+        }
+      } else if (data.name && Array.isArray(data.slices)) {
+        // Legacy single menu format
+        data.id = `menu_${Date.now()}`;
+        data.slices = data.slices.map((s: any, i: number) => ({ ...s, id: `s_${Date.now()}_${i}` }));
+        addMenu(data);
+      } else {
+        alert('Unrecognized file format');
+        return;
       }
-    };
-    input.click();
+
+      saveSettings();
+    } catch (err) {
+      alert('Import failed: ' + String(err));
+    }
+  };
+
+  const handleExportAll = () => {
+    if (!settings) return;
+    exportBundle(settings.menus, settings.profiles);
   };
 
   const handleAutoHotPieImport = () => {
@@ -109,30 +111,36 @@ export const Dashboard: React.FC = () => {
     input.click();
   };
 
-  if (loading || !settings) return <div className="text-zinc-400">Loading...</div>;
+  if (loading || !settings) return <div className="text-zinc-400">{t('common.loading')}</div>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Menus</h2>
+        <h2 className="text-2xl font-bold">{t('dashboard.title')}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={handleAutoHotPieImport}
             className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
           >
-            Import AutoHotPie
+            {t('dashboard.importAutoHotPie')}
           </button>
           <button
             onClick={handleImport}
             className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
           >
-            Import Menu
+            {t('dashboard.importMenu')}
+          </button>
+          <button
+            onClick={handleExportAll}
+            className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
+          >
+            {t('dashboard.exportAll')}
           </button>
           <button
             onClick={handleNewMenu}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
           >
-            + New Menu
+            {t('dashboard.newMenu')}
           </button>
         </div>
       </div>
@@ -150,10 +158,10 @@ export const Dashboard: React.FC = () => {
                 className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors ml-2 shrink-0"
                 title="Export menu as JSON"
               >
-                Export
+                {t('common.export')}
               </button>
             </div>
-            <p className="text-sm text-zinc-400">{menu.slices.length} slices</p>
+            <p className="text-sm text-zinc-400">{t('dashboard.slices', { count: menu.slices.length })}</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {menu.slices.slice(0, 6).map((s) => (
                 <span key={s.id} className="text-xs bg-zinc-800 px-2 py-0.5 rounded">

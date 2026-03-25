@@ -230,6 +230,7 @@ pub fn execute_action(action_type: &str, params: &serde_json::Value) -> Result<(
         "noop" => Ok(()),
         "delay" => execute_delay(params),
         "submenu" => Ok(()), // Handled by frontend
+        "runLua" => execute_run_lua(params),
         other => Err(ActionError::UnsupportedAction(other.to_string())),
     }
 }
@@ -480,6 +481,24 @@ fn execute_run_script(params: &serde_json::Value) -> Result<(), ActionError> {
         .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
 
     Ok(())
+}
+
+fn execute_run_lua(params: &serde_json::Value) -> Result<(), ActionError> {
+    // Option 1: inline script
+    if let Some(script) = params.get("script").and_then(|v| v.as_str()) {
+        crate::lua_engine::execute_lua_script(script)
+            .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+        return Ok(());
+    }
+
+    // Option 2: script file path
+    if let Some(path) = params.get("scriptPath").and_then(|v| v.as_str()) {
+        crate::lua_engine::execute_lua_file(std::path::Path::new(path))
+            .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
+        return Ok(());
+    }
+
+    Err(ActionError::InvalidParams("runLua requires 'script' or 'scriptPath'".into()))
 }
 
 fn execute_delay(params: &serde_json::Value) -> Result<(), ActionError> {

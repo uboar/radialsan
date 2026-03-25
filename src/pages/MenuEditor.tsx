@@ -6,6 +6,7 @@ import { MenuPreview } from '../components/Editor/MenuPreview';
 import { SliceList } from '../components/Editor/SliceList';
 import { SliceEditor } from '../components/Editor/SliceEditor';
 import { AppearancePanel } from '../components/Editor/AppearancePanel';
+import { useTranslation } from 'react-i18next';
 import type { Slice } from '../types/settings';
 
 export const MenuEditor: React.FC = () => {
@@ -13,6 +14,7 @@ export const MenuEditor: React.FC = () => {
   const navigate = useNavigate();
   const { settings, updateMenu, saveSettings, deleteMenu, loadSettings, setSettings } = useSettingsStore();
   const { pushSnapshot, undo, redo, canUndo, canRedo } = useHistoryStore();
+  const { t } = useTranslation();
   const [selectedSliceId, setSelectedSliceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'slices' | 'appearance'>('slices');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -119,7 +121,7 @@ export const MenuEditor: React.FC = () => {
   };
 
   const handleDeleteMenu = () => {
-    if (confirm('Delete this menu?')) {
+    if (confirm(t('editor.deleteConfirm'))) {
       deleteMenu(id!);
       saveSettings();
       navigate('/');
@@ -134,7 +136,7 @@ export const MenuEditor: React.FC = () => {
           onClick={() => navigate('/')}
           className="text-zinc-400 hover:text-white text-sm"
         >
-          &larr; Back
+          {t('editor.back')}
         </button>
         <input
           type="text"
@@ -164,7 +166,7 @@ export const MenuEditor: React.FC = () => {
           onClick={handleDeleteMenu}
           className="ml-auto text-sm text-zinc-500 hover:text-red-400 transition-colors"
         >
-          Delete Menu
+          {t('editor.deleteMenu')}
         </button>
       </div>
 
@@ -189,7 +191,7 @@ export const MenuEditor: React.FC = () => {
                 activeTab === 'slices' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Slices
+              {t('editor.slices')}
             </button>
             <button
               onClick={() => setActiveTab('appearance')}
@@ -197,7 +199,7 @@ export const MenuEditor: React.FC = () => {
                 activeTab === 'appearance' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Appearance
+              {t('editor.appearance')}
             </button>
           </div>
 

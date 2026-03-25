@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useTranslation } from 'react-i18next';
 
 export const GlobalSettings: React.FC = () => {
   const { settings, updateGlobalSettings, saveSettings } = useSettingsStore();
   const [autoLaunch, setAutoLaunch] = useState(false);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     // Load auto-launch state
@@ -29,7 +31,12 @@ export const GlobalSettings: React.FC = () => {
     }
   };
 
-  if (!settings) return <div className="text-zinc-400">Loading...</div>;
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('radialsan-lang', lang);
+  };
+
+  if (!settings) return <div className="text-zinc-400">{t('common.loading')}</div>;
 
   const handleAppearanceChange = (key: string, value: number) => {
     updateGlobalSettings({
@@ -47,13 +54,13 @@ export const GlobalSettings: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Settings</h2>
+      <h2 className="text-2xl font-bold mb-6">{t('settings.title')}</h2>
       <div className="space-y-6 max-w-lg">
         {/* General */}
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <h3 className="font-semibold mb-3">General</h3>
+          <h3 className="font-semibold mb-3">{t('settings.general')}</h3>
           <label className="flex items-center justify-between py-2">
-            <span className="text-sm">Launch at startup</span>
+            <span className="text-sm">{t('settings.launchAtStartup')}</span>
             <button
               onClick={handleAutoLaunchToggle}
               className={`w-10 h-5 rounded-full transition-colors ${autoLaunch ? 'bg-blue-600' : 'bg-zinc-700'}`}
@@ -62,7 +69,7 @@ export const GlobalSettings: React.FC = () => {
             </button>
           </label>
           <label className="flex items-center justify-between py-2">
-            <span className="text-sm">Show tray icon</span>
+            <span className="text-sm">{t('settings.showTrayIcon')}</span>
             <div className={`w-10 h-5 rounded-full bg-blue-600`}>
               <div className="w-4 h-4 bg-white rounded-full translate-x-5 mx-0.5" />
             </div>
@@ -71,11 +78,11 @@ export const GlobalSettings: React.FC = () => {
 
         {/* Activation */}
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <h3 className="font-semibold mb-3">Activation</h3>
+          <h3 className="font-semibold mb-3">{t('settings.activation')}</h3>
           <div className="space-y-3">
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Quick tap threshold: {settings.global.menuActivation.quickTapThresholdMs}ms
+                {t('settings.quickTapThreshold')}: {settings.global.menuActivation.quickTapThresholdMs}ms
               </label>
               <input
                 type="range"
@@ -89,7 +96,7 @@ export const GlobalSettings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Submenu hover delay: {settings.global.menuActivation.submenuHoverDelayMs}ms
+                {t('settings.submenuHoverDelay')}: {settings.global.menuActivation.submenuHoverDelayMs}ms
               </label>
               <input
                 type="range"
@@ -103,7 +110,7 @@ export const GlobalSettings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Max submenu depth: {settings.global.menuActivation.maxSubmenuDepth}
+                {t('settings.maxSubmenuDepth')}: {settings.global.menuActivation.maxSubmenuDepth}
               </label>
               <input
                 type="range"
@@ -119,11 +126,11 @@ export const GlobalSettings: React.FC = () => {
 
         {/* Default Appearance */}
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <h3 className="font-semibold mb-3">Default Appearance</h3>
+          <h3 className="font-semibold mb-3">{t('settings.defaultAppearance')}</h3>
           <div className="space-y-3">
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Inner radius: {settings.global.appearance.innerRadius}px
+                {t('settings.innerRadius')}: {settings.global.appearance.innerRadius}px
               </label>
               <input
                 type="range"
@@ -136,7 +143,7 @@ export const GlobalSettings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Outer radius: {settings.global.appearance.outerRadius}px
+                {t('settings.outerRadius')}: {settings.global.appearance.outerRadius}px
               </label>
               <input
                 type="range"
@@ -149,7 +156,7 @@ export const GlobalSettings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-zinc-400 mb-1">
-                Opacity: {settings.global.appearance.opacity}
+                {t('settings.opacity')}: {settings.global.appearance.opacity}
               </label>
               <input
                 type="range"
@@ -164,12 +171,35 @@ export const GlobalSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Language */}
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <h3 className="font-semibold mb-3">{t('settings.language')}</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleLanguageChange('en')}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                i18n.language === 'en' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => handleLanguageChange('ja')}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                i18n.language === 'ja' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+            >
+              日本語
+            </button>
+          </div>
+        </div>
+
         {/* Info */}
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <h3 className="font-semibold mb-3">About</h3>
-          <p className="text-sm text-zinc-400">radialsan v0.1.0</p>
-          <p className="text-sm text-zinc-500 mt-1">Cross-platform radial menu</p>
-          <p className="text-sm text-zinc-500">Settings are automatically backed up on save.</p>
+          <h3 className="font-semibold mb-3">{t('settings.about')}</h3>
+          <p className="text-sm text-zinc-400">radialsan {t('settings.version')}</p>
+          <p className="text-sm text-zinc-500 mt-1">{t('settings.description')}</p>
+          <p className="text-sm text-zinc-500">{t('settings.autoBackupNote')}</p>
         </div>
       </div>
     </div>

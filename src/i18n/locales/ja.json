@@ -1,0 +1,90 @@
+{
+  "app": {
+    "name": "radialsan"
+  },
+  "nav": {
+    "menus": "メニュー",
+    "profiles": "プロファイル",
+    "settings": "設定"
+  },
+  "dashboard": {
+    "title": "メニュー",
+    "newMenu": "+ 新規メニュー",
+    "importMenu": "インポート",
+    "exportAll": "全てエクスポート",
+    "importAutoHotPie": "AutoHotPieインポート",
+    "slices": "{{count}} スライス",
+    "noMenus": "メニューがありません。作成してください。"
+  },
+  "editor": {
+    "back": "← 戻る",
+    "deleteMenu": "メニューを削除",
+    "deleteConfirm": "このメニューを削除しますか？",
+    "slices": "スライス",
+    "appearance": "外観",
+    "addSlice": "+ 追加",
+    "sliceProperties": "スライス設定",
+    "label": "ラベル",
+    "icon": "アイコン",
+    "iconChange": "アイコン変更",
+    "iconPlaceholder": "絵文字またはアイコン名を入力",
+    "action": "アクション",
+    "actionType": "アクションタイプ",
+    "undo": "元に戻す",
+    "redo": "やり直す"
+  },
+  "actions": {
+    "sendKey": "キー送信",
+    "sendText": "テキスト送信",
+    "mouseClick": "マウスクリック",
+    "openUrl": "URL を開く",
+    "openFile": "ファイルを開く",
+    "openFolder": "フォルダを開く",
+    "runCommand": "コマンド実行",
+    "runScript": "スクリプト実行",
+    "clipboard": "クリップボード",
+    "mediaControl": "メディア操作",
+    "submenu": "サブメニュー",
+    "noop": "アクションなし",
+    "runLua": "Lua スクリプト",
+    "delay": "遅延"
+  },
+  "profiles": {
+    "title": "プロファイル",
+    "newProfile": "+ 新規プロファイル",
+    "importProfile": "インポート",
+    "default": "デフォルト",
+    "matchesAll": "全アプリケーションに適用",
+    "hotkeyBindings": "ホットキー {{count}} 件",
+    "deleteConfirm": "このプロファイルを削除しますか？"
+  },
+  "settings": {
+    "title": "設定",
+    "general": "一般",
+    "launchAtStartup": "起動時に自動起動",
+    "showTrayIcon": "トレイアイコンを表示",
+    "activation": "アクティベーション",
+    "quickTapThreshold": "クイックタップ閾値",
+    "submenuHoverDelay": "サブメニューホバー遅延",
+    "maxSubmenuDepth": "サブメニュー最大深度",
+    "defaultAppearance": "デフォルト外観",
+    "innerRadius": "内側半径",
+    "outerRadius": "外側半径",
+    "opacity": "不透明度",
+    "language": "言語",
+    "about": "このアプリについて",
+    "version": "v0.1.0",
+    "description": "クロスプラットフォーム ラジアルメニュー",
+    "autoBackupNote": "設定は保存時に自動的にバックアップされます。"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "export": "エクスポート",
+    "import": "インポート",
+    "close": "閉じる",
+    "search": "検索...",
+    "loading": "読み込み中..."
+  }
+}

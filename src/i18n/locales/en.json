@@ -1,0 +1,90 @@
+{
+  "app": {
+    "name": "radialsan"
+  },
+  "nav": {
+    "menus": "Menus",
+    "profiles": "Profiles",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Menus",
+    "newMenu": "+ New Menu",
+    "importMenu": "Import",
+    "exportAll": "Export All",
+    "importAutoHotPie": "Import AutoHotPie",
+    "slices": "{{count}} slices",
+    "noMenus": "No menus yet. Create one to get started."
+  },
+  "editor": {
+    "back": "← Back",
+    "deleteMenu": "Delete Menu",
+    "deleteConfirm": "Delete this menu?",
+    "slices": "Slices",
+    "appearance": "Appearance",
+    "addSlice": "+ Add",
+    "sliceProperties": "Slice Properties",
+    "label": "Label",
+    "icon": "Icon",
+    "iconChange": "Change Icon",
+    "iconPlaceholder": "Type emoji or icon name",
+    "action": "Action",
+    "actionType": "Action Type",
+    "undo": "Undo",
+    "redo": "Redo"
+  },
+  "actions": {
+    "sendKey": "Send Key",
+    "sendText": "Send Text",
+    "mouseClick": "Mouse Click",
+    "openUrl": "Open URL",
+    "openFile": "Open File",
+    "openFolder": "Open Folder",
+    "runCommand": "Run Command",
+    "runScript": "Run Script",
+    "clipboard": "Clipboard",
+    "mediaControl": "Media Control",
+    "submenu": "Submenu",
+    "noop": "No Action",
+    "runLua": "Lua Script",
+    "delay": "Delay"
+  },
+  "profiles": {
+    "title": "Profiles",
+    "newProfile": "+ New Profile",
+    "importProfile": "Import",
+    "default": "Default",
+    "matchesAll": "Matches all applications",
+    "hotkeyBindings": "{{count}} hotkey binding(s)",
+    "deleteConfirm": "Delete this profile?"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "launchAtStartup": "Launch at startup",
+    "showTrayIcon": "Show tray icon",
+    "activation": "Activation",
+    "quickTapThreshold": "Quick tap threshold",
+    "submenuHoverDelay": "Submenu hover delay",
+    "maxSubmenuDepth": "Max submenu depth",
+    "defaultAppearance": "Default Appearance",
+    "innerRadius": "Inner radius",
+    "outerRadius": "Outer radius",
+    "opacity": "Opacity",
+    "language": "Language",
+    "about": "About",
+    "version": "v0.1.0",
+    "description": "Cross-platform radial menu",
+    "autoBackupNote": "Settings are automatically backed up on save."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "export": "Export",
+    "import": "Import",
+    "close": "Close",
+    "search": "Search...",
+    "loading": "Loading..."
+  }
+}
