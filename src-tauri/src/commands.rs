@@ -2,6 +2,7 @@ use tauri::Manager;
 use tauri::State;
 use std::sync::Mutex;
 use crate::settings::Settings;
+use crate::input_listener;
 
 pub struct AppState {
     pub settings: Mutex<Settings>,
@@ -88,4 +89,10 @@ pub fn set_auto_launch_enabled(_app_handle: tauri::AppHandle, enabled: bool) -> 
     } else {
         auto.disable().map_err(|e| e.to_string())
     }
+}
+
+#[tauri::command]
+pub fn start_key_detection(app_handle: tauri::AppHandle) -> Result<(), String> {
+    input_listener::detect_next_key(app_handle);
+    Ok(())
 }

@@ -39,6 +39,20 @@ impl From<serde_json::Error> for SettingsError {
 // Enums
 // ---------------------------------------------------------------------------
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum AppTheme {
+    Dark,
+    Light,
+    System,
+}
+
+impl Default for AppTheme {
+    fn default() -> Self {
+        AppTheme::Dark
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ActivationMode {
@@ -126,6 +140,8 @@ pub struct Appearance {
 pub struct GlobalSettings {
     pub launch_at_startup: bool,
     pub show_tray_icon: bool,
+    #[serde(default)]
+    pub theme: AppTheme,
     pub default_profile_id: String,
     pub menu_activation: MenuActivation,
     pub appearance: Appearance,
@@ -253,6 +269,7 @@ impl Default for GlobalSettings {
         Self {
             launch_at_startup: false,
             show_tray_icon: true,
+            theme: AppTheme::default(),
             default_profile_id: "default".to_string(),
             menu_activation: MenuActivation::default(),
             appearance: Appearance::default(),
@@ -538,6 +555,71 @@ mod tests {
         let profile = settings.get_active_profile("anything", "anything");
         assert_eq!(profile.id, "default");
         assert!(profile.is_default);
+    }
+
+    #[test]
+    fn test_app_theme_serde() {
+        // Verify camelCase serialization
+        let json = serde_json::to_string(&AppTheme::Dark).unwrap();
+        assert_eq!(json, "\"dark\"");
+        let json = serde_json::to_string(&AppTheme::Light).unwrap();
+        assert_eq!(json, "\"light\"");
+        let json = serde_json::to_string(&AppTheme::System).unwrap();
+        assert_eq!(json, "\"system\"");
+
+        // Verify deserialization
+        let theme: AppTheme = serde_json::from_str("\"dark\"").unwrap();
+        assert_eq!(theme, AppTheme::Dark);
+        let theme: AppTheme = serde_json::from_str("\"light\"").unwrap();
+        assert_eq!(theme, AppTheme::Light);
+        let theme: AppTheme = serde_json::from_str("\"system\"").unwrap();
+        assert_eq!(theme, AppTheme::System);
+    }
+
+    #[test]
+    fn test_default_theme_is_dark() {
+        let settings = Settings::default();
+        assert_eq!(settings.global.theme, AppTheme::Dark);
+    }
+
+    #[test]
+    fn test_settings_without_theme_field_deserializes() {
+        // Existing settings JSON without theme field should deserialize with default
+        let json = r##"{
+            "version": 1,
+            "global": {
+                "launchAtStartup": false,
+                "showTrayIcon": true,
+                "defaultProfileId": "default",
+                "menuActivation": {
+                    "mode": "holdRelease",
+                    "quickTapThresholdMs": 200,
+                    "submenuOpenMode": "onHover",
+                    "submenuHoverDelayMs": 400,
+                    "maxSubmenuDepth": 3
+                },
+                "appearance": {
+                    "innerRadius": 40,
+                    "outerRadius": 120,
+                    "deadZoneRadius": 30,
+                    "backgroundColor": "#00000080",
+                    "sliceFillColor": "#1e1e2e",
+                    "sliceHoverColor": "#313244",
+                    "sliceBorderColor": "#585b70",
+                    "sliceBorderWidth": 1,
+                    "labelFont": "sans-serif",
+                    "labelSize": 13,
+                    "labelColor": "#cdd6f4",
+                    "iconSize": 20,
+                    "animationDurationMs": 120,
+                    "opacity": 1.0
+                }
+            },
+            "profiles": [],
+            "menus": []
+        }"##;
+        let settings: Settings = serde_json::from_str(json).unwrap();
+        assert_eq!(settings.global.theme, AppTheme::Dark);
     }
 
     #[test]

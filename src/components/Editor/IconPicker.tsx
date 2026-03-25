@@ -65,29 +65,29 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange }) => {
       <div className="flex gap-2">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm hover:bg-zinc-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-theme-bg-tertiary border border-theme-border rounded-lg text-sm hover:bg-theme-bg-tertiary/80 transition-colors"
         >
           <span className="text-lg">{value || '⚡'}</span>
-          <span className="text-zinc-400">Change Icon</span>
+          <span className="text-theme-text-secondary">Change Icon</span>
         </button>
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Type emoji or icon name"
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          className="flex-1 bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
         />
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl p-3">
+        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-theme-bg-secondary border border-theme-border rounded-xl shadow-xl p-3">
           {/* Search */}
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search icons..."
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none focus:border-blue-500"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none focus:border-blue-500"
             autoFocus
           />
 
@@ -95,13 +95,13 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange }) => {
           <div className="flex gap-1 mb-2">
             <button
               onClick={() => setMode('emoji')}
-              className={`flex-1 text-xs py-1 rounded ${mode === 'emoji' ? 'bg-zinc-700 text-white' : 'text-zinc-400'}`}
+              className={`flex-1 text-xs py-1 rounded ${mode === 'emoji' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary'}`}
             >
               Emoji
             </button>
             <button
               onClick={() => setMode('lucide')}
-              className={`flex-1 text-xs py-1 rounded ${mode === 'lucide' ? 'bg-zinc-700 text-white' : 'text-zinc-400'}`}
+              className={`flex-1 text-xs py-1 rounded ${mode === 'lucide' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary'}`}
             >
               Lucide Icons
             </button>
@@ -114,7 +114,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange }) => {
                 <button
                   key={i}
                   onClick={() => { onChange(emoji); setIsOpen(false); }}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-zinc-700 text-lg"
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-theme-bg-tertiary/80 text-lg"
                   title={emoji}
                 >
                   {emoji}
@@ -125,7 +125,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange }) => {
                 <button
                   key={name}
                   onClick={() => { onChange(`lucide:${name}`); setIsOpen(false); }}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-zinc-700 text-white"
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-theme-bg-tertiary/80 text-theme-text-primary"
                   title={name}
                 >
                   {renderLucideIcon(name)}
@@ -136,7 +136,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange }) => {
           {/* Close */}
           <button
             onClick={() => setIsOpen(false)}
-            className="mt-2 w-full text-xs text-zinc-500 hover:text-zinc-300 py-1"
+            className="mt-2 w-full text-xs text-theme-text-muted hover:text-theme-text-primary py-1"
           >
             Close
           </button>

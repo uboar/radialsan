@@ -139,6 +139,7 @@ function getDefaultSettings(): Settings {
     global: {
       launchAtStartup: false,
       showTrayIcon: true,
+      theme: 'dark',
       defaultProfileId: 'default',
       menuActivation: {
         mode: 'holdRelease',

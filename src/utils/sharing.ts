@@ -1,3 +1,5 @@
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import type { PieMenu, Profile, PieKey } from '../types/settings';
 
 export interface RadialsanPackage {
@@ -12,7 +14,7 @@ export interface RadialsanPackage {
 /**
  * Export a single menu as a .radialsan.json file
  */
-export function exportMenu(menu: PieMenu): void {
+export async function exportMenu(menu: PieMenu): Promise<void> {
   const pkg: RadialsanPackage = {
     format: 'radialsan',
     version: 1,
@@ -20,13 +22,13 @@ export function exportMenu(menu: PieMenu): void {
     type: 'menu',
     menus: [menu],
   };
-  downloadJson(pkg, `${sanitizeFilename(menu.name)}.radialsan.json`);
+  await saveJsonFile(pkg, `${sanitizeFilename(menu.name)}.radialsan.json`);
 }
 
 /**
  * Export a profile with its associated menus
  */
-export function exportProfile(profile: Profile, allMenus: PieMenu[]): void {
+export async function exportProfile(profile: Profile, allMenus: PieMenu[]): Promise<void> {
   // Find menus referenced by this profile's pieKeys
   const referencedMenuIds = new Set(profile.pieKeys.map((pk: PieKey) => pk.menuId));
   const menus = allMenus.filter((m: PieMenu) => referencedMenuIds.has(m.id));
@@ -39,13 +41,13 @@ export function exportProfile(profile: Profile, allMenus: PieMenu[]): void {
     menus,
     profiles: [profile],
   };
-  downloadJson(pkg, `${sanitizeFilename(profile.name)}.radialsan.json`);
+  await saveJsonFile(pkg, `${sanitizeFilename(profile.name)}.radialsan.json`);
 }
 
 /**
  * Export all menus and profiles as a bundle
  */
-export function exportBundle(menus: PieMenu[], profiles: Profile[]): void {
+export async function exportBundle(menus: PieMenu[], profiles: Profile[]): Promise<void> {
   const pkg: RadialsanPackage = {
     format: 'radialsan',
     version: 1,
@@ -54,7 +56,7 @@ export function exportBundle(menus: PieMenu[], profiles: Profile[]): void {
     menus,
     profiles,
   };
-  downloadJson(pkg, `radialsan_backup_${new Date().toISOString().slice(0, 10)}.radialsan.json`);
+  await saveJsonFile(pkg, `radialsan_backup_${new Date().toISOString().slice(0, 10)}.radialsan.json`);
 }
 
 /**
@@ -123,34 +125,24 @@ export function parseRadialsanPackage(jsonText: string): RadialsanPackage {
 /**
  * Trigger a file picker and read the selected .json file
  */
-export function pickJsonFile(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,.radialsan.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return reject(new Error('No file selected'));
-      try {
-        const text = await file.text();
-        resolve(text);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    input.click();
+export async function pickJsonFile(): Promise<string> {
+  const selected = await open({
+    filters: [{ name: 'radialsan JSON', extensions: ['json'] }],
+    multiple: false,
   });
+  if (!selected) throw new Error('No file selected');
+  const text = await readTextFile(selected);
+  return text;
 }
 
-function downloadJson(data: unknown, filename: string): void {
+async function saveJsonFile(data: unknown, defaultFilename: string): Promise<void> {
   const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  const filePath = await save({
+    defaultPath: defaultFilename,
+    filters: [{ name: 'radialsan JSON', extensions: ['json'] }],
+  });
+  if (!filePath) return; // User cancelled
+  await writeTextFile(filePath, json);
 }
 
 function sanitizeFilename(name: string): string {

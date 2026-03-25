@@ -12,8 +12,8 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <nav className="w-56 min-h-screen bg-zinc-900 border-r border-zinc-800 p-4 flex flex-col gap-1">
-      <h1 className="text-lg font-bold text-white mb-6 px-2">radialsan</h1>
+    <nav className="w-56 min-h-screen bg-theme-bg-secondary border-r border-theme-border p-4 flex flex-col gap-1">
+      <h1 className="text-lg font-bold text-theme-text-primary mb-6 px-2">radialsan</h1>
       {navItems.map((item) => (
         <NavLink
           key={item.to}
@@ -22,8 +22,8 @@ export const Sidebar: React.FC = () => {
           className={({ isActive }) =>
             `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               isActive
-                ? 'bg-zinc-800 text-white'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                ? 'bg-theme-bg-tertiary text-theme-text-primary'
+                : 'text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-tertiary/50'
             }`
           }
         >

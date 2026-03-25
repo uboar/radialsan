@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from 'react-i18next';
+import type { AppTheme } from '../types/settings';
 
 export const GlobalSettings: React.FC = () => {
   const { settings, updateGlobalSettings, saveSettings } = useSettingsStore();
@@ -36,7 +37,12 @@ export const GlobalSettings: React.FC = () => {
     localStorage.setItem('radialsan-lang', lang);
   };
 
-  if (!settings) return <div className="text-zinc-400">{t('common.loading')}</div>;
+  const handleThemeChange = (theme: AppTheme) => {
+    updateGlobalSettings({ theme });
+    saveSettings();
+  };
+
+  if (!settings) return <div className="text-theme-text-muted">{t('common.loading')}</div>;
 
   const handleAppearanceChange = (key: string, value: number) => {
     updateGlobalSettings({
@@ -52,18 +58,24 @@ export const GlobalSettings: React.FC = () => {
     saveSettings();
   };
 
+  const themeOptions: { value: AppTheme; labelKey: string }[] = [
+    { value: 'dark', labelKey: 'settings.themeDark' },
+    { value: 'light', labelKey: 'settings.themeLight' },
+    { value: 'system', labelKey: 'settings.themeSystem' },
+  ];
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">{t('settings.title')}</h2>
       <div className="space-y-6 max-w-lg">
         {/* General */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
           <h3 className="font-semibold mb-3">{t('settings.general')}</h3>
           <label className="flex items-center justify-between py-2">
             <span className="text-sm">{t('settings.launchAtStartup')}</span>
             <button
               onClick={handleAutoLaunchToggle}
-              className={`w-10 h-5 rounded-full transition-colors ${autoLaunch ? 'bg-blue-600' : 'bg-zinc-700'}`}
+              className={`w-10 h-5 rounded-full transition-colors ${autoLaunch ? 'bg-blue-600' : 'bg-theme-bg-tertiary'}`}
             >
               <div className={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${autoLaunch ? 'translate-x-5' : ''}`} />
             </button>
@@ -76,12 +88,32 @@ export const GlobalSettings: React.FC = () => {
           </label>
         </div>
 
+        {/* Theme */}
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+          <h3 className="font-semibold mb-3">{t('settings.theme')}</h3>
+          <div className="flex gap-2">
+            {themeOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleThemeChange(opt.value)}
+                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                  settings.global.theme === opt.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
+                }`}
+              >
+                {t(opt.labelKey)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Activation */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
           <h3 className="font-semibold mb-3">{t('settings.activation')}</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.quickTapThreshold')}: {settings.global.menuActivation.quickTapThresholdMs}ms
               </label>
               <input
@@ -95,7 +127,7 @@ export const GlobalSettings: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.submenuHoverDelay')}: {settings.global.menuActivation.submenuHoverDelayMs}ms
               </label>
               <input
@@ -109,7 +141,7 @@ export const GlobalSettings: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.maxSubmenuDepth')}: {settings.global.menuActivation.maxSubmenuDepth}
               </label>
               <input
@@ -125,11 +157,11 @@ export const GlobalSettings: React.FC = () => {
         </div>
 
         {/* Default Appearance */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
           <h3 className="font-semibold mb-3">{t('settings.defaultAppearance')}</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.innerRadius')}: {settings.global.appearance.innerRadius}px
               </label>
               <input
@@ -142,7 +174,7 @@ export const GlobalSettings: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.outerRadius')}: {settings.global.appearance.outerRadius}px
               </label>
               <input
@@ -155,7 +187,7 @@ export const GlobalSettings: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">
+              <label className="block text-sm text-theme-text-secondary mb-1">
                 {t('settings.opacity')}: {settings.global.appearance.opacity}
               </label>
               <input
@@ -172,13 +204,13 @@ export const GlobalSettings: React.FC = () => {
         </div>
 
         {/* Language */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
           <h3 className="font-semibold mb-3">{t('settings.language')}</h3>
           <div className="flex gap-2">
             <button
               onClick={() => handleLanguageChange('en')}
               className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                i18n.language === 'en' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                i18n.language === 'en' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
               }`}
             >
               English
@@ -186,7 +218,7 @@ export const GlobalSettings: React.FC = () => {
             <button
               onClick={() => handleLanguageChange('ja')}
               className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                i18n.language === 'ja' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                i18n.language === 'ja' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
               }`}
             >
               日本語
@@ -195,11 +227,11 @@ export const GlobalSettings: React.FC = () => {
         </div>
 
         {/* Info */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+        <div className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
           <h3 className="font-semibold mb-3">{t('settings.about')}</h3>
-          <p className="text-sm text-zinc-400">radialsan {t('settings.version')}</p>
-          <p className="text-sm text-zinc-500 mt-1">{t('settings.description')}</p>
-          <p className="text-sm text-zinc-500">{t('settings.autoBackupNote')}</p>
+          <p className="text-sm text-theme-text-secondary">radialsan {t('settings.version')}</p>
+          <p className="text-sm text-theme-text-muted mt-1">{t('settings.description')}</p>
+          <p className="text-sm text-theme-text-muted">{t('settings.autoBackupNote')}</p>
         </div>
       </div>
     </div>

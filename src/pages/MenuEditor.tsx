@@ -63,7 +63,7 @@ export const MenuEditor: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, setSettings, saveSettings]);
 
-  if (!settings || !menu) return <div className="text-zinc-400">Menu not found</div>;
+  if (!settings || !menu) return <div className="text-theme-text-secondary">Menu not found</div>;
 
   const selectedSlice = menu.slices.find((s) => s.id === selectedSliceId);
   const selectedIndex = menu.slices.findIndex((s) => s.id === selectedSliceId);
@@ -134,7 +134,7 @@ export const MenuEditor: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/')}
-          className="text-zinc-400 hover:text-white text-sm"
+          className="text-theme-text-secondary hover:text-theme-text-primary text-sm"
         >
           {t('editor.back')}
         </button>
@@ -148,7 +148,7 @@ export const MenuEditor: React.FC = () => {
           <button
             onClick={() => { const s = undo(); if (s) { setSettings(s); saveSettings(); } }}
             disabled={!canUndo()}
-            className="px-2 py-1 text-sm rounded bg-zinc-800 disabled:opacity-30 hover:bg-zinc-700 disabled:cursor-not-allowed"
+            className="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
             title="Undo (Ctrl+Z)"
           >
             ↶
@@ -156,7 +156,7 @@ export const MenuEditor: React.FC = () => {
           <button
             onClick={() => { const s = redo(); if (s) { setSettings(s); saveSettings(); } }}
             disabled={!canRedo()}
-            className="px-2 py-1 text-sm rounded bg-zinc-800 disabled:opacity-30 hover:bg-zinc-700 disabled:cursor-not-allowed"
+            className="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
             title="Redo (Ctrl+Shift+Z)"
           >
             ↷
@@ -164,7 +164,7 @@ export const MenuEditor: React.FC = () => {
         </div>
         <button
           onClick={handleDeleteMenu}
-          className="ml-auto text-sm text-zinc-500 hover:text-red-400 transition-colors"
+          className="ml-auto text-sm text-theme-text-muted hover:text-red-400 transition-colors"
         >
           {t('editor.deleteMenu')}
         </button>
@@ -184,11 +184,11 @@ export const MenuEditor: React.FC = () => {
         {/* Right: Editor panels */}
         <div className="w-1/2 flex flex-col gap-4 overflow-auto">
           {/* Tab bar */}
-          <div className="flex gap-1 bg-zinc-900 rounded-lg p-1">
+          <div className="flex gap-1 bg-theme-bg-secondary rounded-lg p-1">
             <button
               onClick={() => setActiveTab('slices')}
               className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${
-                activeTab === 'slices' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                activeTab === 'slices' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary hover:text-theme-text-primary'
               }`}
             >
               {t('editor.slices')}
@@ -196,7 +196,7 @@ export const MenuEditor: React.FC = () => {
             <button
               onClick={() => setActiveTab('appearance')}
               className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${
-                activeTab === 'appearance' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                activeTab === 'appearance' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary hover:text-theme-text-primary'
               }`}
             >
               {t('editor.appearance')}
@@ -214,7 +214,7 @@ export const MenuEditor: React.FC = () => {
                 onDelete={handleDeleteSlice}
               />
               {selectedSlice && (
-                <div className="border-t border-zinc-800 pt-4">
+                <div className="border-t border-theme-border pt-4">
                   <SliceEditor
                     slice={selectedSlice}
                     onChange={handleSliceChange}

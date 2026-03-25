@@ -27,6 +27,8 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
@@ -35,6 +37,7 @@ pub fn run() {
             commands::get_default_settings,
             commands::get_auto_launch_enabled,
             commands::set_auto_launch_enabled,
+            commands::start_key_detection,
         ])
         .setup(move |app| {
             // Set up system tray

@@ -25,10 +25,14 @@ export const Dashboard: React.FC = () => {
     saveSettings();
   };
 
-  const handleExport = (menu: PieMenu, e: React.MouseEvent) => {
+  const handleExport = async (menu: PieMenu, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    exportMenu(menu);
+    try {
+      await exportMenu(menu);
+    } catch (err) {
+      alert('Export failed: ' + String(err));
+    }
   };
 
   const handleImport = async () => {
@@ -63,9 +67,13 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleExportAll = () => {
+  const handleExportAll = async () => {
     if (!settings) return;
-    exportBundle(settings.menus, settings.profiles);
+    try {
+      await exportBundle(settings.menus, settings.profiles);
+    } catch (err) {
+      alert('Export failed: ' + String(err));
+    }
   };
 
   const handleAutoHotPieImport = () => {
@@ -111,7 +119,7 @@ export const Dashboard: React.FC = () => {
     input.click();
   };
 
-  if (loading || !settings) return <div className="text-zinc-400">{t('common.loading')}</div>;
+  if (loading || !settings) return <div className="text-theme-text-secondary">{t('common.loading')}</div>;
 
   return (
     <div>
@@ -120,19 +128,19 @@ export const Dashboard: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleAutoHotPieImport}
-            className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
           >
             {t('dashboard.importAutoHotPie')}
           </button>
           <button
             onClick={handleImport}
-            className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
           >
             {t('dashboard.importMenu')}
           </button>
           <button
             onClick={handleExportAll}
-            className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
           >
             {t('dashboard.exportAll')}
           </button>
@@ -149,27 +157,27 @@ export const Dashboard: React.FC = () => {
           <Link
             key={menu.id}
             to={`/menu/${menu.id}`}
-            className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors"
+            className="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl hover:border-theme-text-muted transition-colors"
           >
             <div className="flex items-start justify-between mb-1">
               <h3 className="font-semibold">{menu.name}</h3>
               <button
                 onClick={(e) => handleExport(menu, e)}
-                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors ml-2 shrink-0"
+                className="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors ml-2 shrink-0"
                 title="Export menu as JSON"
               >
                 {t('common.export')}
               </button>
             </div>
-            <p className="text-sm text-zinc-400">{t('dashboard.slices', { count: menu.slices.length })}</p>
+            <p className="text-sm text-theme-text-secondary">{t('dashboard.slices', { count: menu.slices.length })}</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {menu.slices.slice(0, 6).map((s) => (
-                <span key={s.id} className="text-xs bg-zinc-800 px-2 py-0.5 rounded">
+                <span key={s.id} className="text-xs bg-theme-bg-tertiary px-2 py-0.5 rounded">
                   {s.icon} {s.label}
                 </span>
               ))}
               {menu.slices.length > 6 && (
-                <span className="text-xs text-zinc-500">+{menu.slices.length - 6} more</span>
+                <span className="text-xs text-theme-text-muted">+{menu.slices.length - 6} more</span>
               )}
             </div>
           </Link>

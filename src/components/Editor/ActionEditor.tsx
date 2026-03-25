@@ -38,11 +38,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs text-zinc-400 mb-1">Action Type</label>
+        <label className="block text-xs text-theme-text-secondary mb-1">Action Type</label>
         <select
           value={action.type}
           onChange={(e) => updateType(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
         >
           {ACTION_TYPES.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
@@ -52,25 +52,25 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
 
       {action.type === 'sendKey' && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Keys (e.g. ctrl+c)</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">Keys (e.g. ctrl+c)</label>
           <input
             type="text"
             value={(params.keys as string) || ''}
             onChange={(e) => updateParam('keys', e.target.value)}
             placeholder="ctrl+c"
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           />
         </div>
       )}
 
       {action.type === 'sendText' && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Text</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">Text</label>
           <input
             type="text"
             value={(params.text as string) || ''}
             onChange={(e) => updateParam('text', e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           />
         </div>
       )}
@@ -78,11 +78,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       {action.type === 'mouseClick' && (
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Button</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Button</label>
             <select
               value={(params.button as string) || 'left'}
               onChange={(e) => updateParam('button', e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             >
               <option value="left">Left</option>
               <option value="right">Right</option>
@@ -90,14 +90,14 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
             </select>
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Clicks</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Clicks</label>
             <input
               type="number"
               min={1}
               max={5}
               value={(params.clicks as number) || 1}
               onChange={(e) => updateParam('clicks', parseInt(e.target.value) || 1)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -105,25 +105,25 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
 
       {action.type === 'openUrl' && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">URL</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">URL</label>
           <input
             type="url"
             value={(params.url as string) || ''}
             onChange={(e) => updateParam('url', e.target.value)}
             placeholder="https://..."
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           />
         </div>
       )}
 
       {(action.type === 'openFile' || action.type === 'openFolder') && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Path</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">Path</label>
           <input
             type="text"
             value={(params.path as string) || ''}
             onChange={(e) => updateParam('path', e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           />
         </div>
       )}
@@ -131,12 +131,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       {action.type === 'runCommand' && (
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Command</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Command</label>
             <input
               type="text"
               value={(params.command as string) || ''}
               onChange={(e) => updateParam('command', e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
@@ -154,22 +154,22 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       {action.type === 'runScript' && (
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Interpreter</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Interpreter</label>
             <input
               type="text"
               value={(params.interpreter as string) || ''}
               onChange={(e) => updateParam('interpreter', e.target.value)}
               placeholder="python, node, bash..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Script Path</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Script Path</label>
             <input
               type="text"
               value={(params.scriptPath as string) || ''}
               onChange={(e) => updateParam('scriptPath', e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -177,11 +177,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
 
       {action.type === 'clipboard' && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Operation</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">Operation</label>
           <select
             value={(params.action as string) || 'copy'}
             onChange={(e) => updateParam('action', e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
           >
             <option value="copy">Copy</option>
             <option value="cut">Cut</option>
@@ -192,11 +192,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
 
       {action.type === 'mediaControl' && (
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Action</label>
+          <label className="block text-xs text-theme-text-secondary mb-1">Action</label>
           <select
             value={(params.action as string) || 'playPause'}
             onChange={(e) => updateParam('action', e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
           >
             <option value="playPause">Play/Pause</option>
             <option value="next">Next Track</option>
@@ -211,16 +211,16 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       {action.type === 'runLua' && (
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Lua Script</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Lua Script</label>
             <textarea
               value={params.script as string || ''}
               onChange={(e) => updateParam('script', e.target.value)}
               placeholder={'-- Example:\nradialsan.send_key("ctrl+c")\nradialsan.delay(100)\nradialsan.send_key("ctrl+v")'}
               rows={6}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500 resize-y"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500 resize-y"
             />
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-theme-text-muted">
             Available API: radialsan.send_key(), send_text(), delay(), open_url(), open_file(), run_command(), mouse_click(), clipboard(), log()
           </p>
         </div>
@@ -229,11 +229,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
       {action.type === 'submenu' && menuIds && (
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Target Menu</label>
+            <label className="block text-xs text-theme-text-secondary mb-1">Target Menu</label>
             <select
               value={(params.menuId as string) || ''}
               onChange={(e) => updateParam('menuId', e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
             >
               <option value="">Select a menu...</option>
               {menuIds.map((id) => (
@@ -254,7 +254,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
         </div>
       )}
       {action.type === 'submenu' && !menuIds && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-theme-text-muted">
           Submenu selection is not available in this context.
         </p>
       )}

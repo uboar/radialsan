@@ -1,5 +1,6 @@
 use rdev::EventType;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -209,6 +210,11 @@ fn handle_event(
     tx: &std::sync::mpsc::Sender<InputEvent>,
     event: rdev::Event,
 ) {
+    // Skip processing while key detection mode is active
+    if DETECTING_KEY.load(Ordering::SeqCst) {
+        return;
+    }
+
     let mut state = state.lock().unwrap();
 
     match event.event_type {
@@ -307,6 +313,157 @@ impl InputListener {
 
         rx
     }
+}
+
+/// Convert an rdev::Key back to its canonical string name.
+/// Returns None for keys we don't support in our hotkey system.
+pub fn rdev_key_to_string(key: &rdev::Key) -> Option<String> {
+    match key {
+        rdev::Key::KeyA => Some("A".into()),
+        rdev::Key::KeyB => Some("B".into()),
+        rdev::Key::KeyC => Some("C".into()),
+        rdev::Key::KeyD => Some("D".into()),
+        rdev::Key::KeyE => Some("E".into()),
+        rdev::Key::KeyF => Some("F".into()),
+        rdev::Key::KeyG => Some("G".into()),
+        rdev::Key::KeyH => Some("H".into()),
+        rdev::Key::KeyI => Some("I".into()),
+        rdev::Key::KeyJ => Some("J".into()),
+        rdev::Key::KeyK => Some("K".into()),
+        rdev::Key::KeyL => Some("L".into()),
+        rdev::Key::KeyM => Some("M".into()),
+        rdev::Key::KeyN => Some("N".into()),
+        rdev::Key::KeyO => Some("O".into()),
+        rdev::Key::KeyP => Some("P".into()),
+        rdev::Key::KeyQ => Some("Q".into()),
+        rdev::Key::KeyR => Some("R".into()),
+        rdev::Key::KeyS => Some("S".into()),
+        rdev::Key::KeyT => Some("T".into()),
+        rdev::Key::KeyU => Some("U".into()),
+        rdev::Key::KeyV => Some("V".into()),
+        rdev::Key::KeyW => Some("W".into()),
+        rdev::Key::KeyX => Some("X".into()),
+        rdev::Key::KeyY => Some("Y".into()),
+        rdev::Key::KeyZ => Some("Z".into()),
+        rdev::Key::Num0 => Some("0".into()),
+        rdev::Key::Num1 => Some("1".into()),
+        rdev::Key::Num2 => Some("2".into()),
+        rdev::Key::Num3 => Some("3".into()),
+        rdev::Key::Num4 => Some("4".into()),
+        rdev::Key::Num5 => Some("5".into()),
+        rdev::Key::Num6 => Some("6".into()),
+        rdev::Key::Num7 => Some("7".into()),
+        rdev::Key::Num8 => Some("8".into()),
+        rdev::Key::Num9 => Some("9".into()),
+        rdev::Key::F1 => Some("F1".into()),
+        rdev::Key::F2 => Some("F2".into()),
+        rdev::Key::F3 => Some("F3".into()),
+        rdev::Key::F4 => Some("F4".into()),
+        rdev::Key::F5 => Some("F5".into()),
+        rdev::Key::F6 => Some("F6".into()),
+        rdev::Key::F7 => Some("F7".into()),
+        rdev::Key::F8 => Some("F8".into()),
+        rdev::Key::F9 => Some("F9".into()),
+        rdev::Key::F10 => Some("F10".into()),
+        rdev::Key::F11 => Some("F11".into()),
+        rdev::Key::F12 => Some("F12".into()),
+        rdev::Key::Space => Some("Space".into()),
+        rdev::Key::Tab => Some("Tab".into()),
+        rdev::Key::CapsLock => Some("CapsLock".into()),
+        rdev::Key::Escape => Some("Escape".into()),
+        rdev::Key::Return => Some("Return".into()),
+        rdev::Key::Backspace => Some("Backspace".into()),
+        rdev::Key::Delete => Some("Delete".into()),
+        rdev::Key::UpArrow => Some("Up".into()),
+        rdev::Key::DownArrow => Some("Down".into()),
+        rdev::Key::LeftArrow => Some("Left".into()),
+        rdev::Key::RightArrow => Some("Right".into()),
+        rdev::Key::Unknown(200) => Some("Mouse4".into()),
+        rdev::Key::Unknown(201) => Some("Mouse5".into()),
+        _ => None,
+    }
+}
+
+/// A shared flag that, when set to true, causes the main input listener
+/// to ignore events so that key detection can work without conflicts.
+pub static DETECTING_KEY: AtomicBool = AtomicBool::new(false);
+
+/// Start a temporary rdev listener that captures the next key press and
+/// emits the result as a `radialsan://key-detected` event on the given AppHandle.
+/// The listener stops after detecting one key.
+pub fn detect_next_key(app_handle: tauri::AppHandle) {
+    DETECTING_KEY.store(true, Ordering::SeqCst);
+
+    std::thread::spawn(move || {
+        let detected: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let detected_clone = Arc::clone(&detected);
+        let modifiers: Arc<Mutex<HashSet<ModifierKey>>> = Arc::new(Mutex::new(HashSet::new()));
+        let modifiers_clone = Arc::clone(&modifiers);
+
+        // We use a channel to signal completion since rdev::listen blocks
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
+
+        std::thread::spawn(move || {
+            let callback = move |event: rdev::Event| {
+                match event.event_type {
+                    EventType::KeyPress(key) => {
+                        // Track modifiers
+                        if let Some(modifier) = key_to_modifier(&key) {
+                            modifiers_clone.lock().unwrap().insert(modifier);
+                            return;
+                        }
+
+                        // Non-modifier key pressed: build the hotkey string
+                        if let Some(key_name) = rdev_key_to_string(&key) {
+                            let mods = modifiers_clone.lock().unwrap();
+                            let mut mod_list: Vec<ModifierKey> = mods.iter().copied().collect();
+                            mod_list.sort();
+
+                            let mut parts: Vec<String> = Vec::new();
+                            for m in &mod_list {
+                                parts.push(match m {
+                                    ModifierKey::Ctrl => "Ctrl".into(),
+                                    ModifierKey::Shift => "Shift".into(),
+                                    ModifierKey::Alt => "Alt".into(),
+                                    ModifierKey::Meta => "Meta".into(),
+                                });
+                            }
+                            parts.push(key_name);
+                            let hotkey_str = parts.join("+");
+
+                            *detected_clone.lock().unwrap() = Some(hotkey_str.clone());
+                            let _ = tx.send(hotkey_str);
+                        }
+                    }
+                    EventType::KeyRelease(key) => {
+                        if let Some(modifier) = key_to_modifier(&key) {
+                            modifiers_clone.lock().unwrap().remove(&modifier);
+                        }
+                    }
+                    _ => {}
+                }
+            };
+
+            if let Err(e) = rdev::listen(callback) {
+                eprintln!("rdev detect_next_key listen error: {:?}", e);
+            }
+        });
+
+        // Wait for detection (with a 10 second timeout)
+        let result = rx.recv_timeout(std::time::Duration::from_secs(10));
+        DETECTING_KEY.store(false, Ordering::SeqCst);
+
+        match result {
+            Ok(hotkey) => {
+                use tauri::Emitter;
+                let _ = app_handle.emit("radialsan://key-detected", serde_json::json!({ "hotkey": hotkey }));
+            }
+            Err(_) => {
+                use tauri::Emitter;
+                let _ = app_handle.emit("radialsan://key-detected", serde_json::json!({ "hotkey": null, "timeout": true }));
+            }
+        }
+    });
 }
 
 #[cfg(test)]

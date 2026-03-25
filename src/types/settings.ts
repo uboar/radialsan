@@ -4,6 +4,8 @@
 // Enums
 // ---------------------------------------------------------------------------
 
+export type AppTheme = "dark" | "light" | "system";
+
 export type ActivationMode = "holdRelease" | "clickSelect";
 
 export type SubmenuOpenMode = "onHover" | "onThreshold" | "onClick";
@@ -60,6 +62,7 @@ export interface Appearance {
 export interface GlobalSettings {
   launchAtStartup: boolean;
   showTrayIcon: boolean;
+  theme: AppTheme;
   defaultProfileId: string;
   menuActivation: MenuActivation;
   appearance: Appearance;

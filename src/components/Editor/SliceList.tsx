@@ -44,17 +44,17 @@ const SortableSliceItem: React.FC<{
       ref={setNodeRef}
       style={style}
       className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-        isSelected ? 'bg-blue-600/20 border border-blue-500/50' : 'bg-zinc-800/50 border border-transparent hover:bg-zinc-800'
+        isSelected ? 'bg-blue-600/20 border border-blue-500/50' : 'bg-theme-bg-tertiary/50 border border-transparent hover:bg-theme-bg-tertiary'
       }`}
       onClick={onSelect}
     >
-      <span {...attributes} {...listeners} className="cursor-grab text-zinc-500 hover:text-zinc-300 px-1">⠿</span>
+      <span {...attributes} {...listeners} className="cursor-grab text-theme-text-muted hover:text-theme-text-primary px-1">⠿</span>
       <span className="text-lg">{slice.icon}</span>
       <span className="flex-1 text-sm truncate">{slice.label}</span>
-      <span className="text-xs text-zinc-500">{slice.actions[0]?.type || 'noop'}</span>
+      <span className="text-xs text-theme-text-muted">{slice.actions[0]?.type || 'noop'}</span>
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="text-zinc-600 hover:text-red-400 text-sm px-1"
+        className="text-theme-text-muted hover:text-red-400 text-sm px-1"
       >
         ×
       </button>
@@ -82,10 +82,10 @@ export const SliceList: React.FC<SliceListProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">Slices</h3>
+        <h3 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">Slices</h3>
         <button
           onClick={onAdd}
-          className="text-xs px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition-colors"
+          className="text-xs px-2 py-1 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-theme-text-primary transition-colors"
         >
           + Add
         </button>

@@ -64,7 +64,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({ slices, selectedIndex,
   }, [slices, selectedIndex, appearance]);
 
   return (
-    <div ref={containerRef} className="flex items-center justify-center bg-zinc-950 rounded-xl p-4 border border-zinc-800">
+    <div ref={containerRef} className="flex items-center justify-center bg-theme-bg-primary rounded-xl p-4 border border-theme-border">
       <canvas ref={canvasRef} className="max-w-full" />
     </div>
   );
