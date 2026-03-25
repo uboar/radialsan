@@ -1,30 +1,59 @@
-// Placeholder: hook for subscribing to Tauri events from the backend
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-type EventCallback<T> = (payload: T) => void;
+export interface ShowMenuPayload {
+  menuId: string;
+  cursorX: number;
+  cursorY: number;
+  slices: Array<{
+    label: string;
+    icon: string;
+    actions: Array<{ type: string; params: Record<string, unknown> }>;
+  }>;
+  config: Record<string, unknown>;
+}
 
-/**
- * Subscribe to a Tauri backend event.
- * Returns a cleanup function that unlistens on unmount.
- */
-export function useTauriEvent<T>(
-  eventName: string,
-  callback: EventCallback<T>,
-): void {
+export function useShowMenuEvent(callback: (payload: ShowMenuPayload) => void): void {
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
-    // Dynamically import to avoid issues in non-Tauri environments (e.g. tests)
-    import("@tauri-apps/api/event")
-      .then(({ listen }) => listen<T>(eventName, (event) => callback(event.payload)))
-      .then((fn) => {
+    const setup = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        const fn = await listen<ShowMenuPayload>('radialsan://show-menu', (event) => {
+          callback(event.payload);
+        });
         unlisten = fn;
-      })
-      .catch(console.error);
+      } catch {
+        // Not running in Tauri context.
+      }
+    };
 
+    setup();
     return () => {
       unlisten?.();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventName]);
+  }, [callback]);
+}
+
+export function useHideMenuEvent(callback: (payload: { selected: boolean }) => void): void {
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    const setup = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        const fn = await listen<{ selected: boolean }>('radialsan://hide-menu', (event) => {
+          callback(event.payload);
+        });
+        unlisten = fn;
+      } catch {
+        // Not running in Tauri context.
+      }
+    };
+
+    setup();
+    return () => {
+      unlisten?.();
+    };
+  }, [callback]);
 }

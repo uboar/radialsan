@@ -1,58 +1,68 @@
-// Placeholder: geometry utilities for pie menu calculations
+// Geometry utilities for pie menu calculations.
+// Coordinate system: 0 radians = top (12 o'clock), increasing clockwise.
 
-export interface Point {
-  x: number;
-  y: number;
+export function angleFromCenter(cx: number, cy: number, x: number, y: number): number {
+  // Standard atan2 has 0=right, CCW positive.
+  // Convert to our system: 0=top, CW positive.
+  return (Math.atan2(x - cx, -(y - cy)) + 2 * Math.PI) % (2 * Math.PI);
 }
 
-export interface PieSlice {
-  startAngle: number;
-  endAngle: number;
-  index: number;
+export function distance(x1: number, y1: number, x2: number, y2: number): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
-/**
- * Calculate the angle (in radians) from center to a point.
- */
-export function angleFromCenter(center: Point, point: Point): number {
-  return Math.atan2(point.y - center.y, point.x - center.x);
+export function getSliceIndex(angle: number, numSlices: number): number {
+  const sliceWidth = (2 * Math.PI) / numSlices;
+  // Slice 0 is centered at 0 (top), spanning [-halfWidth, +halfWidth].
+  // Shift angle by half a slice width so that 0 maps to slice 0.
+  const shifted = (angle + sliceWidth / 2 + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(shifted / sliceWidth) % numSlices;
 }
 
-/**
- * Divide a full circle into equal slices.
- */
-export function createEqualSlices(count: number): PieSlice[] {
-  const sliceAngle = (2 * Math.PI) / count;
-  return Array.from({ length: count }, (_, i) => ({
-    startAngle: i * sliceAngle - Math.PI / 2,
-    endAngle: (i + 1) * sliceAngle - Math.PI / 2,
-    index: i,
-  }));
+export function isInRing(dist: number, innerRadius: number, outerRadius: number): boolean {
+  return dist >= innerRadius && dist <= outerRadius;
 }
 
-/**
- * Determine which slice index a point falls into given a center and slice layout.
- */
-export function hitTestSlice(
-  center: Point,
-  point: Point,
-  slices: PieSlice[],
+export function isInDeadZone(dist: number, deadZoneRadius: number): boolean {
+  return dist <= deadZoneRadius;
+}
+
+export function getSliceAtPoint(
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  numSlices: number,
+  innerRadius: number,
+  outerRadius: number,
   deadZoneRadius: number,
 ): number | null {
-  const dx = point.x - center.x;
-  const dy = point.y - center.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dist = distance(x, y, cx, cy);
 
-  if (dist < deadZoneRadius) return null;
+  if (isInDeadZone(dist, deadZoneRadius)) return null;
+  if (!isInRing(dist, innerRadius, outerRadius)) return null;
 
-  const angle = Math.atan2(dy, dx);
-  for (const slice of slices) {
-    let start = slice.startAngle;
-    let end = slice.endAngle;
-    // Normalise to [-π, π]
-    if (end < start) end += 2 * Math.PI;
-    let a = angle < start ? angle + 2 * Math.PI : angle;
-    if (a >= start && a < end) return slice.index;
-  }
-  return null;
+  const angle = angleFromCenter(cx, cy, x, y);
+  return getSliceIndex(angle, numSlices);
+}
+
+export function polarToCartesian(
+  cx: number,
+  cy: number,
+  radius: number,
+  angle: number,
+): { x: number; y: number } {
+  // angle is in our coordinate system (0=top, CW).
+  // canvas_x = cx + radius * sin(angle)
+  // canvas_y = cy - radius * cos(angle)
+  return {
+    x: cx + radius * Math.sin(angle),
+    y: cy - radius * Math.cos(angle),
+  };
+}
+
+export function getSliceCenterAngle(sliceIndex: number, numSlices: number): number {
+  return ((2 * Math.PI) / numSlices) * sliceIndex;
 }
