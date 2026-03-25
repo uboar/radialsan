@@ -58,28 +58,31 @@ pub fn get_default_settings() -> Result<String, String> {
     serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn get_auto_launch_enabled(_app_handle: tauri::AppHandle) -> Result<bool, String> {
+fn create_auto_launch() -> Result<auto_launch::AutoLaunch, String> {
     let app_name = "radialsan";
     let app_path = std::env::current_exe()
         .map_err(|e| e.to_string())?
         .to_string_lossy()
         .to_string();
 
+    // macOS API takes an extra `use_launch_agent: bool` parameter
+    #[cfg(target_os = "macos")]
     let auto = auto_launch::AutoLaunch::new(app_name, &app_path, true, &[] as &[&str]);
+    #[cfg(not(target_os = "macos"))]
+    let auto = auto_launch::AutoLaunch::new(app_name, &app_path, &[] as &[&str]);
+
+    Ok(auto)
+}
+
+#[tauri::command]
+pub fn get_auto_launch_enabled(_app_handle: tauri::AppHandle) -> Result<bool, String> {
+    let auto = create_auto_launch()?;
     auto.is_enabled().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn set_auto_launch_enabled(_app_handle: tauri::AppHandle, enabled: bool) -> Result<(), String> {
-    let app_name = "radialsan";
-    let app_path = std::env::current_exe()
-        .map_err(|e| e.to_string())?
-        .to_string_lossy()
-        .to_string();
-
-    let auto = auto_launch::AutoLaunch::new(app_name, &app_path, true, &[] as &[&str]);
-
+    let auto = create_auto_launch()?;
     if enabled {
         auto.enable().map_err(|e| e.to_string())
     } else {
