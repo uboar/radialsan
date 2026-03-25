@@ -68,11 +68,11 @@ cargo tauri dev
 
 # テスト
 cd src-tauri && cargo test     # Rust 38テスト
-npx vitest run                  # Frontend 46テスト
-npx tsc --noEmit                # 型チェック
+pnpm exec vitest run            # Frontend 46テスト
+pnpm exec tsc --noEmit          # 型チェック
 
 # ビルド
-npm run build                   # フロントエンド
+pnpm run build                  # フロントエンド
 cargo tauri build               # 全体
 
 # リリース
