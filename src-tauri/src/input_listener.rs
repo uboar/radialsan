@@ -293,23 +293,44 @@ impl InputListener {
         state.bindings = bindings;
     }
 
-    /// Start the rdev listener on a new thread.
+    /// Start the input listener.
     /// Returns a Receiver for InputEvents.
     ///
-    /// NOTE: On macOS, this requires Accessibility permission.
+    /// On macOS, uses a native CGEventTap implementation.
+    /// On other platforms, uses rdev.
     pub fn start(&self) -> std::sync::mpsc::Receiver<InputEvent> {
         let (tx, rx) = std::sync::mpsc::channel();
         let state = Arc::clone(&self.state);
 
-        std::thread::spawn(move || {
-            // NOTE: On macOS, this requires Accessibility permission
-            let callback = move |event: rdev::Event| {
-                handle_event(&state, &tx, event);
-            };
-            if let Err(e) = rdev::listen(callback) {
-                eprintln!("rdev listen error: {:?}", e);
+        #[cfg(target_os = "macos")]
+        {
+            match crate::macos_input::listen() {
+                Ok((native_rx, handle)) => {
+                    std::thread::spawn(move || {
+                        // Keep the handle alive for the lifetime of this thread
+                        let _handle = handle;
+                        while let Ok(event) = native_rx.recv() {
+                            handle_event(&state, &tx, event);
+                        }
+                    });
+                }
+                Err(e) => {
+                    eprintln!("macOS input listener error: {}", e);
+                }
             }
-        });
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            std::thread::spawn(move || {
+                let callback = move |event: rdev::Event| {
+                    handle_event(&state, &tx, event);
+                };
+                if let Err(e) = rdev::listen(callback) {
+                    eprintln!("rdev listen error: {:?}", e);
+                }
+            });
+        }
 
         rx
     }
@@ -388,70 +409,94 @@ pub fn rdev_key_to_string(key: &rdev::Key) -> Option<String> {
 /// to ignore events so that key detection can work without conflicts.
 pub static DETECTING_KEY: AtomicBool = AtomicBool::new(false);
 
-/// Start a temporary rdev listener that captures the next key press and
+/// Start a temporary listener that captures the next key press and
 /// emits the result as a `radialsan://key-detected` event on the given AppHandle.
 /// The listener stops after detecting one key.
 pub fn detect_next_key(app_handle: tauri::AppHandle) {
     DETECTING_KEY.store(true, Ordering::SeqCst);
 
     std::thread::spawn(move || {
-        let detected: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
-        let detected_clone = Arc::clone(&detected);
         let modifiers: Arc<Mutex<HashSet<ModifierKey>>> = Arc::new(Mutex::new(HashSet::new()));
         let modifiers_clone = Arc::clone(&modifiers);
 
-        // We use a channel to signal completion since rdev::listen blocks
+        // Channel to signal completion
         let (tx, rx) = std::sync::mpsc::channel::<String>();
 
-        std::thread::spawn(move || {
-            let callback = move |event: rdev::Event| {
-                match event.event_type {
-                    EventType::KeyPress(key) => {
-                        // Track modifiers
-                        if let Some(modifier) = key_to_modifier(&key) {
-                            modifiers_clone.lock().unwrap().insert(modifier);
-                            return;
-                        }
-
-                        // Non-modifier key pressed: build the hotkey string
-                        if let Some(key_name) = rdev_key_to_string(&key) {
-                            let mods = modifiers_clone.lock().unwrap();
-                            let mut mod_list: Vec<ModifierKey> = mods.iter().copied().collect();
-                            mod_list.sort();
-
-                            let mut parts: Vec<String> = Vec::new();
-                            for m in &mod_list {
-                                parts.push(match m {
-                                    ModifierKey::Ctrl => "Ctrl".into(),
-                                    ModifierKey::Shift => "Shift".into(),
-                                    ModifierKey::Alt => "Alt".into(),
-                                    ModifierKey::Meta => "Meta".into(),
-                                });
-                            }
-                            parts.push(key_name);
-                            let hotkey_str = parts.join("+");
-
-                            *detected_clone.lock().unwrap() = Some(hotkey_str.clone());
-                            let _ = tx.send(hotkey_str);
-                        }
+        let process_event = move |event: rdev::Event| {
+            match event.event_type {
+                EventType::KeyPress(key) => {
+                    // Track modifiers
+                    if let Some(modifier) = key_to_modifier(&key) {
+                        modifiers_clone.lock().unwrap().insert(modifier);
+                        return;
                     }
-                    EventType::KeyRelease(key) => {
-                        if let Some(modifier) = key_to_modifier(&key) {
-                            modifiers_clone.lock().unwrap().remove(&modifier);
+
+                    // Non-modifier key pressed: build the hotkey string
+                    if let Some(key_name) = rdev_key_to_string(&key) {
+                        let mods = modifiers_clone.lock().unwrap();
+                        let mut mod_list: Vec<ModifierKey> = mods.iter().copied().collect();
+                        mod_list.sort();
+
+                        let mut parts: Vec<String> = Vec::new();
+                        for m in &mod_list {
+                            parts.push(match m {
+                                ModifierKey::Ctrl => "Ctrl".into(),
+                                ModifierKey::Shift => "Shift".into(),
+                                ModifierKey::Alt => "Alt".into(),
+                                ModifierKey::Meta => "Meta".into(),
+                            });
                         }
+                        parts.push(key_name);
+                        let hotkey_str = parts.join("+");
+                        let _ = tx.send(hotkey_str);
                     }
-                    _ => {}
                 }
-            };
-
-            if let Err(e) = rdev::listen(callback) {
-                eprintln!("rdev detect_next_key listen error: {:?}", e);
+                EventType::KeyRelease(key) => {
+                    if let Some(modifier) = key_to_modifier(&key) {
+                        modifiers_clone.lock().unwrap().remove(&modifier);
+                    }
+                }
+                _ => {}
             }
-        });
+        };
+
+        #[cfg(target_os = "macos")]
+        let listener_handle;
+
+        #[cfg(target_os = "macos")]
+        {
+            match crate::macos_input::listen() {
+                Ok((native_rx, handle)) => {
+                    listener_handle = Some(handle);
+                    std::thread::spawn(move || {
+                        while let Ok(event) = native_rx.recv() {
+                            process_event(event);
+                        }
+                    });
+                }
+                Err(e) => {
+                    listener_handle = None;
+                    eprintln!("macOS key detection error: {}", e);
+                }
+            }
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            std::thread::spawn(move || {
+                if let Err(e) = rdev::listen(process_event) {
+                    eprintln!("rdev detect_next_key listen error: {:?}", e);
+                }
+            });
+        }
 
         // Wait for detection (with a 10 second timeout)
         let result = rx.recv_timeout(std::time::Duration::from_secs(10));
         DETECTING_KEY.store(false, Ordering::SeqCst);
+
+        // Clean up the CGEventTap on macOS
+        #[cfg(target_os = "macos")]
+        drop(listener_handle);
 
         match result {
             Ok(hotkey) => {

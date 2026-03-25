@@ -2,6 +2,8 @@ pub mod actions;
 pub mod commands;
 pub mod input_listener;
 pub mod lua_engine;
+#[cfg(target_os = "macos")]
+pub mod macos_input;
 pub mod profiles;
 pub mod settings;
 pub mod tray;
@@ -52,6 +54,32 @@ pub fn run() {
                         let _ = main_window_clone.hide();
                     }
                 });
+            }
+
+            // Size overlay window to cover the primary monitor (use logical coordinates for Retina)
+            if let Some(overlay) = app.get_webview_window("overlay") {
+                if let Ok(Some(monitor)) = overlay.primary_monitor() {
+                    let size = monitor.size();
+                    let pos = monitor.position();
+                    let scale = monitor.scale_factor();
+                    let _ = overlay.set_position(tauri::Position::Logical(
+                        tauri::LogicalPosition::new(
+                            pos.x as f64 / scale,
+                            pos.y as f64 / scale,
+                        ),
+                    ));
+                    let _ = overlay.set_size(tauri::Size::Logical(
+                        tauri::LogicalSize::new(
+                            size.width as f64 / scale,
+                            size.height as f64 / scale,
+                        ),
+                    ));
+                }
+
+                #[cfg(target_os = "macos")]
+                {
+                    let _ = overlay.set_visible_on_all_workspaces(true);
+                }
             }
 
             // Start input listener and bridge events to frontend
@@ -111,74 +139,81 @@ fn bridge_input_events(
                 cursor_x,
                 cursor_y,
             } => {
-                // Look up menu config from settings
+                // Build the payload on this thread (while holding the lock briefly)
                 let state = app_handle.state::<AppState>();
-                let settings = state.settings.lock().unwrap();
-                let menu = settings.get_menu_by_id(&menu_id);
-
-                if let Some(menu) = menu {
-                    let slices: Vec<serde_json::Value> = menu
-                        .slices
-                        .iter()
-                        .map(|s| {
-                            serde_json::json!({
-                                "label": s.label,
-                                "icon": s.icon,
+                let payload = {
+                    let settings = state.settings.lock().unwrap();
+                    let menu = settings.get_menu_by_id(&menu_id);
+                    menu.map(|menu| {
+                        let slices: Vec<serde_json::Value> = menu
+                            .slices
+                            .iter()
+                            .map(|s| {
+                                serde_json::json!({
+                                    "label": s.label,
+                                    "icon": s.icon,
+                                })
                             })
+                            .collect();
+
+                        let actions: Vec<serde_json::Value> = menu
+                            .slices
+                            .iter()
+                            .map(|s| serde_json::to_value(&s.actions).unwrap_or_default())
+                            .collect();
+
+                        let appearance = &settings.global.appearance;
+                        serde_json::json!({
+                            "menuId": menu_id,
+                            "cursorX": cursor_x,
+                            "cursorY": cursor_y,
+                            "slices": slices,
+                            "actions": actions,
+                            "config": {
+                                "innerRadius": appearance.inner_radius,
+                                "outerRadius": appearance.outer_radius,
+                                "deadZoneRadius": appearance.dead_zone_radius,
+                                "backgroundColor": appearance.background_color,
+                                "sliceFillColor": appearance.slice_fill_color,
+                                "sliceHoverColor": appearance.slice_hover_color,
+                                "sliceBorderColor": appearance.slice_border_color,
+                                "sliceBorderWidth": appearance.slice_border_width,
+                                "labelFont": appearance.label_font,
+                                "labelSize": appearance.label_size,
+                                "labelColor": appearance.label_color,
+                                "iconSize": appearance.icon_size,
+                                "opacity": appearance.opacity,
+                            }
                         })
-                        .collect();
+                    })
+                };
 
-                    let actions: Vec<serde_json::Value> = menu
-                        .slices
-                        .iter()
-                        .map(|s| serde_json::to_value(&s.actions).unwrap_or_default())
-                        .collect();
-
-                    let appearance = &settings.global.appearance;
-                    let payload = serde_json::json!({
-                        "menuId": menu_id,
-                        "cursorX": cursor_x,
-                        "cursorY": cursor_y,
-                        "slices": slices,
-                        "actions": actions,
-                        "config": {
-                            "innerRadius": appearance.inner_radius,
-                            "outerRadius": appearance.outer_radius,
-                            "deadZoneRadius": appearance.dead_zone_radius,
-                            "backgroundColor": appearance.background_color,
-                            "sliceFillColor": appearance.slice_fill_color,
-                            "sliceHoverColor": appearance.slice_hover_color,
-                            "sliceBorderColor": appearance.slice_border_color,
-                            "sliceBorderWidth": appearance.slice_border_width,
-                            "labelFont": appearance.label_font,
-                            "labelSize": appearance.label_size,
-                            "labelColor": appearance.label_color,
-                            "iconSize": appearance.icon_size,
-                            "opacity": appearance.opacity,
+                if let Some(payload) = payload {
+                    // Window operations must run on the main thread on macOS
+                    let ah = app_handle.clone();
+                    let _ = app_handle.run_on_main_thread(move || {
+                        if let Some(overlay) = ah.get_webview_window("overlay") {
+                            let _ = overlay.set_ignore_cursor_events(false);
+                            let _ = overlay.show();
+                            let _ = overlay.set_focus();
                         }
+                        let _ = ah.emit("radialsan://show-menu", payload);
                     });
-
-                    // Show overlay window
-                    if let Some(overlay) = app_handle.get_webview_window("overlay") {
-                        let _ = overlay.set_ignore_cursor_events(false);
-                        let _ = overlay.show();
-                        let _ = overlay.set_focus();
-                    }
-
-                    let _ = app_handle.emit("radialsan://show-menu", payload);
                 }
             }
             InputEvent::HideMenu { selected } => {
-                let _ = app_handle.emit(
-                    "radialsan://hide-menu",
-                    serde_json::json!({ "selected": selected }),
-                );
-
-                // Hide overlay window
-                if let Some(overlay) = app_handle.get_webview_window("overlay") {
-                    let _ = overlay.hide();
-                    let _ = overlay.set_ignore_cursor_events(true);
-                }
+                // Window operations must run on the main thread on macOS
+                let ah = app_handle.clone();
+                let _ = app_handle.run_on_main_thread(move || {
+                    let _ = ah.emit(
+                        "radialsan://hide-menu",
+                        serde_json::json!({ "selected": selected }),
+                    );
+                    if let Some(overlay) = ah.get_webview_window("overlay") {
+                        let _ = overlay.hide();
+                        let _ = overlay.set_ignore_cursor_events(true);
+                    }
+                });
             }
             InputEvent::MouseMove { x, y } => {
                 let _ = app_handle.emit(
