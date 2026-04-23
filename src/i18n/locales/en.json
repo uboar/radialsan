@@ -94,6 +94,14 @@
     "description": "Cross-platform radial menu",
     "autoBackupNote": "Settings are automatically backed up on save."
   },
+  "runtimeWarnings": {
+    "title": "macOS integration needs attention",
+    "inputMonitoringTitle": "Hotkey detection is unavailable",
+    "inputMonitoringBody": "Grant Accessibility permission in System Settings > Privacy & Security > Accessibility so radialsan can watch global hotkeys.",
+    "activeWindowTitle": "Profile switching is unavailable",
+    "activeWindowBody": "Grant Screen Recording permission in System Settings > Privacy & Security > Screen Recording so radialsan can inspect the frontmost window.",
+    "details": "Details: {{detail}}"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

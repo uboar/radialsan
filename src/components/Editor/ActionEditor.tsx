@@ -179,8 +179,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({ action, onChange, me
         <div>
           <label className="block text-xs text-theme-text-secondary mb-1">Operation</label>
           <select
-            value={(params.action as string) || 'copy'}
-            onChange={(e) => updateParam('action', e.target.value)}
+            value={(params.operation as string) || (params.action as string) || 'copy'}
+            onChange={(e) => updateParam('operation', e.target.value)}
             className="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
           >
             <option value="copy">Copy</option>
@@ -272,7 +272,7 @@ function getDefaultParams(type: string): Record<string, unknown> {
     case 'openFolder': return { path: '' };
     case 'runCommand': return { command: '', shell: false };
     case 'runScript': return { interpreter: '', scriptPath: '' };
-    case 'clipboard': return { action: 'copy' };
+    case 'clipboard': return { operation: 'copy' };
     case 'mediaControl': return { action: 'playPause' };
     case 'runLua': return { script: '' };
     case 'submenu': return { menuId: '' };

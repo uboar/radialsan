@@ -133,7 +133,18 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   }),
 }));
 
+function getPrimaryModifier(): 'meta' | 'ctrl' {
+  if (typeof navigator === 'undefined') {
+    return 'ctrl';
+  }
+
+  const platform = navigator.platform || navigator.userAgent;
+  return /mac|iphone|ipad/i.test(platform) ? 'meta' : 'ctrl';
+}
+
 function getDefaultSettings(): Settings {
+  const modifier = getPrimaryModifier();
+
   return {
     version: 1,
     global: {
@@ -177,10 +188,10 @@ function getDefaultSettings(): Settings {
       name: 'Quick Actions',
       appearanceOverrides: null,
       slices: [
-        { id: 's1', label: 'Copy', icon: '📋', actions: [{ type: 'sendKey', params: { keys: 'ctrl+c' } }] },
-        { id: 's2', label: 'Paste', icon: '📌', actions: [{ type: 'sendKey', params: { keys: 'ctrl+v' } }] },
-        { id: 's3', label: 'Undo', icon: '↩️', actions: [{ type: 'sendKey', params: { keys: 'ctrl+z' } }] },
-        { id: 's4', label: 'Redo', icon: '↪️', actions: [{ type: 'sendKey', params: { keys: 'ctrl+shift+z' } }] },
+        { id: 's1', label: 'Copy', icon: '📋', actions: [{ type: 'clipboard', params: { operation: 'copy' } }] },
+        { id: 's2', label: 'Paste', icon: '📌', actions: [{ type: 'clipboard', params: { operation: 'paste' } }] },
+        { id: 's3', label: 'Undo', icon: '↩️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+z` } }] },
+        { id: 's4', label: 'Redo', icon: '↪️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+shift+z` } }] },
       ],
     }],
   };

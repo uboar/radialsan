@@ -261,13 +261,15 @@ export const PieMenu: React.FC = () => {
   useEffect(() => {
     if (!menuState?.visible) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    let unlisten: (() => void) | undefined;
+
+    const updateHoveredSlice = (x: number, y: number) => {
       const current = menuStateRef.current;
       if (!current) return;
 
       const idx = getSliceAtPoint(
-        e.clientX,
-        e.clientY,
+        x,
+        y,
         current.centerX,
         current.centerY,
         current.slices.length,
@@ -279,17 +281,17 @@ export const PieMenu: React.FC = () => {
       hoveredSliceRef.current = idx;
 
       // Submenu threshold: when cursor moves past the outer radius in a submenu slice's direction.
-      const dist = distance(e.clientX, e.clientY, current.centerX, current.centerY);
+      const dist = distance(x, y, current.centerX, current.centerY);
       if (dist > current.config.outerRadius) {
         // Determine which slice direction this is (even outside the ring).
-        const angle = angleFromCenter(current.centerX, current.centerY, e.clientX, e.clientY);
+        const angle = angleFromCenter(current.centerX, current.centerY, x, y);
         const directionIdx = getSliceIndex(angle, current.slices.length);
         const sliceActions = current.actions[directionIdx];
         const submenuAction = sliceActions?.find((a) => a.type === 'submenu');
         if (submenuAction && submenuAction.params?.menuId) {
           const maxDepth = 3;
           if (menuStackRef.current.length < maxDepth) {
-            enterSubmenu(submenuAction.params.menuId as string, e.clientX, e.clientY);
+            enterSubmenu(submenuAction.params.menuId as string, x, y);
           }
         }
       }
@@ -318,8 +320,28 @@ export const PieMenu: React.FC = () => {
       }
     };
 
+    const setup = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        unlisten = await listen<{ x: number; y: number }>('radialsan://mouse-move', (event) => {
+          updateHoveredSlice(event.payload.x, event.payload.y);
+        });
+      } catch {
+        // Not running in Tauri context.
+      }
+    };
+
+    setup();
+
+    const handleMouseMove = (e: MouseEvent) => {
+      updateHoveredSlice(e.clientX, e.clientY);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    return () => {
+      unlisten?.();
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
   }, [menuState?.visible]);
 
   // Animator-driven render canvas.

@@ -1,16 +1,93 @@
+use crate::input_listener;
+use crate::settings::Settings;
+use serde::Serialize;
+use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
-use std::sync::Mutex;
-use crate::settings::Settings;
-use crate::input_listener;
 
 pub struct AppState {
     pub settings: Mutex<Settings>,
+    pub runtime_status: Mutex<RuntimeStatus>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeStatus {
+    pub input_monitoring_available: bool,
+    pub active_window_monitoring_available: bool,
+    pub input_monitoring_detail: Option<String>,
+    pub active_window_monitoring_detail: Option<String>,
+}
+
+impl Default for RuntimeStatus {
+    fn default() -> Self {
+        Self {
+            input_monitoring_available: true,
+            active_window_monitoring_available: true,
+            input_monitoring_detail: None,
+            active_window_monitoring_detail: None,
+        }
+    }
+}
+
+fn update_runtime_status<F>(app_handle: &tauri::AppHandle, update: F)
+where
+    F: FnOnce(&mut RuntimeStatus),
+{
+    let state = app_handle.state::<AppState>();
+    let mut status = state.runtime_status.lock().unwrap();
+    let previous = status.clone();
+    update(&mut status);
+
+    if *status != previous {
+        let snapshot = status.clone();
+        drop(status);
+        let _ = app_handle.emit("radialsan://runtime-status", snapshot);
+    }
+}
+
+pub fn set_input_monitoring_unavailable(app_handle: &tauri::AppHandle, detail: impl Into<String>) {
+    let detail = detail.into();
+    update_runtime_status(app_handle, move |status| {
+        status.input_monitoring_available = false;
+        status.input_monitoring_detail = Some(detail);
+    });
+}
+
+pub fn clear_input_monitoring_issue(app_handle: &tauri::AppHandle) {
+    update_runtime_status(app_handle, |status| {
+        status.input_monitoring_available = true;
+        status.input_monitoring_detail = None;
+    });
+}
+
+pub fn set_active_window_monitoring_unavailable(
+    app_handle: &tauri::AppHandle,
+    detail: impl Into<String>,
+) {
+    let detail = detail.into();
+    update_runtime_status(app_handle, move |status| {
+        status.active_window_monitoring_available = false;
+        status.active_window_monitoring_detail = Some(detail);
+    });
+}
+
+pub fn clear_active_window_monitoring_issue(app_handle: &tauri::AppHandle) {
+    update_runtime_status(app_handle, |status| {
+        status.active_window_monitoring_available = true;
+        status.active_window_monitoring_detail = None;
+    });
 }
 
 #[tauri::command]
 pub fn get_settings(state: State<'_, AppState>) -> Settings {
     state.settings.lock().unwrap().clone()
+}
+
+#[tauri::command]
+pub fn get_runtime_status(state: State<'_, AppState>) -> RuntimeStatus {
+    state.runtime_status.lock().unwrap().clone()
 }
 
 #[tauri::command]

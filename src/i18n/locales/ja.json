@@ -94,6 +94,14 @@
     "description": "クロスプラットフォーム ラジアルメニュー",
     "autoBackupNote": "設定は保存時に自動的にバックアップされます。"
   },
+  "runtimeWarnings": {
+    "title": "macOS 連携に確認が必要です",
+    "inputMonitoringTitle": "ホットキー検出が利用できません",
+    "inputMonitoringBody": "radialsan がグローバルホットキーを監視できるように、システム設定 > プライバシーとセキュリティ > アクセシビリティ で権限を許可してください。",
+    "activeWindowTitle": "プロファイル切り替えが利用できません",
+    "activeWindowBody": "radialsan が最前面ウィンドウを判定できるように、システム設定 > プライバシーとセキュリティ > 画面収録 で権限を許可してください。",
+    "details": "詳細: {{detail}}"
+  },
   "common": {
     "save": "保存",
     "cancel": "キャンセル",

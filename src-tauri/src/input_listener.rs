@@ -298,7 +298,7 @@ impl InputListener {
     ///
     /// On macOS, uses a native CGEventTap implementation.
     /// On other platforms, uses rdev.
-    pub fn start(&self) -> std::sync::mpsc::Receiver<InputEvent> {
+    pub fn start(&self) -> Result<std::sync::mpsc::Receiver<InputEvent>, String> {
         let (tx, rx) = std::sync::mpsc::channel();
         let state = Arc::clone(&self.state);
 
@@ -315,7 +315,7 @@ impl InputListener {
                     });
                 }
                 Err(e) => {
-                    eprintln!("macOS input listener error: {}", e);
+                    return Err(e);
                 }
             }
         }
@@ -332,7 +332,7 @@ impl InputListener {
             });
         }
 
-        rx
+        Ok(rx)
     }
 }
 
@@ -467,6 +467,7 @@ pub fn detect_next_key(app_handle: tauri::AppHandle) {
         {
             match crate::macos_input::listen() {
                 Ok((native_rx, handle)) => {
+                    crate::commands::clear_input_monitoring_issue(&app_handle);
                     listener_handle = Some(handle);
                     std::thread::spawn(move || {
                         while let Ok(event) = native_rx.recv() {
@@ -475,8 +476,14 @@ pub fn detect_next_key(app_handle: tauri::AppHandle) {
                     });
                 }
                 Err(e) => {
-                    listener_handle = None;
-                    eprintln!("macOS key detection error: {}", e);
+                    crate::commands::set_input_monitoring_unavailable(&app_handle, e.clone());
+                    use tauri::Emitter;
+                    let _ = app_handle.emit(
+                        "radialsan://key-detected",
+                        serde_json::json!({ "hotkey": null, "error": e }),
+                    );
+                    DETECTING_KEY.store(false, Ordering::SeqCst);
+                    return;
                 }
             }
         }

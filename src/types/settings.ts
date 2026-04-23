@@ -130,3 +130,10 @@ export interface Settings {
   profiles: Profile[];
   menus: PieMenu[];
 }
+
+export interface RuntimeStatus {
+  inputMonitoringAvailable: boolean;
+  activeWindowMonitoringAvailable: boolean;
+  inputMonitoringDetail: string | null;
+  activeWindowMonitoringDetail: string | null;
+}

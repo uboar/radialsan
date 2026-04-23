@@ -83,7 +83,7 @@ pub enum MatchMode {
     Regex,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum ActionType {
     SendKey,
@@ -284,18 +284,35 @@ fn make_send_key_slice(id: &str, label: &str, icon: &str, key: &str) -> Slice {
         icon: icon.to_string(),
         actions: vec![Action {
             action_type: ActionType::SendKey,
-            params: serde_json::json!({ "key": key }),
+            params: serde_json::json!({ "keys": key }),
+        }],
+    }
+}
+
+fn make_clipboard_slice(id: &str, label: &str, icon: &str, operation: &str) -> Slice {
+    Slice {
+        id: id.to_string(),
+        label: label.to_string(),
+        icon: icon.to_string(),
+        actions: vec![Action {
+            action_type: ActionType::Clipboard,
+            params: serde_json::json!({ "operation": operation }),
         }],
     }
 }
 
 impl Default for Settings {
     fn default() -> Self {
+        #[cfg(target_os = "macos")]
+        let modifier = "meta";
+        #[cfg(not(target_os = "macos"))]
+        let modifier = "ctrl";
+
         let slices = vec![
-            make_send_key_slice("slice_copy", "Copy", "copy", "ctrl+c"),
-            make_send_key_slice("slice_paste", "Paste", "clipboard", "ctrl+v"),
-            make_send_key_slice("slice_undo", "Undo", "undo", "ctrl+z"),
-            make_send_key_slice("slice_redo", "Redo", "redo", "ctrl+shift+z"),
+            make_clipboard_slice("slice_copy", "Copy", "copy", "copy"),
+            make_clipboard_slice("slice_paste", "Paste", "clipboard", "paste"),
+            make_send_key_slice("slice_undo", "Undo", "undo", &format!("{}+z", modifier)),
+            make_send_key_slice("slice_redo", "Redo", "redo", &format!("{}+shift+z", modifier)),
         ];
 
         let sample_menu = PieMenu {
@@ -494,6 +511,19 @@ mod tests {
         assert_eq!(settings2.profiles.len(), settings.profiles.len());
 
         fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_default_menu_actions_use_current_schema() {
+        let settings = Settings::default();
+        let slices = &settings.menus[0].slices;
+
+        assert_eq!(slices[0].actions[0].action_type, ActionType::Clipboard);
+        assert_eq!(slices[0].actions[0].params["operation"], "copy");
+        assert_eq!(slices[1].actions[0].action_type, ActionType::Clipboard);
+        assert_eq!(slices[1].actions[0].params["operation"], "paste");
+        assert!(slices[2].actions[0].params.get("keys").is_some());
+        assert!(slices[3].actions[0].params.get("keys").is_some());
     }
 
     #[test]

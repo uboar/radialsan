@@ -16,7 +16,7 @@ pub fn start_profile_monitor(app_handle: AppHandle, listener: Arc<InputListener>
             std::thread::sleep(Duration::from_millis(500));
 
             // Get active window info
-            let (window_title, process_name) = get_active_window_info();
+            let (window_title, process_name) = get_active_window_info(&app_handle);
 
             // Get active profile from settings
             let state = app_handle.state::<AppState>();
@@ -52,17 +52,21 @@ pub fn start_profile_monitor(app_handle: AppHandle, listener: Arc<InputListener>
 }
 
 /// Get the active window's title and process name.
-fn get_active_window_info() -> (String, String) {
-    match get_active_window_xwin() {
+fn get_active_window_info(app_handle: &AppHandle) -> (String, String) {
+    match get_active_window_xwin(app_handle) {
         Some((title, process)) => (title, process),
         None => (String::new(), String::new()),
     }
 }
 
-fn get_active_window_xwin() -> Option<(String, String)> {
+fn get_active_window_xwin(app_handle: &AppHandle) -> Option<(String, String)> {
     match x_win::get_active_window() {
-        Ok(info) => Some((info.title, info.info.name)),
+        Ok(info) => {
+            crate::commands::clear_active_window_monitoring_issue(app_handle);
+            Some((info.title, info.info.name))
+        }
         Err(e) => {
+            crate::commands::set_active_window_monitoring_unavailable(app_handle, e.to_string());
             log::debug!("Failed to get active window: {}", e);
             None
         }

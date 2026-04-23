@@ -242,6 +242,7 @@ pub fn execute_action(action_type: &str, params: &serde_json::Value) -> Result<(
 fn execute_send_key(params: &serde_json::Value) -> Result<(), ActionError> {
     let keys = params
         .get("keys")
+        .or_else(|| params.get("key"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| ActionError::InvalidParams("missing 'keys' field".into()))?;
 
@@ -345,6 +346,7 @@ fn execute_run_command(params: &serde_json::Value) -> Result<(), ActionError> {
 fn execute_clipboard(params: &serde_json::Value) -> Result<(), ActionError> {
     let operation = params
         .get("operation")
+        .or_else(|| params.get("action"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| ActionError::InvalidParams("missing 'operation' field".into()))?;
 
@@ -624,5 +626,25 @@ mod tests {
         let params = serde_json::json!({});
         let result = execute_action("mediaControl", &params);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_send_key_accepts_legacy_key_field() {
+        let params = serde_json::json!({ "key": "ctrl+c" });
+        let keys = params
+            .get("keys")
+            .or_else(|| params.get("key"))
+            .and_then(|v| v.as_str());
+        assert_eq!(keys, Some("ctrl+c"));
+    }
+
+    #[test]
+    fn test_clipboard_accepts_legacy_action_field() {
+        let params = serde_json::json!({ "action": "copy" });
+        let operation = params
+            .get("operation")
+            .or_else(|| params.get("action"))
+            .and_then(|v| v.as_str());
+        assert_eq!(operation, Some("copy"));
     }
 }

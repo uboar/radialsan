@@ -8,11 +8,78 @@ pub mod profiles;
 pub mod settings;
 pub mod tray;
 
-use commands::AppState;
+use commands::{AppState, RuntimeStatus};
 use input_listener::{HotkeyBinding, InputEvent, InputListener};
 use settings::Settings;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
+
+struct OverlayPlacement {
+    position: tauri::LogicalPosition<f64>,
+    size: tauri::LogicalSize<f64>,
+    cursor_x: f64,
+    cursor_y: f64,
+}
+
+fn overlay_placement_for_point(
+    overlay: &tauri::WebviewWindow,
+    cursor_x: f64,
+    cursor_y: f64,
+) -> Option<OverlayPlacement> {
+    let monitor = overlay
+        .monitor_from_point(cursor_x, cursor_y)
+        .ok()
+        .flatten()
+        .or_else(|| overlay.current_monitor().ok().flatten())
+        .or_else(|| overlay.primary_monitor().ok().flatten())?;
+
+    let position = monitor.position();
+    let size = monitor.size();
+    let scale = monitor.scale_factor();
+
+    Some(OverlayPlacement {
+        position: tauri::LogicalPosition::new(
+            position.x as f64 / scale,
+            position.y as f64 / scale,
+        ),
+        size: tauri::LogicalSize::new(
+            size.width as f64 / scale,
+            size.height as f64 / scale,
+        ),
+        cursor_x: (cursor_x - position.x as f64) / scale,
+        cursor_y: (cursor_y - position.y as f64) / scale,
+    })
+}
+
+fn apply_overlay_placement(
+    overlay: &tauri::WebviewWindow,
+    placement: &OverlayPlacement,
+) -> tauri::Result<()> {
+    overlay.set_position(tauri::Position::Logical(placement.position))?;
+    overlay.set_size(tauri::Size::Logical(placement.size))?;
+    Ok(())
+}
+
+fn global_to_overlay_coordinates(
+    overlay: &tauri::WebviewWindow,
+    x: f64,
+    y: f64,
+) -> Option<(f64, f64)> {
+    let monitor = overlay
+        .current_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| overlay.monitor_from_point(x, y).ok().flatten())
+        .or_else(|| overlay.primary_monitor().ok().flatten())?;
+
+    let position = monitor.position();
+    let scale = monitor.scale_factor();
+
+    Some((
+        (x - position.x as f64) / scale,
+        (y - position.y as f64) / scale,
+    ))
+}
 
 pub fn run() {
     env_logger::init();
@@ -25,6 +92,7 @@ pub fn run() {
 
     let app_state = AppState {
         settings: Mutex::new(settings),
+        runtime_status: Mutex::new(RuntimeStatus::default()),
     };
 
     tauri::Builder::default()
@@ -34,6 +102,7 @@ pub fn run() {
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
+            commands::get_runtime_status,
             commands::save_settings,
             commands::execute_slice_actions,
             commands::get_default_settings,
@@ -56,29 +125,20 @@ pub fn run() {
                 });
             }
 
-            // Size overlay window to cover the primary monitor (use logical coordinates for Retina)
+            // Size overlay window to cover the monitor containing the cursor.
             if let Some(overlay) = app.get_webview_window("overlay") {
-                if let Ok(Some(monitor)) = overlay.primary_monitor() {
-                    let size = monitor.size();
-                    let pos = monitor.position();
-                    let scale = monitor.scale_factor();
-                    let _ = overlay.set_position(tauri::Position::Logical(
-                        tauri::LogicalPosition::new(
-                            pos.x as f64 / scale,
-                            pos.y as f64 / scale,
-                        ),
-                    ));
-                    let _ = overlay.set_size(tauri::Size::Logical(
-                        tauri::LogicalSize::new(
-                            size.width as f64 / scale,
-                            size.height as f64 / scale,
-                        ),
-                    ));
+                if let Ok(cursor) = app.handle().cursor_position() {
+                    if let Some(placement) = overlay_placement_for_point(&overlay, cursor.x, cursor.y) {
+                        let _ = apply_overlay_placement(&overlay, &placement);
+                    }
                 }
+
+                let _ = overlay.set_ignore_cursor_events(true);
 
                 #[cfg(target_os = "macos")]
                 {
                     let _ = overlay.set_visible_on_all_workspaces(true);
+                    let _ = overlay.set_focusable(false);
                 }
             }
 
@@ -86,15 +146,23 @@ pub fn run() {
             let listener = Arc::new(InputListener::new(quick_tap_ms));
             listener.update_bindings(bindings.clone());
 
-            let app_handle = app.handle().clone();
-            let rx = listener.start();
+            match listener.start() {
+                Ok(rx) => {
+                    commands::clear_input_monitoring_issue(app.handle());
+
+                    let app_handle = app.handle().clone();
+                    std::thread::spawn(move || {
+                        bridge_input_events(rx, &app_handle);
+                    });
+                }
+                Err(e) => {
+                    eprintln!("input listener error: {}", e);
+                    commands::set_input_monitoring_unavailable(app.handle(), e);
+                }
+            }
 
             // Start profile monitor (polls active window and switches bindings)
             profiles::start_profile_monitor(app.handle().clone(), Arc::clone(&listener));
-
-            std::thread::spawn(move || {
-                bridge_input_events(rx, &app_handle);
-            });
 
             Ok(())
         })
@@ -136,8 +204,8 @@ fn bridge_input_events(
         match event {
             InputEvent::ShowMenu {
                 menu_id,
-                cursor_x,
-                cursor_y,
+                cursor_x: event_cursor_x,
+                cursor_y: event_cursor_y,
             } => {
                 // Build the payload on this thread (while holding the lock briefly)
                 let state = app_handle.state::<AppState>();
@@ -165,8 +233,8 @@ fn bridge_input_events(
                         let appearance = &settings.global.appearance;
                         serde_json::json!({
                             "menuId": menu_id,
-                            "cursorX": cursor_x,
-                            "cursorY": cursor_y,
+                            "cursorX": event_cursor_x,
+                            "cursorY": event_cursor_y,
                             "slices": slices,
                             "actions": actions,
                             "config": {
@@ -189,13 +257,28 @@ fn bridge_input_events(
                 };
 
                 if let Some(payload) = payload {
+                    let cursor_position = app_handle
+                        .cursor_position()
+                        .map(|cursor| (cursor.x, cursor.y))
+                        .unwrap_or((event_cursor_x, event_cursor_y));
+
                     // Window operations must run on the main thread on macOS
                     let ah = app_handle.clone();
                     let _ = app_handle.run_on_main_thread(move || {
+                        let mut payload = payload;
                         if let Some(overlay) = ah.get_webview_window("overlay") {
-                            let _ = overlay.set_ignore_cursor_events(false);
+                            if let Some(placement) =
+                                overlay_placement_for_point(&overlay, cursor_position.0, cursor_position.1)
+                            {
+                                let _ = apply_overlay_placement(&overlay, &placement);
+                                if let Some(object) = payload.as_object_mut() {
+                                    object.insert("cursorX".into(), serde_json::json!(placement.cursor_x));
+                                    object.insert("cursorY".into(), serde_json::json!(placement.cursor_y));
+                                }
+                            }
+
+                            let _ = overlay.set_ignore_cursor_events(true);
                             let _ = overlay.show();
-                            let _ = overlay.set_focus();
                         }
                         let _ = ah.emit("radialsan://show-menu", payload);
                     });
@@ -211,11 +294,14 @@ fn bridge_input_events(
                     );
                     if let Some(overlay) = ah.get_webview_window("overlay") {
                         let _ = overlay.hide();
-                        let _ = overlay.set_ignore_cursor_events(true);
                     }
                 });
             }
             InputEvent::MouseMove { x, y } => {
+                let (x, y) = app_handle
+                    .get_webview_window("overlay")
+                    .and_then(|overlay| global_to_overlay_coordinates(&overlay, x, y))
+                    .unwrap_or((x, y));
                 let _ = app_handle.emit(
                     "radialsan://mouse-move",
                     serde_json::json!({ "x": x, "y": y }),
