@@ -1,7 +1,8 @@
 use crate::input_listener;
+use crate::input_listener::InputListener;
 use crate::settings::Settings;
 use serde::Serialize;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
@@ -9,6 +10,7 @@ use tauri::State;
 pub struct AppState {
     pub settings: Mutex<Settings>,
     pub runtime_status: Mutex<RuntimeStatus>,
+    pub input_listener: Mutex<Option<Arc<InputListener>>>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -96,18 +98,37 @@ pub fn save_settings(
     state: State<'_, AppState>,
     settings: Settings,
 ) -> Result<(), String> {
-    let mut current = state.settings.lock().map_err(|e| e.to_string())?;
-
     // Create backup before saving
     if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
         let _ = Settings::backup(&app_data_dir); // Don't fail save if backup fails
     }
 
-    *current = settings.clone();
-
     // Persist to disk
-    let app_data_dir = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
     settings.save(&app_data_dir).map_err(|e| e.to_string())?;
+
+    {
+        let mut current = state.settings.lock().map_err(|e| e.to_string())?;
+        *current = settings.clone();
+    }
+
+    let listener = {
+        let input_listener = state.input_listener.lock().map_err(|e| e.to_string())?;
+        input_listener.as_ref().cloned()
+    };
+
+    if let Some(listener) = listener {
+        let active_profile =
+            crate::profiles::get_active_profile_for_current_window(&app_handle, &settings);
+        let bindings = crate::profiles::build_bindings_for_profile(active_profile);
+        listener.update_runtime_settings(
+            bindings,
+            settings.global.menu_activation.quick_tap_threshold_ms,
+        );
+    }
 
     Ok(())
 }
@@ -124,8 +145,7 @@ pub fn execute_slice_actions(actions_json: Vec<serde_json::Value>) -> Result<(),
             .cloned()
             .unwrap_or(serde_json::Value::Null);
 
-        crate::actions::execute_action(action_type, &params)
-            .map_err(|e| e.to_string())?;
+        crate::actions::execute_action(action_type, &params).map_err(|e| e.to_string())?;
     }
     Ok(())
 }

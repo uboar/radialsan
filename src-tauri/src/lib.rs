@@ -11,6 +11,7 @@ pub mod tray;
 use commands::{AppState, RuntimeStatus};
 use input_listener::{HotkeyBinding, InputEvent, InputListener};
 use settings::Settings;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
@@ -38,14 +39,8 @@ fn overlay_placement_for_point(
     let scale = monitor.scale_factor();
 
     Some(OverlayPlacement {
-        position: tauri::LogicalPosition::new(
-            position.x as f64 / scale,
-            position.y as f64 / scale,
-        ),
-        size: tauri::LogicalSize::new(
-            size.width as f64 / scale,
-            size.height as f64 / scale,
-        ),
+        position: tauri::LogicalPosition::new(position.x as f64 / scale, position.y as f64 / scale),
+        size: tauri::LogicalSize::new(size.width as f64 / scale, size.height as f64 / scale),
         cursor_x: (cursor_x - position.x as f64) / scale,
         cursor_y: (cursor_y - position.y as f64) / scale,
     })
@@ -81,18 +76,27 @@ fn global_to_overlay_coordinates(
     ))
 }
 
+fn load_initial_settings(app_data_dir: &Path) -> Settings {
+    match Settings::load(app_data_dir) {
+        Ok(settings) => settings,
+        Err(error) => {
+            log::error!(
+                "Failed to load settings from {}: {}",
+                app_data_dir.display(),
+                error
+            );
+            Settings::default()
+        }
+    }
+}
+
 pub fn run() {
     env_logger::init();
 
-    let settings = Settings::default();
-    let quick_tap_ms = settings.global.menu_activation.quick_tap_threshold_ms;
-
-    // Build hotkey bindings from the default profile
-    let bindings = build_bindings_from_settings(&settings);
-
     let app_state = AppState {
-        settings: Mutex::new(settings),
+        settings: Mutex::new(Settings::default()),
         runtime_status: Mutex::new(RuntimeStatus::default()),
+        input_listener: Mutex::new(None),
     };
 
     tauri::Builder::default()
@@ -111,6 +115,19 @@ pub fn run() {
             commands::start_key_detection,
         ])
         .setup(move |app| {
+            let settings = match app.path().app_data_dir() {
+                Ok(app_data_dir) => load_initial_settings(&app_data_dir),
+                Err(error) => {
+                    log::error!("Failed to resolve app data directory: {}", error);
+                    Settings::default()
+                }
+            };
+
+            {
+                let state = app.state::<AppState>();
+                *state.settings.lock().unwrap() = settings.clone();
+            }
+
             // Set up system tray
             tray::setup_tray(app.handle())?;
 
@@ -128,7 +145,9 @@ pub fn run() {
             // Size overlay window to cover the monitor containing the cursor.
             if let Some(overlay) = app.get_webview_window("overlay") {
                 if let Ok(cursor) = app.handle().cursor_position() {
-                    if let Some(placement) = overlay_placement_for_point(&overlay, cursor.x, cursor.y) {
+                    if let Some(placement) =
+                        overlay_placement_for_point(&overlay, cursor.x, cursor.y)
+                    {
                         let _ = apply_overlay_placement(&overlay, &placement);
                     }
                 }
@@ -143,8 +162,15 @@ pub fn run() {
             }
 
             // Start input listener and bridge events to frontend
+            let quick_tap_ms = settings.global.menu_activation.quick_tap_threshold_ms;
+            let bindings = build_bindings_from_settings(&settings);
             let listener = Arc::new(InputListener::new(quick_tap_ms));
-            listener.update_bindings(bindings.clone());
+            listener.update_bindings(bindings);
+
+            {
+                let state = app.state::<AppState>();
+                *state.input_listener.lock().unwrap() = Some(Arc::clone(&listener));
+            }
 
             match listener.start() {
                 Ok(rx) => {
@@ -196,10 +222,7 @@ fn build_bindings_from_settings(settings: &Settings) -> Vec<HotkeyBinding> {
 }
 
 /// Bridge InputEvents from the rdev listener thread to Tauri frontend events.
-fn bridge_input_events(
-    rx: std::sync::mpsc::Receiver<InputEvent>,
-    app_handle: &tauri::AppHandle,
-) {
+fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &tauri::AppHandle) {
     while let Ok(event) = rx.recv() {
         match event {
             InputEvent::ShowMenu {
@@ -267,13 +290,21 @@ fn bridge_input_events(
                     let _ = app_handle.run_on_main_thread(move || {
                         let mut payload = payload;
                         if let Some(overlay) = ah.get_webview_window("overlay") {
-                            if let Some(placement) =
-                                overlay_placement_for_point(&overlay, cursor_position.0, cursor_position.1)
-                            {
+                            if let Some(placement) = overlay_placement_for_point(
+                                &overlay,
+                                cursor_position.0,
+                                cursor_position.1,
+                            ) {
                                 let _ = apply_overlay_placement(&overlay, &placement);
                                 if let Some(object) = payload.as_object_mut() {
-                                    object.insert("cursorX".into(), serde_json::json!(placement.cursor_x));
-                                    object.insert("cursorY".into(), serde_json::json!(placement.cursor_y));
+                                    object.insert(
+                                        "cursorX".into(),
+                                        serde_json::json!(placement.cursor_x),
+                                    );
+                                    object.insert(
+                                        "cursorY".into(),
+                                        serde_json::json!(placement.cursor_y),
+                                    );
                                 }
                             }
 
@@ -308,5 +339,55 @@ fn bridge_input_events(
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn make_temp_dir(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("radialsan_{}_{}", name, uuid::Uuid::new_v4()))
+    }
+
+    #[test]
+    fn test_load_initial_settings_uses_saved_settings() {
+        let dir = make_temp_dir("load_saved_settings");
+        fs::create_dir_all(&dir).unwrap();
+
+        let mut settings = Settings::default();
+        settings.global.theme = settings::AppTheme::Light;
+        settings.global.menu_activation.quick_tap_threshold_ms = 350;
+        settings.save(&dir).unwrap();
+
+        let loaded = load_initial_settings(&dir);
+
+        assert_eq!(loaded.global.theme, settings::AppTheme::Light);
+        assert_eq!(loaded.global.menu_activation.quick_tap_threshold_ms, 350);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_load_initial_settings_falls_back_to_default_on_invalid_json() {
+        let dir = make_temp_dir("load_invalid_settings");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("settings.json"), "{ invalid json").unwrap();
+
+        let loaded = load_initial_settings(&dir);
+        let default_settings = Settings::default();
+
+        assert_eq!(loaded.global.theme, default_settings.global.theme);
+        assert_eq!(
+            loaded.global.menu_activation.quick_tap_threshold_ms,
+            default_settings
+                .global
+                .menu_activation
+                .quick_tap_threshold_ms
+        );
+
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

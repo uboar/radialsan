@@ -27,7 +27,7 @@ pub fn start_profile_monitor(app_handle: AppHandle, listener: Arc<InputListener>
                 current_profile_id = active_profile.id.clone();
 
                 // Build new bindings
-                let bindings = build_bindings_for_profile(active_profile, &settings);
+                let bindings = build_bindings_for_profile(active_profile);
 
                 // Update input listener
                 listener.update_bindings(bindings);
@@ -52,11 +52,19 @@ pub fn start_profile_monitor(app_handle: AppHandle, listener: Arc<InputListener>
 }
 
 /// Get the active window's title and process name.
-fn get_active_window_info(app_handle: &AppHandle) -> (String, String) {
+pub(crate) fn get_active_window_info(app_handle: &AppHandle) -> (String, String) {
     match get_active_window_xwin(app_handle) {
         Some((title, process)) => (title, process),
         None => (String::new(), String::new()),
     }
+}
+
+pub(crate) fn get_active_profile_for_current_window<'a>(
+    app_handle: &AppHandle,
+    settings: &'a Settings,
+) -> &'a crate::settings::Profile {
+    let (window_title, process_name) = get_active_window_info(app_handle);
+    settings.get_active_profile(&window_title, &process_name)
 }
 
 fn get_active_window_xwin(app_handle: &AppHandle) -> Option<(String, String)> {
@@ -74,10 +82,7 @@ fn get_active_window_xwin(app_handle: &AppHandle) -> Option<(String, String)> {
 }
 
 /// Build hotkey bindings for a specific profile.
-fn build_bindings_for_profile(
-    profile: &crate::settings::Profile,
-    _settings: &Settings,
-) -> Vec<HotkeyBinding> {
+pub(crate) fn build_bindings_for_profile(profile: &crate::settings::Profile) -> Vec<HotkeyBinding> {
     profile
         .pie_keys
         .iter()
@@ -108,8 +113,7 @@ mod tests {
                 menu_id: "menu_1".to_string(),
             }],
         };
-        let settings = Settings::default();
-        let bindings = build_bindings_for_profile(&profile, &settings);
+        let bindings = build_bindings_for_profile(&profile);
         assert_eq!(bindings.len(), 1);
         assert_eq!(bindings[0].menu_id, "menu_1");
     }
@@ -134,8 +138,7 @@ mod tests {
                 },
             ],
         };
-        let settings = Settings::default();
-        let bindings = build_bindings_for_profile(&profile, &settings);
+        let bindings = build_bindings_for_profile(&profile);
         // Invalid hotkey should be skipped, valid one included
         assert_eq!(bindings.len(), 1);
         assert_eq!(bindings[0].menu_id, "menu_2");

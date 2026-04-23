@@ -67,8 +67,7 @@ pub fn parse_hotkey(s: &str) -> Result<HotkeyCombo, String> {
 
     // Parse all but the last part as modifiers
     for part in &parts[..parts.len() - 1] {
-        let modifier = parse_modifier(part)
-            .ok_or_else(|| format!("Unknown modifier: {}", part))?;
+        let modifier = parse_modifier(part).ok_or_else(|| format!("Unknown modifier: {}", part))?;
         if !modifiers.contains(&modifier) {
             modifiers.push(modifier);
         }
@@ -77,8 +76,7 @@ pub fn parse_hotkey(s: &str) -> Result<HotkeyCombo, String> {
     // Sort modifiers for consistent comparison
     modifiers.sort();
 
-    let key = parse_key(key_str)
-        .ok_or_else(|| format!("Unknown key: {}", key_str))?;
+    let key = parse_key(key_str).ok_or_else(|| format!("Unknown key: {}", key_str))?;
 
     Ok(HotkeyCombo { key, modifiers })
 }
@@ -291,6 +289,16 @@ impl InputListener {
     pub fn update_bindings(&self, bindings: Vec<HotkeyBinding>) {
         let mut state = self.state.lock().unwrap();
         state.bindings = bindings;
+    }
+
+    pub fn update_runtime_settings(
+        &self,
+        bindings: Vec<HotkeyBinding>,
+        quick_tap_threshold_ms: u64,
+    ) {
+        let mut state = self.state.lock().unwrap();
+        state.bindings = bindings;
+        state.quick_tap_threshold_ms = quick_tap_threshold_ms;
     }
 
     /// Start the input listener.
@@ -508,11 +516,17 @@ pub fn detect_next_key(app_handle: tauri::AppHandle) {
         match result {
             Ok(hotkey) => {
                 use tauri::Emitter;
-                let _ = app_handle.emit("radialsan://key-detected", serde_json::json!({ "hotkey": hotkey }));
+                let _ = app_handle.emit(
+                    "radialsan://key-detected",
+                    serde_json::json!({ "hotkey": hotkey }),
+                );
             }
             Err(_) => {
                 use tauri::Emitter;
-                let _ = app_handle.emit("radialsan://key-detected", serde_json::json!({ "hotkey": null, "timeout": true }));
+                let _ = app_handle.emit(
+                    "radialsan://key-detected",
+                    serde_json::json!({ "hotkey": null, "timeout": true }),
+                );
             }
         }
     });
@@ -590,5 +604,26 @@ mod tests {
         // Modifiers should be sorted consistently
         assert_eq!(combo.modifiers[0], ModifierKey::Ctrl);
         assert_eq!(combo.modifiers[1], ModifierKey::Shift);
+    }
+
+    #[test]
+    fn test_update_runtime_settings_updates_bindings_and_threshold() {
+        let listener = InputListener::new(200);
+        listener.update_runtime_settings(
+            vec![HotkeyBinding {
+                menu_id: "menu_1".to_string(),
+                hotkey: parse_hotkey("Ctrl+Space").unwrap(),
+            }],
+            350,
+        );
+
+        let state = listener.state.lock().unwrap();
+        assert_eq!(state.quick_tap_threshold_ms, 350);
+        assert_eq!(state.bindings.len(), 1);
+        assert_eq!(state.bindings[0].menu_id, "menu_1");
+        assert_eq!(
+            state.bindings[0].hotkey,
+            parse_hotkey("Ctrl+Space").unwrap()
+        );
     }
 }
