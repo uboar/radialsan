@@ -5,6 +5,7 @@ import { MenuAnimator } from './animation';
 
 interface MenuState {
   visible: boolean;
+  menuId: string;
   centerX: number;
   centerY: number;
   slices: SliceRenderData[];
@@ -18,6 +19,27 @@ interface MenuStackEntry {
   actions: Array<Array<{ type: string; params: Record<string, unknown> }>>;
   centerX: number;
   centerY: number;
+}
+
+async function setBackendMenuContext(
+  menuId: string,
+  originX: number,
+  originY: number,
+  sliceCount: number,
+  deadZoneRadius: number,
+): Promise<void> {
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('set_active_menu_context', {
+      menuId,
+      originX,
+      originY,
+      sliceCount,
+      deadZoneRadius,
+    });
+  } catch {
+    // Not running in Tauri context.
+  }
 }
 
 async function loadSubmenu(
@@ -84,7 +106,7 @@ export const PieMenu: React.FC = () => {
 
     // Push current menu onto stack.
     const stackEntry: MenuStackEntry = {
-      menuId: '',
+      menuId: current.menuId,
       slices: current.slices,
       actions: current.actions,
       centerX: current.centerX,
@@ -100,6 +122,7 @@ export const PieMenu: React.FC = () => {
       if (!prev) return null;
       const next: MenuState = {
         ...prev,
+        menuId,
         centerX: cursorX,
         centerY: cursorY,
         slices: data.slices,
@@ -109,6 +132,13 @@ export const PieMenu: React.FC = () => {
       menuStateRef.current = next;
       return next;
     });
+    void setBackendMenuContext(
+      menuId,
+      cursorX,
+      cursorY,
+      data.slices.length,
+      current.config.deadZoneRadius,
+    );
     setHoveredSlice(null);
     hoveredSliceRef.current = null;
   };
@@ -121,6 +151,7 @@ export const PieMenu: React.FC = () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
         unlisten = await listen<{
+          menuId: string;
           cursorX: number;
           cursorY: number;
           slices?: Array<{ label: string; icon: string; actions?: Array<{ type: string; params: Record<string, unknown> }> }>;
@@ -145,6 +176,7 @@ export const PieMenu: React.FC = () => {
 
           const newState: MenuState = {
             visible: true,
+            menuId: payload.menuId,
             centerX: payload.cursorX,
             centerY: payload.cursorY,
             slices,
@@ -193,10 +225,22 @@ export const PieMenu: React.FC = () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
         const { invoke } = await import('@tauri-apps/api/core');
-        unlisten = await listen<{ selected?: boolean }>('radialsan://hide-menu', async (event) => {
+        unlisten = await listen<{
+          selected?: boolean;
+          menuId?: string;
+          selectedIndex?: number | null;
+        }>('radialsan://hide-menu', async (event) => {
           const selected = event.payload?.selected ?? false;
-          if (selected && hoveredSliceRef.current !== null && menuStateRef.current?.actions) {
-            const actions = menuStateRef.current.actions[hoveredSliceRef.current];
+          const current = menuStateRef.current;
+          const backendOwnsSelection = current && event.payload?.menuId === current.menuId;
+          const selectedIndex = backendOwnsSelection
+            ? typeof event.payload?.selectedIndex === 'number'
+              ? event.payload.selectedIndex
+              : null
+            : hoveredSliceRef.current;
+
+          if (selected && selectedIndex !== null && current?.actions) {
+            const actions = current.actions[selectedIndex];
             if (actions) {
               try {
                 await invoke('execute_slice_actions', { actionsJson: actions });
@@ -238,6 +282,7 @@ export const PieMenu: React.FC = () => {
             if (!prev) return null;
             const next: MenuState = {
               ...prev,
+              menuId: parent.menuId,
               centerX: parent.centerX,
               centerY: parent.centerY,
               slices: parent.slices,
@@ -247,6 +292,13 @@ export const PieMenu: React.FC = () => {
             menuStateRef.current = next;
             return next;
           });
+          void setBackendMenuContext(
+            parent.menuId,
+            parent.centerX,
+            parent.centerY,
+            parent.slices.length,
+            menuStateRef.current?.config.deadZoneRadius ?? 30,
+          );
           setHoveredSlice(null);
           hoveredSliceRef.current = null;
         }
@@ -263,20 +315,36 @@ export const PieMenu: React.FC = () => {
 
     let unlisten: (() => void) | undefined;
 
-    const updateHoveredSlice = (x: number, y: number) => {
+    const updateHoveredSlice = (
+      x: number,
+      y: number,
+      backendSelectedIndex: number | null = null,
+      backendMenuId?: string,
+    ) => {
       const current = menuStateRef.current;
       if (!current) return;
 
-      const idx = getSliceAtPoint(
-        x,
-        y,
-        current.centerX,
-        current.centerY,
-        current.slices.length,
-        current.config.innerRadius,
-        current.config.outerRadius,
-        current.config.deadZoneRadius,
-      );
+      const backendOwnsSelection = backendMenuId === current.menuId;
+      const hasBackendSelection =
+        backendOwnsSelection &&
+        backendSelectedIndex !== null &&
+        Number.isInteger(backendSelectedIndex) &&
+        backendSelectedIndex >= 0 &&
+        backendSelectedIndex < current.slices.length;
+      const idx = backendOwnsSelection
+        ? hasBackendSelection
+          ? backendSelectedIndex
+          : null
+        : getSliceAtPoint(
+            x,
+            y,
+            current.centerX,
+            current.centerY,
+            current.slices.length,
+            current.config.innerRadius,
+            current.config.outerRadius,
+            current.config.deadZoneRadius,
+          );
       setHoveredSlice(idx);
       hoveredSliceRef.current = idx;
 
@@ -285,7 +353,7 @@ export const PieMenu: React.FC = () => {
       if (dist > current.config.outerRadius) {
         // Determine which slice direction this is (even outside the ring).
         const angle = angleFromCenter(current.centerX, current.centerY, x, y);
-        const directionIdx = getSliceIndex(angle, current.slices.length);
+        const directionIdx = idx ?? getSliceIndex(angle, current.slices.length);
         const sliceActions = current.actions[directionIdx];
         const submenuAction = sliceActions?.find((a) => a.type === 'submenu');
         if (submenuAction && submenuAction.params?.menuId) {
@@ -306,6 +374,7 @@ export const PieMenu: React.FC = () => {
           if (!prev) return null;
           const next: MenuState = {
             ...prev,
+            menuId: parent.menuId,
             centerX: parent.centerX,
             centerY: parent.centerY,
             slices: parent.slices,
@@ -315,6 +384,13 @@ export const PieMenu: React.FC = () => {
           menuStateRef.current = next;
           return next;
         });
+        void setBackendMenuContext(
+          parent.menuId,
+          parent.centerX,
+          parent.centerY,
+          parent.slices.length,
+          current.config.deadZoneRadius,
+        );
         setHoveredSlice(null);
         hoveredSliceRef.current = null;
       }
@@ -323,8 +399,18 @@ export const PieMenu: React.FC = () => {
     const setup = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
-        unlisten = await listen<{ x: number; y: number }>('radialsan://mouse-move', (event) => {
-          updateHoveredSlice(event.payload.x, event.payload.y);
+        unlisten = await listen<{
+          x: number;
+          y: number;
+          menuId?: string;
+          selectedIndex?: number | null;
+        }>('radialsan://mouse-move', (event) => {
+          updateHoveredSlice(
+            event.payload.x,
+            event.payload.y,
+            typeof event.payload.selectedIndex === 'number' ? event.payload.selectedIndex : null,
+            event.payload.menuId,
+          );
         });
       } catch {
         // Not running in Tauri context.

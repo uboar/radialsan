@@ -35,14 +35,20 @@ export function useShowMenuEvent(callback: (payload: ShowMenuPayload) => void): 
   }, [callback]);
 }
 
-export function useHideMenuEvent(callback: (payload: { selected: boolean }) => void): void {
+export interface HideMenuPayload {
+  selected: boolean;
+  menuId?: string;
+  selectedIndex?: number | null;
+}
+
+export function useHideMenuEvent(callback: (payload: HideMenuPayload) => void): void {
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
     const setup = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
-        const fn = await listen<{ selected: boolean }>('radialsan://hide-menu', (event) => {
+        const fn = await listen<HideMenuPayload>('radialsan://hide-menu', (event) => {
           callback(event.payload);
         });
         unlisten = fn;

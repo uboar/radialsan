@@ -1,5 +1,6 @@
 use crate::input_listener;
 use crate::input_listener::InputListener;
+use crate::menu_selection::MenuSelectionContext;
 use crate::settings::Settings;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
@@ -11,6 +12,7 @@ pub struct AppState {
     pub settings: Mutex<Settings>,
     pub runtime_status: Mutex<RuntimeStatus>,
     pub input_listener: Mutex<Option<Arc<InputListener>>>,
+    pub menu_selection: Mutex<Option<MenuSelectionContext>>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -147,6 +149,26 @@ pub fn execute_slice_actions(actions_json: Vec<serde_json::Value>) -> Result<(),
 
         crate::actions::execute_action(action_type, &params).map_err(|e| e.to_string())?;
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_active_menu_context(
+    state: State<'_, AppState>,
+    menu_id: String,
+    origin_x: f64,
+    origin_y: f64,
+    slice_count: usize,
+    dead_zone_radius: f64,
+) -> Result<(), String> {
+    let mut selection = state.menu_selection.lock().map_err(|e| e.to_string())?;
+    *selection = Some(MenuSelectionContext::new(
+        menu_id,
+        origin_x,
+        origin_y,
+        slice_count,
+        dead_zone_radius,
+    ));
     Ok(())
 }
 

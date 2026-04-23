@@ -4,6 +4,7 @@ pub mod input_listener;
 pub mod lua_engine;
 #[cfg(target_os = "macos")]
 pub mod macos_input;
+pub mod menu_selection;
 pub mod profiles;
 pub mod settings;
 pub mod tray;
@@ -97,6 +98,7 @@ pub fn run() {
         settings: Mutex::new(Settings::default()),
         runtime_status: Mutex::new(RuntimeStatus::default()),
         input_listener: Mutex::new(None),
+        menu_selection: Mutex::new(None),
     };
 
     tauri::Builder::default()
@@ -109,6 +111,7 @@ pub fn run() {
             commands::get_runtime_status,
             commands::save_settings,
             commands::execute_slice_actions,
+            commands::set_active_menu_context,
             commands::get_default_settings,
             commands::get_auto_launch_enabled,
             commands::set_auto_launch_enabled,
@@ -254,8 +257,10 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                             .collect();
 
                         let appearance = &settings.global.appearance;
-                        serde_json::json!({
-                            "menuId": menu_id,
+                        let slice_count = menu.slices.len();
+                        let dead_zone_radius = appearance.dead_zone_radius;
+                        let payload = serde_json::json!({
+                            "menuId": menu_id.clone(),
                             "cursorX": event_cursor_x,
                             "cursorY": event_cursor_y,
                             "slices": slices,
@@ -275,11 +280,13 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                                 "iconSize": appearance.icon_size,
                                 "opacity": appearance.opacity,
                             }
-                        })
+                        });
+
+                        (payload, slice_count, dead_zone_radius)
                     })
                 };
 
-                if let Some(payload) = payload {
+                if let Some((payload, slice_count, dead_zone_radius)) = payload {
                     let cursor_position = app_handle
                         .cursor_position()
                         .map(|cursor| (cursor.x, cursor.y))
@@ -289,6 +296,7 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                     let ah = app_handle.clone();
                     let _ = app_handle.run_on_main_thread(move || {
                         let mut payload = payload;
+                        let mut context_origin = (event_cursor_x, event_cursor_y);
                         if let Some(overlay) = ah.get_webview_window("overlay") {
                             if let Some(placement) = overlay_placement_for_point(
                                 &overlay,
@@ -306,23 +314,50 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                                         serde_json::json!(placement.cursor_y),
                                     );
                                 }
+                                context_origin = (placement.cursor_x, placement.cursor_y);
                             }
 
                             let _ = overlay.set_ignore_cursor_events(true);
                             let _ = overlay.show();
+                        }
+                        {
+                            let state = ah.state::<AppState>();
+                            let mut selection = state.menu_selection.lock().unwrap();
+                            *selection = Some(crate::menu_selection::MenuSelectionContext::new(
+                                menu_id,
+                                context_origin.0,
+                                context_origin.1,
+                                slice_count,
+                                dead_zone_radius,
+                            ));
                         }
                         let _ = ah.emit("radialsan://show-menu", payload);
                     });
                 }
             }
             InputEvent::HideMenu { selected } => {
+                let selection_snapshot = {
+                    let state = app_handle.state::<AppState>();
+                    let mut selection = state.menu_selection.lock().unwrap();
+                    let snapshot = selection.as_ref().map(|context| context.snapshot());
+                    *selection = None;
+                    snapshot
+                };
+
                 // Window operations must run on the main thread on macOS
                 let ah = app_handle.clone();
                 let _ = app_handle.run_on_main_thread(move || {
-                    let _ = ah.emit(
-                        "radialsan://hide-menu",
-                        serde_json::json!({ "selected": selected }),
-                    );
+                    let mut payload = serde_json::json!({ "selected": selected });
+                    if let Some(snapshot) = selection_snapshot {
+                        if let Some(object) = payload.as_object_mut() {
+                            object.insert("menuId".into(), serde_json::json!(snapshot.menu_id));
+                            object.insert(
+                                "selectedIndex".into(),
+                                serde_json::json!(snapshot.selected_index),
+                            );
+                        }
+                    }
+                    let _ = ah.emit("radialsan://hide-menu", payload);
                     if let Some(overlay) = ah.get_webview_window("overlay") {
                         let _ = overlay.hide();
                     }
@@ -333,10 +368,25 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                     .get_webview_window("overlay")
                     .and_then(|overlay| global_to_overlay_coordinates(&overlay, x, y))
                     .unwrap_or((x, y));
-                let _ = app_handle.emit(
-                    "radialsan://mouse-move",
-                    serde_json::json!({ "x": x, "y": y }),
-                );
+                let selection_snapshot = {
+                    let state = app_handle.state::<AppState>();
+                    let mut selection = state.menu_selection.lock().unwrap();
+                    selection.as_mut().map(|context| {
+                        context.update_cursor(x, y);
+                        context.snapshot()
+                    })
+                };
+                let mut payload = serde_json::json!({ "x": x, "y": y });
+                if let Some(snapshot) = selection_snapshot {
+                    if let Some(object) = payload.as_object_mut() {
+                        object.insert("menuId".into(), serde_json::json!(snapshot.menu_id));
+                        object.insert(
+                            "selectedIndex".into(),
+                            serde_json::json!(snapshot.selected_index),
+                        );
+                    }
+                }
+                let _ = app_handle.emit("radialsan://mouse-move", payload);
             }
         }
     }
