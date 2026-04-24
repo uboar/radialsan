@@ -8,6 +8,8 @@ interface MenuState {
   menuId: string;
   centerX: number;
   centerY: number;
+  backendOriginX: number;
+  backendOriginY: number;
   slices: SliceRenderData[];
   actions: Array<Array<{ type: string; params: Record<string, unknown> }>>;
   config: PieMenuRenderConfig;
@@ -19,6 +21,8 @@ interface MenuStackEntry {
   actions: Array<Array<{ type: string; params: Record<string, unknown> }>>;
   centerX: number;
   centerY: number;
+  backendOriginX: number;
+  backendOriginY: number;
 }
 
 async function setBackendMenuContext(
@@ -97,7 +101,13 @@ export const PieMenu: React.FC = () => {
   }, [menuState]);
 
   // Helper: enter a submenu by ID, centered at cursorX/cursorY.
-  const enterSubmenu = async (menuId: string, cursorX: number, cursorY: number) => {
+  const enterSubmenu = async (
+    menuId: string,
+    cursorX: number,
+    cursorY: number,
+    backendOriginX: number,
+    backendOriginY: number,
+  ) => {
     const current = menuStateRef.current;
     if (!current) return;
 
@@ -111,6 +121,8 @@ export const PieMenu: React.FC = () => {
       actions: current.actions,
       centerX: current.centerX,
       centerY: current.centerY,
+      backendOriginX: current.backendOriginX,
+      backendOriginY: current.backendOriginY,
     };
     setMenuStack((prev) => {
       const next = [...prev, stackEntry];
@@ -125,6 +137,8 @@ export const PieMenu: React.FC = () => {
         menuId,
         centerX: cursorX,
         centerY: cursorY,
+        backendOriginX,
+        backendOriginY,
         slices: data.slices,
         actions: data.actions,
         config: { ...prev.config, centerX: cursorX, centerY: cursorY },
@@ -134,8 +148,8 @@ export const PieMenu: React.FC = () => {
     });
     void setBackendMenuContext(
       menuId,
-      cursorX,
-      cursorY,
+      backendOriginX,
+      backendOriginY,
       data.slices.length,
       current.config.deadZoneRadius,
     );
@@ -154,6 +168,8 @@ export const PieMenu: React.FC = () => {
           menuId: string;
           cursorX: number;
           cursorY: number;
+          backendOriginX?: number;
+          backendOriginY?: number;
           slices?: Array<{ label: string; icon: string; actions?: Array<{ type: string; params: Record<string, unknown> }> }>;
           actions?: Array<Array<{ type: string; params: Record<string, unknown> }>>;
           config?: Partial<PieMenuRenderConfig>;
@@ -179,6 +195,8 @@ export const PieMenu: React.FC = () => {
             menuId: payload.menuId,
             centerX: payload.cursorX,
             centerY: payload.cursorY,
+            backendOriginX: payload.backendOriginX ?? payload.cursorX,
+            backendOriginY: payload.backendOriginY ?? payload.cursorY,
             slices,
             actions,
             config: {
@@ -285,6 +303,8 @@ export const PieMenu: React.FC = () => {
               menuId: parent.menuId,
               centerX: parent.centerX,
               centerY: parent.centerY,
+              backendOriginX: parent.backendOriginX,
+              backendOriginY: parent.backendOriginY,
               slices: parent.slices,
               actions: parent.actions,
               config: { ...prev.config, centerX: parent.centerX, centerY: parent.centerY },
@@ -294,8 +314,8 @@ export const PieMenu: React.FC = () => {
           });
           void setBackendMenuContext(
             parent.menuId,
-            parent.centerX,
-            parent.centerY,
+            parent.backendOriginX,
+            parent.backendOriginY,
             parent.slices.length,
             menuStateRef.current?.config.deadZoneRadius ?? 30,
           );
@@ -320,6 +340,8 @@ export const PieMenu: React.FC = () => {
       y: number,
       backendSelectedIndex: number | null = null,
       backendMenuId?: string,
+      rawX?: number,
+      rawY?: number,
     ) => {
       const current = menuStateRef.current;
       if (!current) return;
@@ -359,7 +381,7 @@ export const PieMenu: React.FC = () => {
         if (submenuAction && submenuAction.params?.menuId) {
           const maxDepth = 3;
           if (menuStackRef.current.length < maxDepth) {
-            enterSubmenu(submenuAction.params.menuId as string, x, y);
+            enterSubmenu(submenuAction.params.menuId as string, x, y, rawX ?? x, rawY ?? y);
           }
         }
       }
@@ -377,6 +399,8 @@ export const PieMenu: React.FC = () => {
             menuId: parent.menuId,
             centerX: parent.centerX,
             centerY: parent.centerY,
+            backendOriginX: parent.backendOriginX,
+            backendOriginY: parent.backendOriginY,
             slices: parent.slices,
             actions: parent.actions,
             config: { ...prev.config, centerX: parent.centerX, centerY: parent.centerY },
@@ -386,8 +410,8 @@ export const PieMenu: React.FC = () => {
         });
         void setBackendMenuContext(
           parent.menuId,
-          parent.centerX,
-          parent.centerY,
+          parent.backendOriginX,
+          parent.backendOriginY,
           parent.slices.length,
           current.config.deadZoneRadius,
         );
@@ -404,12 +428,16 @@ export const PieMenu: React.FC = () => {
           y: number;
           menuId?: string;
           selectedIndex?: number | null;
+          rawX?: number;
+          rawY?: number;
         }>('radialsan://mouse-move', (event) => {
           updateHoveredSlice(
             event.payload.x,
             event.payload.y,
             typeof event.payload.selectedIndex === 'number' ? event.payload.selectedIndex : null,
             event.payload.menuId,
+            typeof event.payload.rawX === 'number' ? event.payload.rawX : undefined,
+            typeof event.payload.rawY === 'number' ? event.payload.rawY : undefined,
           );
         });
       } catch {

@@ -263,6 +263,10 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                             "menuId": menu_id.clone(),
                             "cursorX": event_cursor_x,
                             "cursorY": event_cursor_y,
+                            // Selection uses input-listener coordinates so raw movement deltas
+                            // stay in one coordinate system across display scale factors.
+                            "backendOriginX": event_cursor_x,
+                            "backendOriginY": event_cursor_y,
                             "slices": slices,
                             "actions": actions,
                             "config": {
@@ -296,7 +300,6 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                     let ah = app_handle.clone();
                     let _ = app_handle.run_on_main_thread(move || {
                         let mut payload = payload;
-                        let mut context_origin = (event_cursor_x, event_cursor_y);
                         if let Some(overlay) = ah.get_webview_window("overlay") {
                             if let Some(placement) = overlay_placement_for_point(
                                 &overlay,
@@ -314,7 +317,6 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                                         serde_json::json!(placement.cursor_y),
                                     );
                                 }
-                                context_origin = (placement.cursor_x, placement.cursor_y);
                             }
 
                             let _ = overlay.set_ignore_cursor_events(true);
@@ -325,8 +327,8 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                             let mut selection = state.menu_selection.lock().unwrap();
                             *selection = Some(crate::menu_selection::MenuSelectionContext::new(
                                 menu_id,
-                                context_origin.0,
-                                context_origin.1,
+                                event_cursor_x,
+                                event_cursor_y,
                                 slice_count,
                                 dead_zone_radius,
                             ));
@@ -364,19 +366,37 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                 });
             }
             InputEvent::MouseMove { x, y } => {
-                let (x, y) = app_handle
+                let raw_x = x;
+                let raw_y = y;
+                // Use Tauri coordinates for drawing, but raw input coordinates for selection.
+                let frontend_cursor = app_handle
+                    .cursor_position()
+                    .map(|cursor| (cursor.x, cursor.y))
+                    .unwrap_or((raw_x, raw_y));
+                let (overlay_x, overlay_y) = app_handle
                     .get_webview_window("overlay")
-                    .and_then(|overlay| global_to_overlay_coordinates(&overlay, x, y))
-                    .unwrap_or((x, y));
+                    .and_then(|overlay| {
+                        global_to_overlay_coordinates(
+                            &overlay,
+                            frontend_cursor.0,
+                            frontend_cursor.1,
+                        )
+                    })
+                    .unwrap_or(frontend_cursor);
                 let selection_snapshot = {
                     let state = app_handle.state::<AppState>();
                     let mut selection = state.menu_selection.lock().unwrap();
                     selection.as_mut().map(|context| {
-                        context.update_cursor(x, y);
+                        context.update_cursor(raw_x, raw_y);
                         context.snapshot()
                     })
                 };
-                let mut payload = serde_json::json!({ "x": x, "y": y });
+                let mut payload = serde_json::json!({
+                    "x": overlay_x,
+                    "y": overlay_y,
+                    "rawX": raw_x,
+                    "rawY": raw_y,
+                });
                 if let Some(snapshot) = selection_snapshot {
                     if let Some(object) = payload.as_object_mut() {
                         object.insert("menuId".into(), serde_json::json!(snapshot.menu_id));

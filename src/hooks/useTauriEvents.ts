@@ -4,6 +4,8 @@ export interface ShowMenuPayload {
   menuId: string;
   cursorX: number;
   cursorY: number;
+  backendOriginX?: number;
+  backendOriginY?: number;
   slices: Array<{
     label: string;
     icon: string;
