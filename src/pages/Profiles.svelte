@@ -2,7 +2,7 @@
   import { t } from '../i18n';
   import { settingsStore } from '../stores/settingsStore';
   import { exportProfile, parseRadialsanPackage, pickJsonFile } from '../utils/sharing';
-  import type { MatchRule, PieKey, Profile } from '../types/settings';
+  import type { MatchRule, PieKey, Profile, WindowCandidate } from '../types/settings';
 
   const AVAILABLE_KEYS = [
     'A','B','C','D','E','F','G','H','I','J','K','L','M',
@@ -21,6 +21,9 @@
   let editRules: MatchRule[] = [];
   let editPieKeys: PieKey[] = [];
   let recordingPieKeyId: string | null = null;
+  let windowCandidates: WindowCandidate[] = [];
+  let isLoadingWindowCandidates = false;
+  let windowCandidateError: string | null = null;
 
   function parseHotkeyString(hotkey: string): { modifiers: string[]; key: string } {
     const parts = hotkey.split('+');
@@ -81,6 +84,7 @@
     editName = profile.name;
     editRules = profile.matchRules.map((rule) => ({ ...rule }));
     editPieKeys = profile.pieKeys.map((pieKey) => ({ ...pieKey }));
+    void loadWindowCandidates();
   }
 
   function handleSaveEdit(profileId: string) {
@@ -109,6 +113,28 @@
 
   function handleRemoveRule(index: number) {
     editRules = editRules.filter((_, ruleIndex) => ruleIndex !== index);
+  }
+
+  async function loadWindowCandidates() {
+    isLoadingWindowCandidates = true;
+    windowCandidateError = null;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      windowCandidates = await invoke<WindowCandidate[]>('get_window_candidates');
+    } catch (err) {
+      windowCandidateError = String(err);
+      windowCandidates = [];
+    } finally {
+      isLoadingWindowCandidates = false;
+    }
+  }
+
+  function getRuleCandidateValues(field: MatchRule['field']): string[] {
+    const values = windowCandidates
+      .map((candidate) => field === 'processName' ? candidate.processName : candidate.windowTitle)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
   }
 
   function handleAddPieKey() {
@@ -215,15 +241,29 @@
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-xs text-theme-text-secondary">{$t('profiles.matchRules')}</span>
-                  <button type="button" onclick={handleAddRule} class="text-xs text-blue-400 hover:text-blue-300">
-                    {$t('profiles.addRule')}
-                  </button>
+                  <div class="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onclick={loadWindowCandidates}
+                      disabled={isLoadingWindowCandidates}
+                      class="text-xs text-theme-text-muted hover:text-theme-text-primary disabled:opacity-50"
+                    >
+                      {isLoadingWindowCandidates ? $t('profiles.loadingCandidates') : $t('profiles.refreshCandidates')}
+                    </button>
+                    <button type="button" onclick={handleAddRule} class="text-xs text-blue-400 hover:text-blue-300">
+                      {$t('profiles.addRule')}
+                    </button>
+                  </div>
                 </div>
+                {#if windowCandidateError}
+                  <p class="mb-2 text-xs text-red-400">{$t('profiles.windowCandidatesFailed', { error: windowCandidateError })}</p>
+                {/if}
                 {#if editRules.length === 0}
                   <p class="text-xs text-theme-text-muted">{$t('profiles.noRules')}</p>
                 {/if}
                 {#each editRules as rule, index}
-                  <div class="flex items-center gap-2 mb-2">
+                  {@const candidateValues = getRuleCandidateValues(rule.field)}
+                  <div class="grid grid-cols-1 md:grid-cols-[minmax(8rem,auto)_minmax(7rem,auto)_minmax(10rem,1fr)_minmax(10rem,1fr)_auto] items-center gap-2 mb-2">
                     <select
                       value={rule.field}
                       onchange={(event) => handleUpdateRule(index, { field: event.currentTarget.value as MatchRule['field'] })}
@@ -246,8 +286,23 @@
                       value={rule.value}
                       oninput={(event) => handleUpdateRule(index, { value: event.currentTarget.value })}
                       placeholder={$t('profiles.valuePlaceholder')}
-                      class="flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                     />
+                    <select
+                      value={candidateValues.includes(rule.value) ? rule.value : ''}
+                      onchange={(event) => {
+                        if (event.currentTarget.value) {
+                          handleUpdateRule(index, { value: event.currentTarget.value });
+                        }
+                      }}
+                      disabled={candidateValues.length === 0}
+                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                    >
+                      <option value="">{$t('profiles.selectFromRunning')}</option>
+                      {#each candidateValues as value}
+                        <option value={value}>{value}</option>
+                      {/each}
+                    </select>
                     <button
                       onclick={() => handleRemoveRule(index)}
                       class="text-theme-text-muted hover:text-red-400 text-xs"

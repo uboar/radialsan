@@ -109,6 +109,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
             commands::get_runtime_status,
+            commands::get_window_candidates,
             commands::save_settings,
             commands::execute_slice_actions,
             commands::set_active_menu_context,

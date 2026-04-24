@@ -35,6 +35,14 @@ impl Default for RuntimeStatus {
     }
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowCandidate {
+    pub process_id: u32,
+    pub process_name: String,
+    pub window_title: String,
+}
+
 fn update_runtime_status<F>(app_handle: &tauri::AppHandle, update: F)
 where
     F: FnOnce(&mut RuntimeStatus),
@@ -92,6 +100,60 @@ pub fn get_settings(state: State<'_, AppState>) -> Settings {
 #[tauri::command]
 pub fn get_runtime_status(state: State<'_, AppState>) -> RuntimeStatus {
     state.runtime_status.lock().unwrap().clone()
+}
+
+#[tauri::command]
+pub fn get_window_candidates(app_handle: tauri::AppHandle) -> Result<Vec<WindowCandidate>, String> {
+    match x_win::get_open_windows() {
+        Ok(windows) => {
+            clear_active_window_monitoring_issue(&app_handle);
+            Ok(normalize_window_candidates(
+                windows
+                    .into_iter()
+                    .map(|window| WindowCandidate {
+                        process_id: window.info.process_id,
+                        process_name: window.info.name,
+                        window_title: window.title,
+                    })
+                    .collect(),
+            ))
+        }
+        Err(error) => {
+            let detail = error.to_string();
+            set_active_window_monitoring_unavailable(&app_handle, detail.clone());
+            Err(detail)
+        }
+    }
+}
+
+fn normalize_window_candidates(mut candidates: Vec<WindowCandidate>) -> Vec<WindowCandidate> {
+    candidates.retain(|candidate| {
+        !candidate.process_name.trim().is_empty() || !candidate.window_title.trim().is_empty()
+    });
+
+    for candidate in &mut candidates {
+        candidate.process_name = candidate.process_name.trim().to_string();
+        candidate.window_title = candidate.window_title.trim().to_string();
+    }
+
+    candidates.sort_by(|left, right| {
+        left.process_name
+            .to_lowercase()
+            .cmp(&right.process_name.to_lowercase())
+            .then_with(|| {
+                left.window_title
+                    .to_lowercase()
+                    .cmp(&right.window_title.to_lowercase())
+            })
+            .then_with(|| left.process_id.cmp(&right.process_id))
+    });
+    candidates.dedup_by(|left, right| {
+        left.process_id == right.process_id
+            && left.process_name == right.process_name
+            && left.window_title == right.window_title
+    });
+
+    candidates
 }
 
 #[tauri::command]
@@ -214,4 +276,51 @@ pub fn set_auto_launch_enabled(_app_handle: tauri::AppHandle, enabled: bool) -> 
 pub fn start_key_detection(app_handle: tauri::AppHandle) -> Result<(), String> {
     input_listener::detect_next_key(app_handle);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_window_candidates_trims_sorts_and_deduplicates() {
+        let candidates = normalize_window_candidates(vec![
+            WindowCandidate {
+                process_id: 2,
+                process_name: "  Code  ".to_string(),
+                window_title: " main.rs ".to_string(),
+            },
+            WindowCandidate {
+                process_id: 1,
+                process_name: "Safari".to_string(),
+                window_title: "Apple".to_string(),
+            },
+            WindowCandidate {
+                process_id: 2,
+                process_name: "Code".to_string(),
+                window_title: "main.rs".to_string(),
+            },
+            WindowCandidate {
+                process_id: 3,
+                process_name: "   ".to_string(),
+                window_title: "".to_string(),
+            },
+        ]);
+
+        assert_eq!(
+            candidates,
+            vec![
+                WindowCandidate {
+                    process_id: 2,
+                    process_name: "Code".to_string(),
+                    window_title: "main.rs".to_string(),
+                },
+                WindowCandidate {
+                    process_id: 1,
+                    process_name: "Safari".to_string(),
+                    window_title: "Apple".to_string(),
+                },
+            ]
+        );
+    }
 }

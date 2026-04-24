@@ -137,3 +137,9 @@ export interface RuntimeStatus {
   inputMonitoringDetail: string | null;
   activeWindowMonitoringDetail: string | null;
 }
+
+export interface WindowCandidate {
+  processId: number;
+  processName: string;
+  windowTitle: string;
+}
