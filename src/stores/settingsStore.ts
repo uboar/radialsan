@@ -191,20 +191,20 @@ function getDefaultSettings(): Settings {
     },
     profiles: [{
       id: 'default',
-      name: 'Default',
+      name: 'デフォルト',
       isDefault: true,
       matchRules: [],
       pieKeys: [{ id: 'pk_1', hotkey: 'CapsLock', menuId: 'menu_1' }],
     }],
     menus: [{
       id: 'menu_1',
-      name: 'Quick Actions',
+      name: 'クイックアクション',
       appearanceOverrides: null,
       slices: [
-        { id: 's1', label: 'Copy', icon: '📋', actions: [{ type: 'clipboard', params: { operation: 'copy' } }] },
-        { id: 's2', label: 'Paste', icon: '📌', actions: [{ type: 'clipboard', params: { operation: 'paste' } }] },
-        { id: 's3', label: 'Undo', icon: '↩️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+z` } }] },
-        { id: 's4', label: 'Redo', icon: '↪️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+shift+z` } }] },
+        { id: 's1', label: 'コピー', icon: '📋', actions: [{ type: 'clipboard', params: { operation: 'copy' } }] },
+        { id: 's2', label: '貼り付け', icon: '📌', actions: [{ type: 'clipboard', params: { operation: 'paste' } }] },
+        { id: 's3', label: '元に戻す', icon: '↩️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+z` } }] },
+        { id: 's4', label: 'やり直す', icon: '↪️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+shift+z` } }] },
       ],
     }],
   };

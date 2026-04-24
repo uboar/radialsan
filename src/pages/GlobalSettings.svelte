@@ -221,7 +221,7 @@
               $language === 'en' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
             }`}
           >
-            English
+            {$t('settings.languageEnglish')}
           </button>
           <button
             type="button"
@@ -230,7 +230,7 @@
               $language === 'ja' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
             }`}
           >
-            日本語
+            {$t('settings.languageJapanese')}
           </button>
         </div>
       </div>

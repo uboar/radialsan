@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../../i18n';
   import type { Appearance } from '../../types/settings';
 
   export let appearance: Appearance;
@@ -6,11 +7,11 @@
 </script>
 
 <div class="space-y-4">
-  <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">Appearance</h3>
+  <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.appearance')}</h3>
 
   <div class="grid grid-cols-2 gap-3">
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="inner-radius">Inner Radius</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="inner-radius">{$t('settings.innerRadius')}</label>
       <input
         id="inner-radius"
         type="range"
@@ -23,7 +24,7 @@
       <span class="text-xs text-theme-text-muted">{appearance.innerRadius}px</span>
     </div>
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="outer-radius">Outer Radius</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="outer-radius">{$t('settings.outerRadius')}</label>
       <input
         id="outer-radius"
         type="range"
@@ -39,7 +40,7 @@
 
   <div class="grid grid-cols-2 gap-3">
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="background-color">Background</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="background-color">{$t('appearance.background')}</label>
       <input
         id="background-color"
         type="color"
@@ -49,7 +50,7 @@
       />
     </div>
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="slice-fill-color">Slice Fill</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="slice-fill-color">{$t('appearance.sliceFill')}</label>
       <input
         id="slice-fill-color"
         type="color"
@@ -59,7 +60,7 @@
       />
     </div>
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="hover-color">Hover Color</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="hover-color">{$t('appearance.hoverColor')}</label>
       <input
         id="hover-color"
         type="color"
@@ -69,7 +70,7 @@
       />
     </div>
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="border-color">Border</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="border-color">{$t('appearance.border')}</label>
       <input
         id="border-color"
         type="color"
@@ -81,7 +82,7 @@
   </div>
 
   <div>
-    <label class="block text-xs text-theme-text-secondary mb-1" for="opacity">Opacity</label>
+    <label class="block text-xs text-theme-text-secondary mb-1" for="opacity">{$t('settings.opacity')}</label>
     <input
       id="opacity"
       type="range"
@@ -96,7 +97,7 @@
   </div>
 
   <div>
-    <label class="block text-xs text-theme-text-secondary mb-1" for="label-size">Label Size</label>
+    <label class="block text-xs text-theme-text-secondary mb-1" for="label-size">{$t('appearance.labelSize')}</label>
     <input
       id="label-size"
       type="range"

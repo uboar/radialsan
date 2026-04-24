@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../../i18n';
   import ArrowDown from 'lucide-svelte/icons/arrow-down';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ArrowRight from 'lucide-svelte/icons/arrow-right';
@@ -238,13 +239,13 @@
       class="flex items-center gap-2 px-3 py-2 bg-theme-bg-tertiary border border-theme-border rounded-lg text-sm hover:bg-theme-bg-tertiary/80 transition-colors"
     >
       <span class="text-lg">{value || '⚡'}</span>
-      <span class="text-theme-text-secondary">Change Icon</span>
+      <span class="text-theme-text-secondary">{$t('editor.iconChange')}</span>
     </button>
     <input
       type="text"
       value={value}
       on:input={(event) => onChange(event.currentTarget.value)}
-      placeholder="Type emoji or icon name"
+      placeholder={$t('editor.iconPlaceholder')}
       class="flex-1 bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
     />
   </div>
@@ -254,7 +255,7 @@
       <input
         type="text"
         bind:value={search}
-        placeholder="Search icons..."
+        placeholder={$t('iconPicker.searchIcons')}
         class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none focus:border-blue-500"
       />
 
@@ -266,7 +267,7 @@
           }}
           class="flex-1 text-xs py-1 rounded {mode === 'emoji' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary'}"
         >
-          Emoji
+          {$t('iconPicker.emoji')}
         </button>
         <button
           type="button"
@@ -275,7 +276,7 @@
           }}
           class="flex-1 text-xs py-1 rounded {mode === 'lucide' ? 'bg-theme-bg-tertiary text-theme-text-primary' : 'text-theme-text-secondary'}"
         >
-          Lucide Icons
+          {$t('iconPicker.lucideIcons')}
         </button>
       </div>
 
@@ -315,7 +316,7 @@
         }}
         class="mt-2 w-full text-xs text-theme-text-muted hover:text-theme-text-primary py-1"
       >
-        Close
+        {$t('iconPicker.close')}
       </button>
     </div>
   {/if}

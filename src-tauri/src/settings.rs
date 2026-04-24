@@ -309,22 +309,22 @@ impl Default for Settings {
         let modifier = "ctrl";
 
         let slices = vec![
-            make_clipboard_slice("slice_copy", "Copy", "copy", "copy"),
-            make_clipboard_slice("slice_paste", "Paste", "clipboard", "paste"),
-            make_send_key_slice("slice_undo", "Undo", "undo", &format!("{}+z", modifier)),
-            make_send_key_slice("slice_redo", "Redo", "redo", &format!("{}+shift+z", modifier)),
+            make_clipboard_slice("slice_copy", "コピー", "copy", "copy"),
+            make_clipboard_slice("slice_paste", "貼り付け", "clipboard", "paste"),
+            make_send_key_slice("slice_undo", "元に戻す", "undo", &format!("{}+z", modifier)),
+            make_send_key_slice("slice_redo", "やり直す", "redo", &format!("{}+shift+z", modifier)),
         ];
 
         let sample_menu = PieMenu {
             id: "menu_1".to_string(),
-            name: "Default Menu".to_string(),
+            name: "クイックアクション".to_string(),
             appearance_overrides: None,
             slices,
         };
 
         let default_profile = Profile {
             id: "default".to_string(),
-            name: "Default".to_string(),
+            name: "デフォルト".to_string(),
             is_default: true,
             match_rules: vec![],
             pie_keys: vec![PieKey {
@@ -658,7 +658,7 @@ mod tests {
 
         let menu = settings.get_menu_by_id("menu_1");
         assert!(menu.is_some());
-        assert_eq!(menu.unwrap().name, "Default Menu");
+        assert_eq!(menu.unwrap().name, "クイックアクション");
 
         let missing = settings.get_menu_by_id("nonexistent");
         assert!(missing.is_none());

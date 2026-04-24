@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../../i18n';
   import type { Slice } from '../../types/settings';
 
   export let slices: Slice[];
@@ -59,17 +60,22 @@
     event.preventDefault();
     onSelect(sliceId);
   }
+
+  function getActionLabel(type: string | undefined): string {
+    const actionType = type ?? 'noop';
+    return $t(`actions.${actionType}`);
+  }
 </script>
 
 <div class="space-y-2">
   <div class="flex items-center justify-between mb-2">
-    <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">Slices</h3>
+    <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.slices')}</h3>
     <button
       type="button"
       on:click={onAdd}
       class="text-xs px-2 py-1 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-theme-text-primary transition-colors"
     >
-      + Add
+      {$t('editor.addSlice')}
     </button>
   </div>
 
@@ -98,7 +104,7 @@
         <span class="cursor-grab text-theme-text-muted hover:text-theme-text-primary px-1">⠿</span>
         <span class="text-lg">{slice.icon}</span>
         <span class="flex-1 text-sm truncate">{slice.label}</span>
-        <span class="text-xs text-theme-text-muted">{slice.actions[0]?.type || 'noop'}</span>
+        <span class="text-xs text-theme-text-muted">{getActionLabel(slice.actions[0]?.type)}</span>
         <button
           type="button"
           on:click|stopPropagation={() => onDelete(slice.id)}

@@ -56,14 +56,14 @@ export function convertAutoHotPieSettings(ahpJson: any): Partial<Settings> {
         const ahpMenu = ahpMenus[0]; // First pie menu (main)
         const slices: Slice[] = (ahpMenu.functions || []).map((fn: any, i: number) => ({
           id: `s_imp_${menuCounter}_${i}`,
-          label: fn.label || `Action ${i + 1}`,
+          label: fn.label || `アクション ${i + 1}`,
           icon: '⚡', // AutoHotPie uses image icons, we default to emoji
           actions: [convertAhpFunction(fn)],
         }));
 
         menus.push({
           id: menuId,
-          name: ahpPieKey.name || `Imported Menu ${menuCounter}`,
+          name: ahpPieKey.name || `インポートメニュー ${menuCounter}`,
           appearanceOverrides: {
             innerRadius: ahpMenu.radius || undefined,
             outerRadius: ahpMenu.radius ? ahpMenu.radius + (ahpMenu.thickness || 100) : undefined,
@@ -81,7 +81,7 @@ export function convertAutoHotPieSettings(ahpJson: any): Partial<Settings> {
 
     profiles.push({
       id: profileId,
-      name: ahpProfile.name || 'Imported Profile',
+      name: ahpProfile.name || 'インポートプロファイル',
       isDefault: ahpProfile.name === 'Default',
       matchRules: ahpProfile.associatedProgram
         ? [{

@@ -1,24 +1,25 @@
 <script lang="ts">
+  import { t } from '../../i18n';
   import type { Action, ActionType } from '../../types/settings';
 
   export let action: Action;
   export let onChange: (action: Action) => void;
   export let menuIds: string[] | undefined = undefined;
 
-  const ACTION_TYPES: Array<{ value: ActionType; label: string }> = [
-    { value: 'sendKey', label: 'Send Key' },
-    { value: 'sendText', label: 'Send Text' },
-    { value: 'mouseClick', label: 'Mouse Click' },
-    { value: 'openUrl', label: 'Open URL' },
-    { value: 'openFile', label: 'Open File' },
-    { value: 'openFolder', label: 'Open Folder' },
-    { value: 'runCommand', label: 'Run Command' },
-    { value: 'runScript', label: 'Run Script' },
-    { value: 'clipboard', label: 'Clipboard' },
-    { value: 'mediaControl', label: 'Media Control' },
-    { value: 'runLua', label: 'Lua Script' },
-    { value: 'submenu', label: 'Submenu' },
-    { value: 'noop', label: 'No Action' },
+  const ACTION_TYPES: Array<{ value: ActionType; labelKey: string }> = [
+    { value: 'sendKey', labelKey: 'actions.sendKey' },
+    { value: 'sendText', labelKey: 'actions.sendText' },
+    { value: 'mouseClick', labelKey: 'actions.mouseClick' },
+    { value: 'openUrl', labelKey: 'actions.openUrl' },
+    { value: 'openFile', labelKey: 'actions.openFile' },
+    { value: 'openFolder', labelKey: 'actions.openFolder' },
+    { value: 'runCommand', labelKey: 'actions.runCommand' },
+    { value: 'runScript', labelKey: 'actions.runScript' },
+    { value: 'clipboard', labelKey: 'actions.clipboard' },
+    { value: 'mediaControl', labelKey: 'actions.mediaControl' },
+    { value: 'runLua', labelKey: 'actions.runLua' },
+    { value: 'submenu', labelKey: 'actions.submenu' },
+    { value: 'noop', labelKey: 'actions.noop' },
   ];
 
   let params: Record<string, unknown> = {};
@@ -38,7 +39,7 @@
 
 <div class="space-y-3">
   <div>
-    <label class="block text-xs text-theme-text-secondary mb-1" for="action-type">Action Type</label>
+    <label class="block text-xs text-theme-text-secondary mb-1" for="action-type">{$t('editor.actionType')}</label>
     <select
       id="action-type"
       value={action.type}
@@ -46,14 +47,14 @@
       class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
     >
       {#each ACTION_TYPES as type}
-        <option value={type.value}>{type.label}</option>
+        <option value={type.value}>{$t(type.labelKey)}</option>
       {/each}
     </select>
   </div>
 
   {#if action.type === 'sendKey'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="send-key-keys">Keys (e.g. ctrl+c)</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="send-key-keys">{$t('actions.keys')}</label>
       <input
         id="send-key-keys"
         type="text"
@@ -67,7 +68,7 @@
 
   {#if action.type === 'sendText'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="send-text-value">Text</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="send-text-value">{$t('actions.text')}</label>
       <input
         id="send-text-value"
         type="text"
@@ -81,20 +82,20 @@
   {#if action.type === 'mouseClick'}
     <div class="space-y-2">
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="mouse-button">Button</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="mouse-button">{$t('actions.button')}</label>
         <select
           id="mouse-button"
           value={(params.button as string) || 'left'}
           on:change={(event) => updateParam('button', event.currentTarget.value)}
           class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
         >
-          <option value="left">Left</option>
-          <option value="right">Right</option>
-          <option value="middle">Middle</option>
+          <option value="left">{$t('actions.buttonLeft')}</option>
+          <option value="right">{$t('actions.buttonRight')}</option>
+          <option value="middle">{$t('actions.buttonMiddle')}</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="mouse-clicks">Clicks</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="mouse-clicks">{$t('actions.clicks')}</label>
         <input
           id="mouse-clicks"
           type="number"
@@ -110,7 +111,7 @@
 
   {#if action.type === 'openUrl'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="open-url">URL</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="open-url">{$t('actions.url')}</label>
       <input
         id="open-url"
         type="url"
@@ -124,7 +125,7 @@
 
   {#if action.type === 'openFile' || action.type === 'openFolder'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="open-path">Path</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="open-path">{$t('actions.path')}</label>
       <input
         id="open-path"
         type="text"
@@ -138,7 +139,7 @@
   {#if action.type === 'runCommand'}
     <div class="space-y-2">
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="run-command">Command</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="run-command">{$t('actions.command')}</label>
         <input
           id="run-command"
           type="text"
@@ -154,7 +155,7 @@
           on:change={(event) => updateParam('shell', event.currentTarget.checked)}
           class="accent-blue-600"
         />
-        Run in shell
+        {$t('actions.runInShell')}
       </label>
     </div>
   {/if}
@@ -162,7 +163,7 @@
   {#if action.type === 'runScript'}
     <div class="space-y-2">
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="script-interpreter">Interpreter</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="script-interpreter">{$t('actions.interpreter')}</label>
         <input
           id="script-interpreter"
           type="text"
@@ -173,7 +174,7 @@
         />
       </div>
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="script-path">Script Path</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="script-path">{$t('actions.scriptPath')}</label>
         <input
           id="script-path"
           type="text"
@@ -187,35 +188,35 @@
 
   {#if action.type === 'clipboard'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="clipboard-operation">Operation</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="clipboard-operation">{$t('actions.clipboardOperation')}</label>
       <select
         id="clipboard-operation"
         value={(params.operation as string) || (params.action as string) || 'copy'}
         on:change={(event) => updateParam('operation', event.currentTarget.value)}
         class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
       >
-        <option value="copy">Copy</option>
-        <option value="cut">Cut</option>
-        <option value="paste">Paste</option>
+        <option value="copy">{$t('actions.copy')}</option>
+        <option value="cut">{$t('actions.cut')}</option>
+        <option value="paste">{$t('actions.paste')}</option>
       </select>
     </div>
   {/if}
 
   {#if action.type === 'mediaControl'}
     <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="media-action">Action</label>
+      <label class="block text-xs text-theme-text-secondary mb-1" for="media-action">{$t('actions.mediaAction')}</label>
       <select
         id="media-action"
         value={(params.action as string) || 'playPause'}
         on:change={(event) => updateParam('action', event.currentTarget.value)}
         class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
       >
-        <option value="playPause">Play/Pause</option>
-        <option value="next">Next Track</option>
-        <option value="prev">Previous Track</option>
-        <option value="volumeUp">Volume Up</option>
-        <option value="volumeDown">Volume Down</option>
-        <option value="mute">Mute</option>
+        <option value="playPause">{$t('actions.playPause')}</option>
+        <option value="next">{$t('actions.nextTrack')}</option>
+        <option value="prev">{$t('actions.previousTrack')}</option>
+        <option value="volumeUp">{$t('actions.volumeUp')}</option>
+        <option value="volumeDown">{$t('actions.volumeDown')}</option>
+        <option value="mute">{$t('actions.mute')}</option>
       </select>
     </div>
   {/if}
@@ -223,18 +224,18 @@
   {#if action.type === 'runLua'}
     <div class="space-y-2">
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="lua-script">Lua Script</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="lua-script">{$t('actions.luaScript')}</label>
         <textarea
           id="lua-script"
           value={(params.script as string) || ''}
           on:input={(event) => updateParam('script', event.currentTarget.value)}
-          placeholder={'-- Example:\nradialsan.send_key("ctrl+c")\nradialsan.delay(100)\nradialsan.send_key("ctrl+v")'}
+          placeholder={$t('actions.luaPlaceholder')}
           rows="6"
           class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500 resize-y"
         ></textarea>
       </div>
       <p class="text-xs text-theme-text-muted">
-        Available API: radialsan.send_key(), send_text(), delay(), open_url(), open_file(), run_command(), mouse_click(), clipboard(), log()
+        {$t('actions.luaApi')}
       </p>
     </div>
   {/if}
@@ -242,14 +243,14 @@
   {#if action.type === 'submenu' && menuIds}
     <div class="space-y-2">
       <div>
-        <label class="block text-xs text-theme-text-secondary mb-1" for="submenu-target">Target Menu</label>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="submenu-target">{$t('actions.targetMenu')}</label>
         <select
           id="submenu-target"
           value={(params.menuId as string) || ''}
           on:change={(event) => updateParam('menuId', event.currentTarget.value)}
           class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
         >
-          <option value="">Select a menu...</option>
+          <option value="">{$t('actions.selectMenu')}</option>
           {#each menuIds as menuId}
             <option value={menuId}>{menuId}</option>
           {/each}
@@ -257,12 +258,12 @@
       </div>
       {#if menuIds.length === 0}
         <p class="text-xs text-amber-400">
-          No other menus available. Create another menu to use as a submenu target. The current menu is excluded to prevent circular references.
+          {$t('actions.submenuNoMenus')}
         </p>
       {/if}
       {#if (params.menuId as string) && !menuIds.includes(params.menuId as string)}
         <p class="text-xs text-red-400">
-          Warning: The selected menu ID is not in the available menus list. This may cause a circular reference or point to a deleted menu.
+          {$t('actions.submenuInvalid')}
         </p>
       {/if}
     </div>
@@ -270,7 +271,7 @@
 
   {#if action.type === 'submenu' && !menuIds}
     <p class="text-xs text-theme-text-muted">
-      Submenu selection is not available in this context.
+      {$t('actions.submenuUnavailable')}
     </p>
   {/if}
 </div>

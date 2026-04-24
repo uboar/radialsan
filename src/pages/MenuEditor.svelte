@@ -101,7 +101,7 @@
     pushSnapshot();
     const newSlice: Slice = {
       id: `s_${Date.now()}`,
-      label: `Action ${menu.slices.length + 1}`,
+      label: $t('editor.newSliceLabel', { count: menu.slices.length + 1 }),
       icon: '⚡',
       actions: [{ type: 'noop', params: {} }],
     };
@@ -143,7 +143,7 @@
 </script>
 
 {#if !settings || !menu || !appearance}
-  <div class="text-theme-text-secondary">Menu not found</div>
+  <div class="text-theme-text-secondary">{$t('editor.menuNotFound')}</div>
 {:else}
   <div class="flex flex-col h-full">
     <div class="flex items-center gap-4 mb-6">
@@ -166,7 +166,7 @@
           on:click={handleUndo}
           disabled={!canUndoValue}
           class="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
-          title="Undo (Ctrl+Z)"
+          title={$t('editor.undoTitle')}
         >
           ↶
         </button>
@@ -175,7 +175,7 @@
           on:click={handleRedo}
           disabled={!canRedoValue}
           class="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
-          title="Redo (Ctrl+Shift+Z)"
+          title={$t('editor.redoTitle')}
         >
           ↷
         </button>

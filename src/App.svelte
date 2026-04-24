@@ -5,6 +5,7 @@
   import Dashboard from './pages/Dashboard.svelte';
   import GlobalSettings from './pages/GlobalSettings.svelte';
   import Profiles from './pages/Profiles.svelte';
+  import { t } from './i18n';
   import { route } from './stores/router';
   import { settingsStore } from './stores/settingsStore';
   import type { AppTheme } from './types/settings';
@@ -71,9 +72,9 @@
     {#if MenuEditor}
       <svelte:component this={MenuEditor} id={$route.params.id} />
     {:else}
-      <div class="text-theme-text-secondary">Menu editor migration is pending for this route.</div>
+      <div class="text-theme-text-secondary">{$t('common.loading')}</div>
     {/if}
   {:else}
-    <div class="text-theme-text-secondary">Page not found</div>
+    <div class="text-theme-text-secondary">{$t('common.pageNotFound')}</div>
   {/if}
 </Layout>

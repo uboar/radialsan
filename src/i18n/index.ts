@@ -7,9 +7,10 @@ type Locale = 'en' | 'ja';
 type TranslationOptions = Record<string, string | number | boolean | null | undefined>;
 
 function getInitialLanguage(): Locale {
-  if (typeof localStorage === 'undefined') return 'en';
+  if (typeof localStorage === 'undefined') return 'ja';
   const stored = localStorage.getItem('radialsan-lang');
-  return stored === 'ja' ? 'ja' : 'en';
+  if (stored === 'en' || stored === 'ja') return stored;
+  return 'ja';
 }
 
 const initialLanguage = getInitialLanguage();

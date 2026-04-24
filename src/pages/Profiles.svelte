@@ -36,7 +36,7 @@
   function handleNewProfile() {
     settingsStore.addProfile({
       id: `profile_${Date.now()}`,
-      name: 'New Profile',
+      name: $t('profiles.newProfileName'),
       isDefault: false,
       matchRules: [],
       pieKeys: [],
@@ -51,7 +51,7 @@
     try {
       await exportProfile(profile, settings.menus);
     } catch (err) {
-      alert('Export failed: ' + String(err));
+      alert($t('dashboard.exportFailed', { error: String(err) }));
     }
   }
 
@@ -70,9 +70,9 @@
       }
 
       void settingsStore.saveSettings();
-      alert(`Imported ${pkg.profiles?.length || 0} profile(s) and ${pkg.menus.length} menu(s)`);
+      alert($t('profiles.importSummary', { profiles: pkg.profiles?.length || 0, menus: pkg.menus.length }));
     } catch (err) {
-      alert('Import failed: ' + String(err));
+      alert($t('dashboard.importFailed', { error: String(err) }));
     }
   }
 
@@ -165,6 +165,14 @@
       recordingPieKeyId = null;
     }
   }
+
+  function getMatchFieldLabel(field: MatchRule['field']): string {
+    return $t(field === 'processName' ? 'profiles.processName' : 'profiles.windowTitle');
+  }
+
+  function getMatchModeLabel(mode: MatchRule['matchMode']): string {
+    return $t(`profiles.${mode}`);
+  }
 </script>
 
 {#if !$settingsStore.settings}
@@ -195,7 +203,7 @@
           {#if editingId === profile.id}
             <div class="space-y-3">
               <div>
-                <label class="block text-xs text-theme-text-secondary mb-1" for="profile-name">Profile Name</label>
+                <label class="block text-xs text-theme-text-secondary mb-1" for="profile-name">{$t('profiles.profileName')}</label>
                 <input
                   id="profile-name"
                   type="text"
@@ -206,13 +214,13 @@
 
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs text-theme-text-secondary">Match Rules</span>
+                  <span class="text-xs text-theme-text-secondary">{$t('profiles.matchRules')}</span>
                   <button type="button" onclick={handleAddRule} class="text-xs text-blue-400 hover:text-blue-300">
-                    + Add Rule
+                    {$t('profiles.addRule')}
                   </button>
                 </div>
                 {#if editRules.length === 0}
-                  <p class="text-xs text-theme-text-muted">No rules — matches all applications</p>
+                  <p class="text-xs text-theme-text-muted">{$t('profiles.noRules')}</p>
                 {/if}
                 {#each editRules as rule, index}
                   <div class="flex items-center gap-2 mb-2">
@@ -221,30 +229,30 @@
                       onchange={(event) => handleUpdateRule(index, { field: event.currentTarget.value as MatchRule['field'] })}
                       class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                     >
-                      <option value="processName">Process Name</option>
-                      <option value="windowTitle">Window Title</option>
+                      <option value="processName">{$t('profiles.processName')}</option>
+                      <option value="windowTitle">{$t('profiles.windowTitle')}</option>
                     </select>
                     <select
                       value={rule.matchMode}
                       onchange={(event) => handleUpdateRule(index, { matchMode: event.currentTarget.value as MatchRule['matchMode'] })}
                       class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                     >
-                      <option value="contains">contains</option>
-                      <option value="exact">exact</option>
-                      <option value="regex">regex</option>
+                      <option value="contains">{$t('profiles.contains')}</option>
+                      <option value="exact">{$t('profiles.exact')}</option>
+                      <option value="regex">{$t('profiles.regex')}</option>
                     </select>
                     <input
                       type="text"
                       value={rule.value}
                       oninput={(event) => handleUpdateRule(index, { value: event.currentTarget.value })}
-                      placeholder="value"
+                      placeholder={$t('profiles.valuePlaceholder')}
                       class="flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                     />
                     <button
                       onclick={() => handleRemoveRule(index)}
                       class="text-theme-text-muted hover:text-red-400 text-xs"
                     >
-                      Remove
+                      {$t('profiles.removeHotkey')}
                     </button>
                   </div>
                 {/each}
@@ -345,13 +353,13 @@
                   onclick={() => handleSaveEdit(profile.id)}
                   class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium transition-colors"
                 >
-                  Save
+                  {$t('common.save')}
                 </button>
                 <button
                   onclick={() => (editingId = null)}
                   class="px-3 py-1.5 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-xs font-medium transition-colors"
                 >
-                  Cancel
+                  {$t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -367,22 +375,22 @@
                 <button
                   onclick={() => handleExportProfile(profile)}
                   class="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors"
-                  title="Export profile"
+                  title={$t('profiles.exportProfileTitle')}
                 >
-                  Export
+                  {$t('common.export')}
                 </button>
                 <button
                   onclick={() => handleStartEdit(profile)}
                   class="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors"
                 >
-                  Edit
+                  {$t('common.edit')}
                 </button>
                 {#if !profile.isDefault}
                   <button
                     onclick={() => handleDeleteProfile(profile.id)}
                     class="text-xs text-theme-text-muted hover:text-red-400 transition-colors"
                   >
-                    Delete
+                    {$t('common.delete')}
                   </button>
                 {/if}
               </div>
@@ -390,7 +398,7 @@
             <p class="text-sm text-theme-text-secondary mt-1">
               {profile.matchRules.length === 0
                 ? $t('profiles.matchesAll')
-                : profile.matchRules.map((rule) => `${rule.field} ${rule.matchMode} "${rule.value}"`).join(', ')}
+                : profile.matchRules.map((rule) => `${getMatchFieldLabel(rule.field)} ${getMatchModeLabel(rule.matchMode)} "${rule.value}"`).join(', ')}
             </p>
             <div class="mt-2">
               {#if profile.pieKeys.length === 0}

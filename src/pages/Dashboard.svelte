@@ -17,10 +17,10 @@
     const id = `menu_${Date.now()}`;
     settingsStore.addMenu({
       id,
-      name: 'New Menu',
+      name: $t('dashboard.newMenuName'),
       appearanceOverrides: null,
       slices: [
-        { id: `s_${Date.now()}_1`, label: 'Action 1', icon: '⚡', actions: [{ type: 'noop', params: {} }] },
+        { id: `s_${Date.now()}_1`, label: $t('dashboard.newSliceLabel', { count: 1 }), icon: '⚡', actions: [{ type: 'noop', params: {} }] },
       ],
     });
     void settingsStore.saveSettings();
@@ -32,7 +32,7 @@
     try {
       await exportMenu(menu);
     } catch (err) {
-      alert('Export failed: ' + String(err));
+      alert($t('dashboard.exportFailed', { error: String(err) }));
     }
   }
 
@@ -61,13 +61,13 @@
           slices: data.slices.map((slice, index) => ({ ...slice, id: `s_${now}_${index}` })),
         } as PieMenu);
       } else {
-        alert('Unrecognized file format');
+        alert($t('dashboard.unrecognizedFileFormat'));
         return;
       }
 
       void settingsStore.saveSettings();
     } catch (err) {
-      alert('Import failed: ' + String(err));
+      alert($t('dashboard.importFailed', { error: String(err) }));
     }
   }
 
@@ -78,7 +78,7 @@
     try {
       await exportBundle(settings.menus, settings.profiles);
     } catch (err) {
-      alert('Export failed: ' + String(err));
+      alert($t('dashboard.exportFailed', { error: String(err) }));
     }
   }
 
@@ -95,7 +95,7 @@
         const ahpSettings = JSON.parse(text) as { appProfiles?: unknown };
 
         if (!ahpSettings.appProfiles) {
-          alert('This does not appear to be an AutoHotPie settings file');
+          alert($t('dashboard.invalidAutoHotPieFile'));
           return;
         }
 
@@ -115,9 +115,9 @@
         }
 
         void settingsStore.saveSettings();
-        alert(`Imported ${converted.menus?.length || 0} menus and ${converted.profiles?.length || 0} profiles`);
+        alert($t('dashboard.importSummary', { menus: converted.menus?.length || 0, profiles: converted.profiles?.length || 0 }));
       } catch (err) {
-        alert('Failed to import AutoHotPie settings: ' + String(err));
+        alert($t('dashboard.autoHotPieImportFailed', { error: String(err) }));
       }
     };
     input.click();
@@ -170,7 +170,7 @@
             <button
               onclick={(event) => handleExport(menu, event)}
               class="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors ml-2 shrink-0"
-              title="Export menu as JSON"
+              title={$t('dashboard.exportMenuTitle')}
             >
               {$t('common.export')}
             </button>
@@ -183,7 +183,7 @@
               </span>
             {/each}
             {#if menu.slices.length > 6}
-              <span class="text-xs text-theme-text-muted">+{menu.slices.length - 6} more</span>
+              <span class="text-xs text-theme-text-muted">{$t('dashboard.moreSlices', { count: menu.slices.length - 6 })}</span>
             {/if}
           </div>
         </a>
