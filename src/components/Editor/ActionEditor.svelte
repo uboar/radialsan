@@ -6,7 +6,7 @@
 
   export let action: Action;
   export let onChange: (action: Action) => void;
-  export let menuIds: string[] | undefined = undefined;
+  export let menuOptions: Array<{ id: string; name: string }> | undefined = undefined;
 
   const ACTION_TYPES: Array<{ value: ActionType; labelKey: string }> = [
     { value: 'sendKey', labelKey: 'actions.sendKey' },
@@ -315,7 +315,7 @@
     </div>
   {/if}
 
-  {#if action.type === 'submenu' && menuIds}
+  {#if action.type === 'submenu' && menuOptions}
     <div class="space-y-2">
       <div>
         <label class="block text-xs text-theme-text-secondary mb-1" for="submenu-target">{$t('actions.targetMenu')}</label>
@@ -326,17 +326,17 @@
           class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
         >
           <option value="">{$t('actions.selectMenu')}</option>
-          {#each menuIds as menuId}
-            <option value={menuId}>{menuId}</option>
+          {#each menuOptions as menu}
+            <option value={menu.id}>{menu.name}</option>
           {/each}
         </select>
       </div>
-      {#if menuIds.length === 0}
+      {#if menuOptions.length === 0}
         <p class="text-xs text-amber-400">
           {$t('actions.submenuNoMenus')}
         </p>
       {/if}
-      {#if (params.menuId as string) && !menuIds.includes(params.menuId as string)}
+      {#if (params.menuId as string) && !menuOptions.some((menu) => menu.id === params.menuId)}
         <p class="text-xs text-red-400">
           {$t('actions.submenuInvalid')}
         </p>
@@ -344,7 +344,7 @@
     </div>
   {/if}
 
-  {#if action.type === 'submenu' && !menuIds}
+  {#if action.type === 'submenu' && !menuOptions}
     <p class="text-xs text-theme-text-muted">
       {$t('actions.submenuUnavailable')}
     </p>

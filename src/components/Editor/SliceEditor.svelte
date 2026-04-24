@@ -6,7 +6,7 @@
 
   export let slice: Slice;
   export let onChange: (updates: Partial<Slice>) => void;
-  export let menuIds: string[];
+  export let menuOptions: Array<{ id: string; name: string }>;
 
   function handleActionChange(index: number, action: Action) {
     const actions = [...slice.actions];
@@ -37,7 +37,7 @@
   <div class="border-t border-theme-border pt-4">
     <h4 class="text-xs text-theme-text-secondary mb-2 uppercase tracking-wide">{$t('editor.action')}</h4>
     {#each slice.actions as action, index (index)}
-      <ActionEditor action={action} onChange={(nextAction) => handleActionChange(index, nextAction)} {menuIds} />
+      <ActionEditor action={action} onChange={(nextAction) => handleActionChange(index, nextAction)} {menuOptions} />
     {/each}
   </div>
 </div>

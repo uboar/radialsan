@@ -27,7 +27,9 @@
   $: selectedSlice = menu?.slices.find((slice) => slice.id === selectedSliceId);
   $: selectedIndex = menu?.slices.findIndex((slice) => slice.id === selectedSliceId) ?? -1;
   $: appearance = settings?.global.appearance;
-  $: menuIds = settings?.menus.filter((candidate) => candidate.id !== menuId).map((candidate) => candidate.id) ?? [];
+  $: menuOptions = settings?.menus
+    .filter((candidate) => candidate.id !== menuId)
+    .map((candidate) => ({ id: candidate.id, name: candidate.name })) ?? [];
 
   onMount(() => {
     if (!$settingsStore.settings && !$settingsStore.loading) {
@@ -238,7 +240,7 @@
             />
             {#if selectedSlice}
               <div class="border-t border-theme-border pt-4">
-                <SliceEditor slice={selectedSlice} onChange={handleSliceChange} {menuIds} />
+                <SliceEditor slice={selectedSlice} onChange={handleSliceChange} {menuOptions} />
               </div>
             {/if}
           </div>
