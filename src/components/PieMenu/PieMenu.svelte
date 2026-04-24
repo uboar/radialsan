@@ -3,6 +3,7 @@
   import { PieMenuRenderer, type PieMenuRenderConfig, type SliceRenderData } from './PieMenuRenderer';
   import { angleFromCenter, distance, getSliceAtPoint, getSliceIndex } from './geometry';
   import { MenuAnimator } from './animation';
+  import { canEnterSubmenu, getParentPopState } from './submenuNavigation';
 
   type MenuAction = { type: string; params: Record<string, unknown> };
 
@@ -60,6 +61,8 @@
   let menuState: MenuState | null = null;
   let hoveredSlice: number | null = null;
   let menuStack: MenuStackEntry[] = [];
+  let parentPopArmed = false;
+  let pendingSubmenu = false;
   let renderVersion = 0;
   let renderedVersion = -1;
   let mounted = false;
@@ -123,6 +126,8 @@
   function resetMenu(): void {
     menuState = null;
     menuStack = [];
+    parentPopArmed = false;
+    pendingSubmenu = false;
     setHoveredSlice(null);
     renderVersion += 1;
   }
@@ -159,6 +164,7 @@
     if (!parent) return;
 
     menuStack = stack;
+    parentPopArmed = false;
     restoreParent(parent, deadZoneRadius);
   }
 
@@ -172,37 +178,43 @@
     const current = menuState;
     if (!current) return;
 
-    const data = await loadSubmenu(menuId);
-    if (!data) return;
+    pendingSubmenu = true;
+    try {
+      const data = await loadSubmenu(menuId);
+      if (!data) return;
 
-    const latest = menuState;
-    if (!latest) return;
+      const latest = menuState;
+      if (!latest || latest.menuId !== current.menuId) return;
 
-    const stackEntry: MenuStackEntry = {
-      menuId: current.menuId,
-      slices: current.slices,
-      actions: current.actions,
-      centerX: current.centerX,
-      centerY: current.centerY,
-      backendOriginX: current.backendOriginX,
-      backendOriginY: current.backendOriginY,
-    };
-    menuStack = [...menuStack, stackEntry];
+      const stackEntry: MenuStackEntry = {
+        menuId: current.menuId,
+        slices: current.slices,
+        actions: current.actions,
+        centerX: current.centerX,
+        centerY: current.centerY,
+        backendOriginX: current.backendOriginX,
+        backendOriginY: current.backendOriginY,
+      };
+      menuStack = [...menuStack, stackEntry];
+      parentPopArmed = false;
 
-    menuState = {
-      ...latest,
-      menuId,
-      centerX: cursorX,
-      centerY: cursorY,
-      backendOriginX,
-      backendOriginY,
-      slices: data.slices,
-      actions: data.actions,
-      config: { ...latest.config, centerX: cursorX, centerY: cursorY },
-    };
-    renderVersion += 1;
-    void setBackendMenuContext(menuId, backendOriginX, backendOriginY, data.slices.length, current.config.deadZoneRadius);
-    setHoveredSlice(null);
+      menuState = {
+        ...latest,
+        menuId,
+        centerX: cursorX,
+        centerY: cursorY,
+        backendOriginX,
+        backendOriginY,
+        slices: data.slices,
+        actions: data.actions,
+        config: { ...latest.config, centerX: cursorX, centerY: cursorY },
+      };
+      renderVersion += 1;
+      void setBackendMenuContext(menuId, backendOriginX, backendOriginY, data.slices.length, current.config.deadZoneRadius);
+      setHoveredSlice(null);
+    } finally {
+      pendingSubmenu = false;
+    }
   }
 
   function showMenu(payload: ShowMenuPayload): void {
@@ -245,6 +257,8 @@
       },
     };
     menuStack = [];
+    parentPopArmed = false;
+    pendingSubmenu = false;
     setHoveredSlice(null);
     renderVersion += 1;
   }
@@ -322,13 +336,20 @@
       const submenuAction = sliceActions?.find((a) => a.type === 'submenu');
       if (submenuAction && submenuAction.params?.menuId) {
         const maxDepth = 3;
-        if (menuStack.length < maxDepth) {
+        if (canEnterSubmenu(pendingSubmenu, menuStack.length, maxDepth)) {
           void enterSubmenu(submenuAction.params.menuId as string, x, y, rawX ?? x, rawY ?? y);
         }
       }
     }
 
-    if (menuStack.length > 0 && dist <= current.config.deadZoneRadius) {
+    const parentPopState = getParentPopState(
+      dist,
+      current.config.deadZoneRadius,
+      menuStack.length,
+      parentPopArmed,
+    );
+    parentPopArmed = parentPopState.armed;
+    if (parentPopState.shouldPop) {
       popToParent(current.config.deadZoneRadius);
     }
   }
