@@ -1,6 +1,8 @@
 <script lang="ts">
   import { t } from '../../i18n';
   import type { Action, ActionType } from '../../types/settings';
+  import { buildKeyCombo, MODIFIER_NAMES, parseKeyCombo, SEND_KEY_OPTIONS, toggleModifier } from '../../utils/keyOptions';
+  import type { ModifierName } from '../../utils/keyOptions';
 
   export let action: Action;
   export let onChange: (action: Action) => void;
@@ -23,6 +25,7 @@
   ];
 
   let params: Record<string, unknown> = {};
+  let recordingSendKey = false;
 
   $: params = typeof action.params === 'object' && action.params !== null
     ? (action.params as Record<string, unknown>)
@@ -34,6 +37,38 @@
 
   function updateParam(key: string, value: unknown) {
     onChange({ ...action, params: { ...params, [key]: value } });
+  }
+
+  function handleSendKeyModifierToggle(modifier: ModifierName) {
+    const combo = parseKeyCombo((params.keys as string) || '');
+    updateParam('keys', buildKeyCombo(toggleModifier(combo.modifiers, modifier), combo.key));
+  }
+
+  function handleSendKeyChange(key: string) {
+    const combo = parseKeyCombo((params.keys as string) || '');
+    updateParam('keys', buildKeyCombo(combo.modifiers, key));
+  }
+
+  async function handleRecordSendKey() {
+    recordingSendKey = true;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { listen } = await import('@tauri-apps/api/event');
+
+      let stopListening: (() => void) | undefined;
+      stopListening = await listen<{ hotkey: string | null; timeout?: boolean }>('radialsan://key-detected', (event) => {
+        recordingSendKey = false;
+        if (event.payload.hotkey) {
+          updateParam('keys', event.payload.hotkey);
+        }
+        stopListening?.();
+      });
+
+      await invoke('start_key_detection');
+    } catch (err) {
+      console.error('Failed to start key detection:', err);
+      recordingSendKey = false;
+    }
   }
 </script>
 
@@ -53,16 +88,56 @@
   </div>
 
   {#if action.type === 'sendKey'}
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="send-key-keys">{$t('actions.keys')}</label>
-      <input
-        id="send-key-keys"
-        type="text"
-        value={(params.keys as string) || ''}
-        on:input={(event) => updateParam('keys', event.currentTarget.value)}
-        placeholder="ctrl+c"
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-      />
+    {@const sendKeyCombo = parseKeyCombo((params.keys as string) || '')}
+    <div class="space-y-2">
+      <div>
+        <label class="block text-xs text-theme-text-secondary mb-1" for="send-key-key">{$t('actions.keys')}</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <select
+            id="send-key-key"
+            value={sendKeyCombo.key}
+            on:change={(event) => handleSendKeyChange(event.currentTarget.value)}
+            class="min-w-36 bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-theme-text-primary"
+          >
+            <option value="" disabled>{$t('actions.selectKey')}</option>
+            {#each SEND_KEY_OPTIONS as key}
+              <option value={key}>{key}</option>
+            {/each}
+          </select>
+
+          <button
+            type="button"
+            on:click={handleRecordSendKey}
+            disabled={recordingSendKey}
+            class={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              recordingSendKey
+                ? 'bg-red-600/20 text-red-400 border border-red-600/50 animate-pulse'
+                : 'bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 text-theme-text-primary border border-theme-border'
+            }`}
+          >
+            {recordingSendKey ? $t('actions.recording') : $t('actions.recordKey')}
+          </button>
+
+          <span class="px-3 py-2 bg-theme-bg-tertiary border border-theme-border rounded-lg text-sm text-theme-text-primary font-mono">
+            {(params.keys as string) || '-'}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs text-theme-text-secondary mr-1">{$t('actions.keyModifiers')}:</span>
+        {#each MODIFIER_NAMES as modifier}
+          <label class="flex items-center gap-1 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendKeyCombo.modifiers.includes(modifier)}
+              on:change={() => handleSendKeyModifierToggle(modifier)}
+              class="rounded border-theme-border bg-theme-bg-tertiary text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+            />
+            <span class="text-theme-text-primary">{modifier}</span>
+          </label>
+        {/each}
+      </div>
     </div>
   {/if}
 

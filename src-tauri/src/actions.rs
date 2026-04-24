@@ -75,6 +75,7 @@ pub enum SpecialKey {
     End,
     PageUp,
     PageDown,
+    CapsLock,
 }
 
 pub fn parse_key_string(s: &str) -> Result<ParsedKey, ActionError> {
@@ -130,6 +131,7 @@ fn parse_key_part(s: &str) -> Result<KeyAction, ActionError> {
         "end" => Some(SpecialKey::End),
         "pageup" | "pgup" => Some(SpecialKey::PageUp),
         "pagedown" | "pgdn" | "pgdown" => Some(SpecialKey::PageDown),
+        "capslock" | "caps_lock" => Some(SpecialKey::CapsLock),
         "f1" => Some(SpecialKey::F1),
         "f2" => Some(SpecialKey::F2),
         "f3" => Some(SpecialKey::F3),
@@ -192,6 +194,7 @@ fn key_action_to_enigo(k: &KeyAction) -> Result<enigo::Key, ActionError> {
             SpecialKey::End => Ok(enigo::Key::End),
             SpecialKey::PageUp => Ok(enigo::Key::PageUp),
             SpecialKey::PageDown => Ok(enigo::Key::PageDown),
+            SpecialKey::CapsLock => Ok(enigo::Key::CapsLock),
             SpecialKey::F1 => Ok(enigo::Key::F1),
             SpecialKey::F2 => Ok(enigo::Key::F2),
             SpecialKey::F3 => Ok(enigo::Key::F3),
@@ -577,6 +580,14 @@ mod tests {
         assert_eq!(
             parse_key_string("Space").unwrap().key,
             KeyAction::Special(SpecialKey::Space)
+        );
+        assert_eq!(
+            parse_key_string("CapsLock").unwrap().key,
+            KeyAction::Special(SpecialKey::CapsLock)
+        );
+        assert_eq!(
+            parse_key_string("PageDown").unwrap().key,
+            KeyAction::Special(SpecialKey::PageDown)
         );
     }
 

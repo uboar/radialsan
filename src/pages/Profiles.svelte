@@ -1,20 +1,10 @@
 <script lang="ts">
   import { t } from '../i18n';
   import { settingsStore } from '../stores/settingsStore';
+  import { buildKeyCombo, HOTKEY_OPTIONS, MODIFIER_NAMES, parseKeyCombo, toggleModifier } from '../utils/keyOptions';
   import { exportProfile, parseRadialsanPackage, pickJsonFile } from '../utils/sharing';
   import type { MatchRule, PieKey, Profile, WindowCandidate } from '../types/settings';
-
-  const AVAILABLE_KEYS = [
-    'A','B','C','D','E','F','G','H','I','J','K','L','M',
-    'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-    '0','1','2','3','4','5','6','7','8','9',
-    'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',
-    'Space','Tab','CapsLock','Escape','Return','Backspace','Delete',
-    'Up','Down','Left','Right',
-    'Mouse4','Mouse5',
-  ];
-
-  const MODIFIER_NAMES = ['Ctrl', 'Shift', 'Alt', 'Meta'] as const;
+  import type { ModifierName } from '../utils/keyOptions';
 
   let editingId: string | null = null;
   let editName = '';
@@ -25,15 +15,12 @@
   let isLoadingWindowCandidates = false;
   let windowCandidateError: string | null = null;
 
-  function parseHotkeyString(hotkey: string): { modifiers: string[]; key: string } {
-    const parts = hotkey.split('+');
-    const key = parts[parts.length - 1] ?? '';
-    const modifiers = parts.slice(0, -1);
-    return { modifiers, key };
+  function parseHotkeyString(hotkey: string): { modifiers: ModifierName[]; key: string } {
+    return parseKeyCombo(hotkey);
   }
 
-  function buildHotkeyString(modifiers: string[], key: string): string {
-    return [...modifiers, key].join('+');
+  function buildHotkeyString(modifiers: readonly string[], key: string): string {
+    return buildKeyCombo(modifiers, key);
   }
 
   function handleNewProfile() {
@@ -156,13 +143,9 @@
     editPieKeys = editPieKeys.filter((pieKey) => pieKey.id !== pieKeyId);
   }
 
-  function handleModifierToggle(pieKey: PieKey, modifier: string) {
+  function handleModifierToggle(pieKey: PieKey, modifier: ModifierName) {
     const { modifiers, key } = parseHotkeyString(pieKey.hotkey);
-    const newModifiers = modifiers.includes(modifier)
-      ? modifiers.filter((existing) => existing !== modifier)
-      : [...modifiers, modifier];
-    const sorted = MODIFIER_NAMES.filter((existing) => newModifiers.includes(existing));
-    handleUpdatePieKey(pieKey.id, { hotkey: buildHotkeyString(sorted, key) });
+    handleUpdatePieKey(pieKey.id, { hotkey: buildHotkeyString(toggleModifier(modifiers, modifier), key) });
   }
 
   function handleKeyChange(pieKey: PieKey, key: string) {
@@ -353,7 +336,7 @@
                             class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 text-theme-text-primary"
                           >
                             <option value="" disabled>{$t('profiles.selectKey')}</option>
-                            {#each AVAILABLE_KEYS as key}
+                            {#each HOTKEY_OPTIONS as key}
                               <option value={key}>{key}</option>
                             {/each}
                           </select>
