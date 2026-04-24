@@ -158,10 +158,7 @@ fn parse_key_part(s: &str) -> Result<KeyAction, ActionError> {
         }
     }
 
-    Err(ActionError::InvalidParams(format!(
-        "unknown key: {}",
-        s
-    )))
+    Err(ActionError::InvalidParams(format!("unknown key: {}", s)))
 }
 
 // ---------------------------------------------------------------------------
@@ -373,20 +370,20 @@ fn execute_clipboard(params: &serde_json::Value) -> Result<(), ActionError> {
 }
 
 fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
-    let button = params.get("button")
+    let button = params
+        .get("button")
         .and_then(|v| v.as_str())
         .unwrap_or("left");
-    let clicks = params.get("clicks")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(1) as usize;
-    let modifiers: Vec<String> = params.get("modifiers")
+    let clicks = params.get("clicks").and_then(|v| v.as_u64()).unwrap_or(1) as usize;
+    let modifiers: Vec<String> = params
+        .get("modifiers")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
     let mut enigo = enigo::Enigo::new(&enigo::Settings::default())
         .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
 
-    use enigo::{Keyboard, Mouse, Direction, Button};
+    use enigo::{Button, Direction, Keyboard, Mouse};
 
     // Press modifiers
     for m in &modifiers {
@@ -397,7 +394,8 @@ fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
             "meta" | "cmd" | "win" => enigo::Key::Meta,
             _ => continue,
         };
-        enigo.key(key, Direction::Press)
+        enigo
+            .key(key, Direction::Press)
             .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
     }
 
@@ -409,7 +407,8 @@ fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
     };
 
     for _ in 0..clicks {
-        enigo.button(btn, Direction::Click)
+        enigo
+            .button(btn, Direction::Click)
             .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
     }
 
@@ -422,7 +421,8 @@ fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
             "meta" | "cmd" | "win" => enigo::Key::Meta,
             _ => continue,
         };
-        enigo.key(key, Direction::Release)
+        enigo
+            .key(key, Direction::Release)
             .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
     }
 
@@ -430,11 +430,12 @@ fn execute_mouse_click(params: &serde_json::Value) -> Result<(), ActionError> {
 }
 
 fn execute_media_control(params: &serde_json::Value) -> Result<(), ActionError> {
-    let action = params.get("action")
+    let action = params
+        .get("action")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ActionError::InvalidParams("missing 'action' field".into()))?;
 
-    use enigo::{Keyboard, Direction, Key};
+    use enigo::{Direction, Key, Keyboard};
 
     // Key::MediaStop is not available on macOS in enigo 0.2
     #[cfg(target_os = "macos")]
@@ -453,26 +454,35 @@ fn execute_media_control(params: &serde_json::Value) -> Result<(), ActionError> 
         "volumeUp" => Key::VolumeUp,
         "volumeDown" => Key::VolumeDown,
         "mute" => Key::VolumeMute,
-        other => return Err(ActionError::InvalidParams(format!("unknown media action: {}", other))),
+        other => {
+            return Err(ActionError::InvalidParams(format!(
+                "unknown media action: {}",
+                other
+            )))
+        }
     };
 
     let mut enigo = enigo::Enigo::new(&enigo::Settings::default())
         .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
 
-    enigo.key(key, Direction::Click)
+    enigo
+        .key(key, Direction::Click)
         .map_err(|e| ActionError::ExecutionFailed(e.to_string()))?;
 
     Ok(())
 }
 
 fn execute_run_script(params: &serde_json::Value) -> Result<(), ActionError> {
-    let interpreter = params.get("interpreter")
+    let interpreter = params
+        .get("interpreter")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ActionError::InvalidParams("missing 'interpreter' field".into()))?;
-    let script_path = params.get("scriptPath")
+    let script_path = params
+        .get("scriptPath")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ActionError::InvalidParams("missing 'scriptPath' field".into()))?;
-    let args: Vec<String> = params.get("args")
+    let args: Vec<String> = params
+        .get("args")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
@@ -500,7 +510,9 @@ fn execute_run_lua(params: &serde_json::Value) -> Result<(), ActionError> {
         return Ok(());
     }
 
-    Err(ActionError::InvalidParams("runLua requires 'script' or 'scriptPath'".into()))
+    Err(ActionError::InvalidParams(
+        "runLua requires 'script' or 'scriptPath'".into(),
+    ))
 }
 
 fn execute_delay(params: &serde_json::Value) -> Result<(), ActionError> {
@@ -611,7 +623,9 @@ mod tests {
     #[test]
     fn test_execute_run_script_missing_params() {
         assert!(execute_action("runScript", &serde_json::json!({})).is_err());
-        assert!(execute_action("runScript", &serde_json::json!({"interpreter": "python"})).is_err());
+        assert!(
+            execute_action("runScript", &serde_json::json!({"interpreter": "python"})).is_err()
+        );
     }
 
     #[test]

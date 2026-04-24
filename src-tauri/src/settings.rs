@@ -319,7 +319,12 @@ impl Default for Settings {
             make_clipboard_slice("slice_copy", "コピー", "copy", "copy"),
             make_clipboard_slice("slice_paste", "貼り付け", "clipboard", "paste"),
             make_send_key_slice("slice_undo", "元に戻す", "undo", &format!("{}+z", modifier)),
-            make_send_key_slice("slice_redo", "やり直す", "redo", &format!("{}+shift+z", modifier)),
+            make_send_key_slice(
+                "slice_redo",
+                "やり直す",
+                "redo",
+                &format!("{}+shift+z", modifier),
+            ),
         ];
 
         let sample_menu = PieMenu {
@@ -458,11 +463,9 @@ fn profile_matches(profile: &Profile, window_title: &str, process_name: &str) ->
         match rule.match_mode {
             MatchMode::Contains => haystack.contains(&rule.value),
             MatchMode::Exact => haystack == rule.value,
-            MatchMode::Regex => {
-                regex::Regex::new(&rule.value)
-                    .map(|re| re.is_match(haystack))
-                    .unwrap_or(false)
-            }
+            MatchMode::Regex => regex::Regex::new(&rule.value)
+                .map(|re| re.is_match(haystack))
+                .unwrap_or(false),
         }
     })
 }

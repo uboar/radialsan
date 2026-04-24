@@ -64,6 +64,16 @@
     });
     void settingsStore.saveSettings();
   }
+
+  function handleSuppressTriggerKeyInputToggle() {
+    const settings = $settingsStore.settings;
+    if (!settings) return;
+
+    handleActivationChange(
+      'suppressTriggerKeyInput',
+      !settings.global.menuActivation.suppressTriggerKeyInput
+    );
+  }
 </script>
 
 {#if !$settingsStore.settings}
@@ -122,11 +132,7 @@
               role="switch"
               aria-checked={$settingsStore.settings.global.menuActivation.suppressTriggerKeyInput}
               aria-label={$t('settings.suppressTriggerKeyInput')}
-              onclick={() =>
-                handleActivationChange(
-                  'suppressTriggerKeyInput',
-                  !$settingsStore.settings.global.menuActivation.suppressTriggerKeyInput
-                )}
+              onclick={handleSuppressTriggerKeyInputToggle}
               class={`w-10 h-5 rounded-full transition-colors ${
                 $settingsStore.settings.global.menuActivation.suppressTriggerKeyInput
                   ? 'bg-blue-600'

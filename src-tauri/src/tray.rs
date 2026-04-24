@@ -7,7 +7,8 @@ use tauri::{
 
 /// Set up the system tray icon with a context menu.
 pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let open_settings = MenuItem::with_id(app, "open_settings", "Open Settings", true, None::<&str>)?;
+    let open_settings =
+        MenuItem::with_id(app, "open_settings", "Open Settings", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open_settings, &quit])?;
 
