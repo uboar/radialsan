@@ -1,5 +1,7 @@
 <script lang="ts">
   import { t } from '../../i18n';
+  import { getLucideIconName } from '../../utils/lucideIconRegistry';
+  import LucideIcon from './LucideIcon.svelte';
   import type { Slice } from '../../types/settings';
 
   export let slices: Slice[];
@@ -102,7 +104,13 @@
         on:dragend={handleDragEnd}
       >
         <span class="cursor-grab text-theme-text-muted hover:text-theme-text-primary px-1">⠿</span>
-        <span class="text-lg">{slice.icon}</span>
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center text-lg">
+          {#if getLucideIconName(slice.icon)}
+            <LucideIcon icon={slice.icon} size={20} />
+          {:else}
+            {slice.icon}
+          {/if}
+        </span>
         <span class="flex-1 text-sm truncate">{slice.label}</span>
         <span class="text-xs text-theme-text-muted">{getActionLabel(slice.actions[0]?.type)}</span>
         <button
