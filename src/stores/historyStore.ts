@@ -1,67 +1,100 @@
-import { create } from 'zustand';
+import { get, writable } from 'svelte/store';
 import type { Settings } from '../types/settings';
 
-interface HistoryStore {
-  undoStack: string[];  // JSON snapshots
+interface HistoryState {
+  undoStack: string[];
   redoStack: string[];
   maxHistory: number;
+}
 
-  /** Save current state as a snapshot */
+interface HistoryActions {
   pushSnapshot: (settings: Settings) => void;
-
-  /** Undo: restore previous snapshot */
   undo: () => Settings | null;
-
-  /** Redo: restore next snapshot */
   redo: () => Settings | null;
-
-  /** Check if undo/redo available */
   canUndo: () => boolean;
   canRedo: () => boolean;
-
-  /** Clear history */
   clear: () => void;
 }
 
-export const useHistoryStore = create<HistoryStore>((set, get) => ({
+export type HistoryStoreApi = HistoryState & HistoryActions;
+
+const state = writable<HistoryState>({
   undoStack: [],
   redoStack: [],
   maxHistory: 50,
+});
 
+export const historyActions: HistoryActions = {
   pushSnapshot: (settings) => {
     const json = JSON.stringify(settings);
-    set((state) => ({
-      undoStack: [...state.undoStack.slice(-state.maxHistory + 1), json],
-      redoStack: [], // Clear redo on new action
+    state.update((current) => ({
+      ...current,
+      undoStack: [...current.undoStack.slice(-current.maxHistory + 1), json],
+      redoStack: [],
     }));
   },
 
   undo: () => {
-    const { undoStack } = get();
-    if (undoStack.length < 2) return null; // Need at least 2: previous + current
-    const newStack = [...undoStack];
-    const current = newStack.pop()!;
-    const previous = newStack[newStack.length - 1];
-    set((state) => ({
-      undoStack: newStack,
-      redoStack: [...state.redoStack, current],
+    const { undoStack } = get(state);
+    if (undoStack.length < 2) return null;
+
+    const newUndoStack = [...undoStack];
+    const current = newUndoStack.pop();
+    const previous = newUndoStack[newUndoStack.length - 1];
+    if (!current || !previous) return null;
+
+    state.update((currentState) => ({
+      ...currentState,
+      undoStack: newUndoStack,
+      redoStack: [...currentState.redoStack, current],
     }));
+
     return JSON.parse(previous) as Settings;
   },
 
   redo: () => {
-    const { redoStack } = get();
+    const { redoStack } = get(state);
     if (redoStack.length === 0) return null;
-    const newRedo = [...redoStack];
-    const next = newRedo.pop()!;
-    set((state) => ({
-      undoStack: [...state.undoStack, next],
-      redoStack: newRedo,
+
+    const newRedoStack = [...redoStack];
+    const next = newRedoStack.pop();
+    if (!next) return null;
+
+    state.update((currentState) => ({
+      ...currentState,
+      undoStack: [...currentState.undoStack, next],
+      redoStack: newRedoStack,
     }));
+
     return JSON.parse(next) as Settings;
   },
 
-  canUndo: () => get().undoStack.length >= 2,
-  canRedo: () => get().redoStack.length > 0,
-  clear: () => set({ undoStack: [], redoStack: [] }),
-}));
+  canUndo: () => get(state).undoStack.length >= 2,
+  canRedo: () => get(state).redoStack.length > 0,
+  clear: () => state.set({ undoStack: [], redoStack: [], maxHistory: 50 }),
+};
+
+export const historyStore = {
+  subscribe: state.subscribe,
+  ...historyActions,
+};
+
+function getState(): HistoryStoreApi {
+  return {
+    ...get(state),
+    ...historyActions,
+  };
+}
+
+interface UseHistoryStore {
+  (): HistoryStoreApi;
+  <T>(selector: (state: HistoryStoreApi) => T): T;
+  getState: () => HistoryStoreApi;
+}
+
+export const useHistoryStore = ((selector?: (state: HistoryStoreApi) => unknown) => {
+  const current = getState();
+  return selector ? selector(current) : current;
+}) as UseHistoryStore;
+
+useHistoryStore.getState = getState;

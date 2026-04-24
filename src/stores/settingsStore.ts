@@ -1,137 +1,150 @@
-import { create } from 'zustand';
+import { get, writable } from 'svelte/store';
 import type { Settings, PieMenu, Profile } from '../types/settings';
 
-interface SettingsStore {
+interface SettingsState {
   settings: Settings | null;
   loading: boolean;
   error: string | null;
+}
 
+interface SettingsActions {
   loadSettings: () => Promise<void>;
   saveSettings: () => Promise<void>;
-
-  // Direct state replacement (used for undo/redo)
   setSettings: (settings: Settings) => void;
-
-  // Menu operations
   addMenu: (menu: PieMenu) => void;
   updateMenu: (menuId: string, updates: Partial<PieMenu>) => void;
   deleteMenu: (menuId: string) => void;
-
-  // Profile operations
   addProfile: (profile: Profile) => void;
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
   deleteProfile: (profileId: string) => void;
-
-  // Global settings
   updateGlobalSettings: (updates: Partial<Settings['global']>) => void;
 }
 
-export const useSettingsStore = create<SettingsStore>((set, get) => ({
+export type SettingsStoreApi = SettingsState & SettingsActions;
+
+const initialState: SettingsState = {
   settings: null,
   loading: false,
   error: null,
+};
 
+const state = writable<SettingsState>(initialState);
+
+function mutateSettings(mutator: (settings: Settings) => Settings) {
+  state.update((current) => {
+    if (!current.settings) return current;
+    return { ...current, settings: mutator(current.settings) };
+  });
+}
+
+export const settingsActions: SettingsActions = {
   loadSettings: async () => {
-    set({ loading: true, error: null });
+    state.update((current) => ({ ...current, loading: true, error: null }));
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const settings = await invoke<Settings>('get_settings');
-      set({ settings, loading: false });
+      state.set({ settings, loading: false, error: null });
     } catch (e) {
-      // Fallback for non-Tauri environment (dev browser)
       console.warn('Failed to load settings from Tauri, using defaults', e);
-      set({ settings: getDefaultSettings(), loading: false });
+      state.set({ settings: getDefaultSettings(), loading: false, error: null });
     }
   },
 
   saveSettings: async () => {
-    const { settings } = get();
+    const { settings } = get(state);
     if (!settings) return;
+
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('save_settings', { settings });
     } catch (e) {
       console.error('Failed to save settings', e);
-      set({ error: String(e) });
+      state.update((current) => ({ ...current, error: String(e) }));
     }
   },
 
-  setSettings: (settings) => set({ settings }),
+  setSettings: (settings) => {
+    state.update((current) => ({ ...current, settings }));
+  },
 
-  addMenu: (menu) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        menus: [...state.settings.menus, menu],
-      },
-    };
-  }),
+  addMenu: (menu) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      menus: [...settings.menus, menu],
+    }));
+  },
 
-  updateMenu: (menuId, updates) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        menus: state.settings.menus.map((m) =>
-          m.id === menuId ? { ...m, ...updates } : m
-        ),
-      },
-    };
-  }),
+  updateMenu: (menuId, updates) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      menus: settings.menus.map((menu) =>
+        menu.id === menuId ? { ...menu, ...updates } : menu
+      ),
+    }));
+  },
 
-  deleteMenu: (menuId) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        menus: state.settings.menus.filter((m) => m.id !== menuId),
-      },
-    };
-  }),
+  deleteMenu: (menuId) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      menus: settings.menus.filter((menu) => menu.id !== menuId),
+    }));
+  },
 
-  addProfile: (profile) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        profiles: [...state.settings.profiles, profile],
-      },
-    };
-  }),
+  addProfile: (profile) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      profiles: [...settings.profiles, profile],
+    }));
+  },
 
-  updateProfile: (profileId, updates) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        profiles: state.settings.profiles.map((p) =>
-          p.id === profileId ? { ...p, ...updates } : p
-        ),
-      },
-    };
-  }),
+  updateProfile: (profileId, updates) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      profiles: settings.profiles.map((profile) =>
+        profile.id === profileId ? { ...profile, ...updates } : profile
+      ),
+    }));
+  },
 
-  deleteProfile: (profileId) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        profiles: state.settings.profiles.filter((p) => p.id !== profileId),
-      },
-    };
-  }),
+  deleteProfile: (profileId) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      profiles: settings.profiles.filter((profile) => profile.id !== profileId),
+    }));
+  },
 
-  updateGlobalSettings: (updates) => set((state) => {
-    if (!state.settings) return state;
-    return {
-      settings: {
-        ...state.settings,
-        global: { ...state.settings.global, ...updates },
-      },
-    };
-  }),
-}));
+  updateGlobalSettings: (updates) => {
+    mutateSettings((settings) => ({
+      ...settings,
+      global: { ...settings.global, ...updates },
+    }));
+  },
+};
+
+export const settingsStore = {
+  subscribe: state.subscribe,
+  ...settingsActions,
+};
+
+function getState(): SettingsStoreApi {
+  return {
+    ...get(state),
+    ...settingsActions,
+  };
+}
+
+interface UseSettingsStore {
+  (): SettingsStoreApi;
+  <T>(selector: (state: SettingsStoreApi) => T): T;
+  getState: () => SettingsStoreApi;
+}
+
+export const useSettingsStore = ((selector?: (state: SettingsStoreApi) => unknown) => {
+  const current = getState();
+  return selector ? selector(current) : current;
+}) as UseSettingsStore;
+
+useSettingsStore.getState = getState;
 
 function getPrimaryModifier(): 'meta' | 'ctrl' {
   if (typeof navigator === 'undefined') {

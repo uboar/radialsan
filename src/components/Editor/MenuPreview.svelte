@@ -1,11 +1,11 @@
-import React, { useRef, useEffect } from 'react';
-import { PieMenuRenderer } from '../PieMenu/PieMenuRenderer';
-import type { Slice } from '../../types/settings';
+<script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+  import { PieMenuRenderer } from '../PieMenu/PieMenuRenderer';
+  import type { Slice } from '../../types/settings';
 
-interface MenuPreviewProps {
-  slices: Slice[];
-  selectedIndex: number | null;
-  appearance: {
+  export let slices: Slice[] = [];
+  export let selectedIndex: number | null = null;
+  export let appearance: {
     innerRadius: number;
     outerRadius: number;
     deadZoneRadius: number;
@@ -20,26 +20,24 @@ interface MenuPreviewProps {
     iconSize: number;
     opacity: number;
   };
-}
 
-export const MenuPreview: React.FC<MenuPreviewProps> = ({ slices, selectedIndex, appearance }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  let canvas: HTMLCanvasElement | undefined;
+  let container: HTMLDivElement | undefined;
+  let resizeObserver: ResizeObserver | null = null;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+  function renderPreview(): void {
+    if (!canvas || !container || !appearance) return;
 
     const size = Math.min(container.clientWidth, 400);
     canvas.width = size;
     canvas.height = size;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const centerX = size / 2;
     const centerY = size / 2;
-    const scale = size / 400; // Scale relative to 400px reference
+    const scale = size / 400;
 
     const renderer = new PieMenuRenderer(ctx, {
       centerX,
@@ -61,11 +59,28 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({ slices, selectedIndex,
 
     const sliceData = slices.map((s) => ({ label: s.label, icon: s.icon }));
     renderer.render(sliceData, selectedIndex);
-  }, [slices, selectedIndex, appearance]);
+  }
 
-  return (
-    <div ref={containerRef} className="flex items-center justify-center bg-theme-bg-primary rounded-xl p-4 border border-theme-border">
-      <canvas ref={canvasRef} className="max-w-full" />
-    </div>
-  );
-};
+  onMount(() => {
+    renderPreview();
+    if (container) {
+      resizeObserver = new ResizeObserver(() => renderPreview());
+      resizeObserver.observe(container);
+    }
+  });
+
+  onDestroy(() => {
+    resizeObserver?.disconnect();
+  });
+
+  $: {
+    slices;
+    selectedIndex;
+    appearance;
+    renderPreview();
+  }
+</script>
+
+<div bind:this={container} class="flex items-center justify-center bg-theme-bg-primary rounded-xl p-4 border border-theme-border">
+  <canvas bind:this={canvas} class="max-w-full"></canvas>
+</div>
