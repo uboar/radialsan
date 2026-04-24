@@ -171,6 +171,7 @@ function getDefaultSettings(): Settings {
         submenuOpenMode: 'onThreshold',
         submenuHoverDelayMs: 300,
         maxSubmenuDepth: 3,
+        suppressTriggerKeyInput: true,
       },
       appearance: {
         innerRadius: 40,

@@ -40,6 +40,7 @@ export interface MenuActivation {
   submenuOpenMode: SubmenuOpenMode;
   submenuHoverDelayMs: number;
   maxSubmenuDepth: number;
+  suppressTriggerKeyInput: boolean;
 }
 
 export interface Appearance {

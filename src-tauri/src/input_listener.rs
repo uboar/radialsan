@@ -41,7 +41,6 @@ pub enum InputEvent {
 }
 
 struct ActiveMenu {
-    menu_id: String,
     pressed_at: Instant,
     trigger_key: rdev::Key,
 }
@@ -51,6 +50,7 @@ pub struct InputListenerState {
     active_modifiers: HashSet<ModifierKey>,
     active_menu: Option<ActiveMenu>,
     quick_tap_threshold_ms: u64,
+    suppress_trigger_key_input: bool,
     last_mouse_x: f64,
     last_mouse_y: f64,
 }
@@ -207,16 +207,22 @@ fn handle_event(
     state: &Arc<Mutex<InputListenerState>>,
     tx: &std::sync::mpsc::Sender<InputEvent>,
     event: rdev::Event,
-) {
+) -> bool {
     // Skip processing while key detection mode is active
     if DETECTING_KEY.load(Ordering::SeqCst) {
-        return;
+        return false;
     }
 
     let mut state = state.lock().unwrap();
 
     match event.event_type {
         EventType::KeyPress(key) => {
+            let mut should_suppress = state
+                .active_menu
+                .as_ref()
+                .map(|active| active.trigger_key == key && state.suppress_trigger_key_input)
+                .unwrap_or(false);
+
             // Update modifier state
             if let Some(modifier) = key_to_modifier(&key) {
                 state.active_modifiers.insert(modifier);
@@ -225,12 +231,12 @@ fn handle_event(
             // Check if key + active modifiers match any binding
             if state.active_menu.is_none() {
                 if let Some(binding) = find_matching_binding(&state, &key) {
+                    let menu_id = binding.menu_id.clone();
+                    let suppress_trigger_key_input = state.suppress_trigger_key_input;
                     state.active_menu = Some(ActiveMenu {
-                        menu_id: binding.menu_id.clone(),
                         pressed_at: Instant::now(),
                         trigger_key: key,
                     });
-                    let menu_id = state.active_menu.as_ref().unwrap().menu_id.clone();
                     let cursor_x = state.last_mouse_x;
                     let cursor_y = state.last_mouse_y;
                     let _ = tx.send(InputEvent::ShowMenu {
@@ -238,8 +244,11 @@ fn handle_event(
                         cursor_x,
                         cursor_y,
                     });
+                    should_suppress = suppress_trigger_key_input;
                 }
             }
+
+            should_suppress
         }
         EventType::KeyRelease(key) => {
             // Update modifier state
@@ -252,10 +261,14 @@ fn handle_event(
                 if active.trigger_key == key {
                     let elapsed = active.pressed_at.elapsed().as_millis() as u64;
                     let selected = elapsed >= state.quick_tap_threshold_ms;
+                    let should_suppress = state.suppress_trigger_key_input;
                     let _ = tx.send(InputEvent::HideMenu { selected });
                     state.active_menu = None;
+                    return should_suppress;
                 }
             }
+
+            false
         }
         EventType::MouseMove { x, y } => {
             state.last_mouse_x = x;
@@ -263,8 +276,9 @@ fn handle_event(
             if state.active_menu.is_some() {
                 let _ = tx.send(InputEvent::MouseMove { x, y });
             }
+            false
         }
-        _ => {}
+        _ => false,
     }
 }
 
@@ -273,13 +287,14 @@ pub struct InputListener {
 }
 
 impl InputListener {
-    pub fn new(quick_tap_threshold_ms: u64) -> Self {
+    pub fn new(quick_tap_threshold_ms: u64, suppress_trigger_key_input: bool) -> Self {
         Self {
             state: Arc::new(Mutex::new(InputListenerState {
                 bindings: Vec::new(),
                 active_modifiers: HashSet::new(),
                 active_menu: None,
                 quick_tap_threshold_ms,
+                suppress_trigger_key_input,
                 last_mouse_x: 0.0,
                 last_mouse_y: 0.0,
             })),
@@ -295,10 +310,12 @@ impl InputListener {
         &self,
         bindings: Vec<HotkeyBinding>,
         quick_tap_threshold_ms: u64,
+        suppress_trigger_key_input: bool,
     ) {
         let mut state = self.state.lock().unwrap();
         state.bindings = bindings;
         state.quick_tap_threshold_ms = quick_tap_threshold_ms;
+        state.suppress_trigger_key_input = suppress_trigger_key_input;
     }
 
     /// Start the input listener.
@@ -312,13 +329,15 @@ impl InputListener {
 
         #[cfg(target_os = "macos")]
         {
-            match crate::macos_input::listen() {
-                Ok((native_rx, handle)) => {
+            match crate::macos_input::listen_with_filter(move |event| {
+                handle_event(&state, &tx, event)
+            }) {
+                Ok(handle) => {
                     std::thread::spawn(move || {
-                        // Keep the handle alive for the lifetime of this thread
+                        // Keep the handle alive for the lifetime of this thread.
                         let _handle = handle;
-                        while let Ok(event) = native_rx.recv() {
-                            handle_event(&state, &tx, event);
+                        loop {
+                            std::thread::park();
                         }
                     });
                 }
@@ -331,11 +350,25 @@ impl InputListener {
         #[cfg(not(target_os = "macos"))]
         {
             std::thread::spawn(move || {
-                let callback = move |event: rdev::Event| {
-                    handle_event(&state, &tx, event);
+                let state_for_grab = Arc::clone(&state);
+                let tx_for_grab = tx.clone();
+                let grab_callback = move |event: rdev::Event| {
+                    let should_suppress =
+                        handle_event(&state_for_grab, &tx_for_grab, event.clone());
+                    if should_suppress {
+                        None
+                    } else {
+                        Some(event)
+                    }
                 };
-                if let Err(e) = rdev::listen(callback) {
-                    eprintln!("rdev listen error: {:?}", e);
+                if let Err(e) = rdev::grab(grab_callback) {
+                    eprintln!("rdev grab error: {:?}", e);
+                    let listen_callback = move |event: rdev::Event| {
+                        let _ = handle_event(&state, &tx, event);
+                    };
+                    if let Err(e) = rdev::listen(listen_callback) {
+                        eprintln!("rdev listen error: {:?}", e);
+                    }
                 }
             });
         }
@@ -608,22 +641,110 @@ mod tests {
 
     #[test]
     fn test_update_runtime_settings_updates_bindings_and_threshold() {
-        let listener = InputListener::new(200);
+        let listener = InputListener::new(200, true);
         listener.update_runtime_settings(
             vec![HotkeyBinding {
                 menu_id: "menu_1".to_string(),
                 hotkey: parse_hotkey("Ctrl+Space").unwrap(),
             }],
             350,
+            false,
         );
 
         let state = listener.state.lock().unwrap();
         assert_eq!(state.quick_tap_threshold_ms, 350);
+        assert!(!state.suppress_trigger_key_input);
         assert_eq!(state.bindings.len(), 1);
         assert_eq!(state.bindings[0].menu_id, "menu_1");
         assert_eq!(
             state.bindings[0].hotkey,
             parse_hotkey("Ctrl+Space").unwrap()
         );
+    }
+
+    #[test]
+    fn test_trigger_key_events_are_suppressed_when_enabled() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let state = Arc::new(Mutex::new(InputListenerState {
+            bindings: vec![HotkeyBinding {
+                menu_id: "menu_1".to_string(),
+                hotkey: parse_hotkey("CapsLock").unwrap(),
+            }],
+            active_modifiers: HashSet::new(),
+            active_menu: None,
+            quick_tap_threshold_ms: 200,
+            suppress_trigger_key_input: true,
+            last_mouse_x: 10.0,
+            last_mouse_y: 20.0,
+        }));
+
+        let press_suppressed = handle_event(
+            &state,
+            &tx,
+            rdev::Event {
+                time: std::time::SystemTime::now(),
+                name: None,
+                event_type: EventType::KeyPress(rdev::Key::CapsLock),
+            },
+        );
+        assert!(press_suppressed);
+        assert!(matches!(
+            rx.try_recv().unwrap(),
+            InputEvent::ShowMenu { .. }
+        ));
+
+        let release_suppressed = handle_event(
+            &state,
+            &tx,
+            rdev::Event {
+                time: std::time::SystemTime::now(),
+                name: None,
+                event_type: EventType::KeyRelease(rdev::Key::CapsLock),
+            },
+        );
+        assert!(release_suppressed);
+        assert!(matches!(
+            rx.try_recv().unwrap(),
+            InputEvent::HideMenu { .. }
+        ));
+    }
+
+    #[test]
+    fn test_trigger_key_events_pass_through_when_disabled() {
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let state = Arc::new(Mutex::new(InputListenerState {
+            bindings: vec![HotkeyBinding {
+                menu_id: "menu_1".to_string(),
+                hotkey: parse_hotkey("CapsLock").unwrap(),
+            }],
+            active_modifiers: HashSet::new(),
+            active_menu: None,
+            quick_tap_threshold_ms: 200,
+            suppress_trigger_key_input: false,
+            last_mouse_x: 10.0,
+            last_mouse_y: 20.0,
+        }));
+
+        let press_suppressed = handle_event(
+            &state,
+            &tx,
+            rdev::Event {
+                time: std::time::SystemTime::now(),
+                name: None,
+                event_type: EventType::KeyPress(rdev::Key::CapsLock),
+            },
+        );
+        assert!(!press_suppressed);
+
+        let release_suppressed = handle_event(
+            &state,
+            &tx,
+            rdev::Event {
+                time: std::time::SystemTime::now(),
+                name: None,
+                event_type: EventType::KeyRelease(rdev::Key::CapsLock),
+            },
+        );
+        assert!(!release_suppressed);
     }
 }

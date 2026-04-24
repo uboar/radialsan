@@ -114,6 +114,8 @@ pub struct MenuActivation {
     pub submenu_open_mode: SubmenuOpenMode,
     pub submenu_hover_delay_ms: u64,
     pub max_submenu_depth: u32,
+    #[serde(default = "default_true")]
+    pub suppress_trigger_key_input: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -260,8 +262,13 @@ impl Default for MenuActivation {
             submenu_open_mode: SubmenuOpenMode::OnHover,
             submenu_hover_delay_ms: 400,
             max_submenu_depth: 3,
+            suppress_trigger_key_input: true,
         }
     }
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for GlobalSettings {
@@ -494,6 +501,7 @@ mod tests {
         assert_eq!(restored.menus[0].id, "menu_1");
         assert_eq!(restored.menus[0].slices.len(), 4);
         assert_eq!(restored.profiles[0].pie_keys[0].hotkey, "CapsLock");
+        assert!(restored.global.menu_activation.suppress_trigger_key_input);
     }
 
     #[test]
@@ -650,6 +658,7 @@ mod tests {
         }"##;
         let settings: Settings = serde_json::from_str(json).unwrap();
         assert_eq!(settings.global.theme, AppTheme::Dark);
+        assert!(settings.global.menu_activation.suppress_trigger_key_input);
     }
 
     #[test]

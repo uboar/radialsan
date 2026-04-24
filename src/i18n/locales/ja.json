@@ -141,6 +141,7 @@
     "launchAtStartup": "起動時に自動起動",
     "showTrayIcon": "トレイアイコンを表示",
     "activation": "アクティベーション",
+    "suppressTriggerKeyInput": "元のトリガーキー入力を無効化",
     "quickTapThreshold": "クイックタップ閾値",
     "submenuHoverDelay": "サブメニューホバー遅延",
     "maxSubmenuDepth": "サブメニュー最大深度",

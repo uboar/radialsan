@@ -4,7 +4,6 @@ use std::os::raw::c_void;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
 
-
 // ---------------------------------------------------------------------------
 // CoreGraphics / CoreFoundation types & constants
 // ---------------------------------------------------------------------------
@@ -49,6 +48,7 @@ const K_CG_EVENT_FLAG_MASK_COMMAND: u64 = 0x0010_0000;
 
 const K_CG_HID_EVENT_TAP: u32 = 0;
 const K_CG_HEAD_INSERT_EVENT_TAP: u32 = 0;
+const K_CG_EVENT_TAP_OPTION_DEFAULT: u32 = 0;
 const K_CG_EVENT_TAP_OPTION_LISTEN_ONLY: u32 = 1;
 
 type CGEventTapCallBack = extern "C" fn(
@@ -183,7 +183,11 @@ fn keycode_to_flag_mask(keycode: u16) -> Option<u64> {
     }
 }
 
-fn flags_changed_to_rdev_events(keycode: u16, flags: u64, prev_flags: &AtomicU64) -> Vec<rdev::EventType> {
+fn flags_changed_to_rdev_events(
+    keycode: u16,
+    flags: u64,
+    prev_flags: &AtomicU64,
+) -> Vec<rdev::EventType> {
     let prev = prev_flags.swap(flags, Ordering::SeqCst);
     let key = keycode_to_rdev_key(keycode);
 
@@ -214,9 +218,9 @@ fn flags_changed_to_rdev_events(keycode: u16, flags: u64, prev_flags: &AtomicU64
 // ---------------------------------------------------------------------------
 
 struct CallbackContext {
-    sender: mpsc::Sender<rdev::Event>,
     tap: CFMachPortRef,
     prev_flags: AtomicU64,
+    event_filter: Box<dyn Fn(rdev::Event) -> bool + Send>,
 }
 
 extern "C" fn tap_callback(
@@ -260,13 +264,12 @@ extern "C" fn tap_callback(
         | K_CG_EVENT_RIGHT_MOUSE_DRAGGED
         | K_CG_EVENT_OTHER_MOUSE_DRAGGED => {
             let loc = unsafe { CGEventGetLocation(event) };
-            vec![rdev::EventType::MouseMove {
-                x: loc.x,
-                y: loc.y,
-            }]
+            vec![rdev::EventType::MouseMove { x: loc.x, y: loc.y }]
         }
         _ => vec![],
     };
+
+    let mut suppress_current_event = false;
 
     for et in rdev_events {
         let rdev_event = rdev::Event {
@@ -274,10 +277,14 @@ extern "C" fn tap_callback(
             name: None,
             event_type: et,
         };
-        let _ = context.sender.send(rdev_event);
+        suppress_current_event |= (context.event_filter)(rdev_event);
     }
 
-    event
+    if suppress_current_event {
+        std::ptr::null()
+    } else {
+        event
+    }
 }
 
 /// Wrapper to send raw pointers across threads via channels.
@@ -323,14 +330,33 @@ struct SetupOk {
 /// to avoid IMK mach port errors that occur with background-thread run loops.
 pub fn listen() -> Result<(mpsc::Receiver<rdev::Event>, ListenerHandle), String> {
     let (tx, rx) = mpsc::channel();
+    let handle = listen_with_options(K_CG_EVENT_TAP_OPTION_LISTEN_ONLY, move |event| {
+        let _ = tx.send(event);
+        false
+    })?;
+    Ok((rx, handle))
+}
 
+/// Start a native CGEventTap listener that can suppress events.
+/// The callback should return true to prevent the original event from reaching other apps.
+pub fn listen_with_filter<F>(event_filter: F) -> Result<ListenerHandle, String>
+where
+    F: Fn(rdev::Event) -> bool + Send + 'static,
+{
+    listen_with_options(K_CG_EVENT_TAP_OPTION_DEFAULT, event_filter)
+}
+
+fn listen_with_options<F>(tap_options: u32, event_filter: F) -> Result<ListenerHandle, String>
+where
+    F: Fn(rdev::Event) -> bool + Send + 'static,
+{
     let (setup_tx, setup_rx) = mpsc::channel::<Result<SetupOk, String>>();
 
     std::thread::spawn(move || unsafe {
         let context = Box::new(CallbackContext {
-            sender: tx,
             tap: std::ptr::null(),
             prev_flags: AtomicU64::new(0),
+            event_filter: Box::new(event_filter),
         });
         let context_ptr = Box::into_raw(context) as *mut c_void;
 
@@ -345,7 +371,7 @@ pub fn listen() -> Result<(mpsc::Receiver<rdev::Event>, ListenerHandle), String>
         let tap = CGEventTapCreate(
             K_CG_HID_EVENT_TAP,
             K_CG_HEAD_INSERT_EVENT_TAP,
-            K_CG_EVENT_TAP_OPTION_LISTEN_ONLY,
+            tap_options,
             mask,
             tap_callback,
             context_ptr,
@@ -389,15 +415,12 @@ pub fn listen() -> Result<(mpsc::Receiver<rdev::Event>, ListenerHandle), String>
     match setup_rx.recv() {
         Ok(Ok(ok)) => {
             let run_loop = unsafe { CFRunLoopGetMain() };
-            Ok((
-                rx,
-                ListenerHandle {
-                    run_loop,
-                    tap: ok.tap.0,
-                    source: ok.source.0,
-                    context_ptr: ok.context_ptr.0 as *mut c_void,
-                },
-            ))
+            Ok(ListenerHandle {
+                run_loop,
+                tap: ok.tap.0,
+                source: ok.source.0,
+                context_ptr: ok.context_ptr.0 as *mut c_void,
+            })
         }
         Ok(Err(e)) => Err(e),
         Err(_) => Err("CGEventTap setup thread terminated unexpectedly".into()),

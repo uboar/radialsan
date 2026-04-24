@@ -191,6 +191,7 @@ pub fn save_settings(
         listener.update_runtime_settings(
             bindings,
             settings.global.menu_activation.quick_tap_threshold_ms,
+            settings.global.menu_activation.suppress_trigger_key_input,
         );
     }
 

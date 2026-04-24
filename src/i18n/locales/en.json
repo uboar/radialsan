@@ -141,6 +141,7 @@
     "launchAtStartup": "Launch at startup",
     "showTrayIcon": "Show tray icon",
     "activation": "Activation",
+    "suppressTriggerKeyInput": "Suppress original trigger key input",
     "quickTapThreshold": "Quick tap threshold",
     "submenuHoverDelay": "Submenu hover delay",
     "maxSubmenuDepth": "Max submenu depth",

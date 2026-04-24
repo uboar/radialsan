@@ -55,7 +55,7 @@
     void settingsStore.saveSettings();
   }
 
-  function handleActivationChange(key: string, value: number) {
+  function handleActivationChange(key: string, value: number | boolean) {
     const settings = $settingsStore.settings;
     if (!settings) return;
 
@@ -115,6 +115,31 @@
       <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
         <h3 class="font-semibold mb-3">{$t('settings.activation')}</h3>
         <div class="space-y-3">
+          <div class="flex items-center justify-between py-2">
+            <span class="text-sm">{$t('settings.suppressTriggerKeyInput')}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={$settingsStore.settings.global.menuActivation.suppressTriggerKeyInput}
+              aria-label={$t('settings.suppressTriggerKeyInput')}
+              onclick={() =>
+                handleActivationChange(
+                  'suppressTriggerKeyInput',
+                  !$settingsStore.settings.global.menuActivation.suppressTriggerKeyInput
+                )}
+              class={`w-10 h-5 rounded-full transition-colors ${
+                $settingsStore.settings.global.menuActivation.suppressTriggerKeyInput
+                  ? 'bg-blue-600'
+                  : 'bg-theme-bg-tertiary'
+              }`}
+            >
+              <div
+                class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${
+                  $settingsStore.settings.global.menuActivation.suppressTriggerKeyInput ? 'translate-x-5' : ''
+                }`}
+              ></div>
+            </button>
+          </div>
           <div>
             <label class="block text-sm text-theme-text-secondary mb-1" for="quick-tap-threshold">
               {$t('settings.quickTapThreshold')}: {$settingsStore.settings.global.menuActivation.quickTapThresholdMs}ms

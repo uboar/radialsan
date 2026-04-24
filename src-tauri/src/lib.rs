@@ -167,8 +167,10 @@ pub fn run() {
 
             // Start input listener and bridge events to frontend
             let quick_tap_ms = settings.global.menu_activation.quick_tap_threshold_ms;
+            let suppress_trigger_key_input =
+                settings.global.menu_activation.suppress_trigger_key_input;
             let bindings = build_bindings_from_settings(&settings);
-            let listener = Arc::new(InputListener::new(quick_tap_ms));
+            let listener = Arc::new(InputListener::new(quick_tap_ms, suppress_trigger_key_input));
             listener.update_bindings(bindings);
 
             {
