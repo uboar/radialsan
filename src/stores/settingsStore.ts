@@ -1,5 +1,5 @@
-import { get, writable } from 'svelte/store';
-import type { Settings, PieMenu, Profile } from '../types/settings';
+import { get, writable } from "svelte/store";
+import type { Settings, PieMenu, Profile } from "../types/settings";
 
 interface SettingsState {
   settings: Settings | null;
@@ -17,7 +17,7 @@ interface SettingsActions {
   addProfile: (profile: Profile) => void;
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
   deleteProfile: (profileId: string) => void;
-  updateGlobalSettings: (updates: Partial<Settings['global']>) => void;
+  updateGlobalSettings: (updates: Partial<Settings["global"]>) => void;
 }
 
 export type SettingsStoreApi = SettingsState & SettingsActions;
@@ -41,12 +41,16 @@ export const settingsActions: SettingsActions = {
   loadSettings: async () => {
     state.update((current) => ({ ...current, loading: true, error: null }));
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const settings = await invoke<Settings>('get_settings');
+      const { invoke } = await import("@tauri-apps/api/core");
+      const settings = await invoke<Settings>("get_settings");
       state.set({ settings, loading: false, error: null });
     } catch (e) {
-      console.warn('Failed to load settings from Tauri, using defaults', e);
-      state.set({ settings: getDefaultSettings(), loading: false, error: null });
+      console.warn("Failed to load settings from Tauri, using defaults", e);
+      state.set({
+        settings: getDefaultSettings(),
+        loading: false,
+        error: null,
+      });
     }
   },
 
@@ -55,10 +59,10 @@ export const settingsActions: SettingsActions = {
     if (!settings) return;
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('save_settings', { settings });
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("save_settings", { settings });
     } catch (e) {
-      console.error('Failed to save settings', e);
+      console.error("Failed to save settings", e);
       state.update((current) => ({ ...current, error: String(e) }));
     }
   },
@@ -78,7 +82,7 @@ export const settingsActions: SettingsActions = {
     mutateSettings((settings) => ({
       ...settings,
       menus: settings.menus.map((menu) =>
-        menu.id === menuId ? { ...menu, ...updates } : menu
+        menu.id === menuId ? { ...menu, ...updates } : menu,
       ),
     }));
   },
@@ -101,7 +105,7 @@ export const settingsActions: SettingsActions = {
     mutateSettings((settings) => ({
       ...settings,
       profiles: settings.profiles.map((profile) =>
-        profile.id === profileId ? { ...profile, ...updates } : profile
+        profile.id === profileId ? { ...profile, ...updates } : profile,
       ),
     }));
   },
@@ -139,20 +143,22 @@ interface UseSettingsStore {
   getState: () => SettingsStoreApi;
 }
 
-export const useSettingsStore = ((selector?: (state: SettingsStoreApi) => unknown) => {
+export const useSettingsStore = ((
+  selector?: (state: SettingsStoreApi) => unknown,
+) => {
   const current = getState();
   return selector ? selector(current) : current;
 }) as UseSettingsStore;
 
 useSettingsStore.getState = getState;
 
-function getPrimaryModifier(): 'meta' | 'ctrl' {
-  if (typeof navigator === 'undefined') {
-    return 'ctrl';
+function getPrimaryModifier(): "meta" | "ctrl" {
+  if (typeof navigator === "undefined") {
+    return "ctrl";
   }
 
   const platform = navigator.platform || navigator.userAgent;
-  return /mac|iphone|ipad/i.test(platform) ? 'meta' : 'ctrl';
+  return /mac|iphone|ipad/i.test(platform) ? "meta" : "ctrl";
 }
 
 function getDefaultSettings(): Settings {
@@ -163,12 +169,12 @@ function getDefaultSettings(): Settings {
     global: {
       launchAtStartup: false,
       showTrayIcon: true,
-      theme: 'dark',
-      defaultProfileId: 'default',
+      theme: "dark",
+      defaultProfileId: "default",
       menuActivation: {
-        mode: 'holdRelease',
+        mode: "holdRelease",
         quickTapThresholdMs: 200,
-        submenuOpenMode: 'onThreshold',
+        submenuOpenMode: "onThreshold",
         submenuHoverDelayMs: 300,
         maxSubmenuDepth: 3,
         suppressTriggerKeyInput: true,
@@ -177,36 +183,62 @@ function getDefaultSettings(): Settings {
         innerRadius: 40,
         outerRadius: 140,
         deadZoneRadius: 20,
-        backgroundColor: '#00000080',
-        sliceFillColor: '#2a2a2aCC',
-        sliceHoverColor: '#4a9eff99',
-        sliceBorderColor: '#555555',
+        backgroundColor: "#00000080",
+        sliceFillColor: "#2a2a2aCC",
+        sliceHoverColor: "#4a9eff99",
+        sliceBorderColor: "#555555",
         sliceBorderWidth: 1,
-        labelFont: 'system-ui',
+        labelFont: "system-ui",
         labelSize: 13,
-        labelColor: '#FFFFFF',
+        labelColor: "#FFFFFF",
         iconSize: 28,
         animationDurationMs: 100,
         opacity: 0.95,
       },
     },
-    profiles: [{
-      id: 'default',
-      name: 'デフォルト',
-      isDefault: true,
-      matchRules: [],
-      pieKeys: [{ id: 'pk_1', hotkey: 'CapsLock', menuId: 'menu_1' }],
-    }],
-    menus: [{
-      id: 'menu_1',
-      name: 'クイックアクション',
-      appearanceOverrides: null,
-      slices: [
-        { id: 's1', label: 'コピー', icon: '📋', actions: [{ type: 'clipboard', params: { operation: 'copy' } }] },
-        { id: 's2', label: '貼り付け', icon: '📌', actions: [{ type: 'clipboard', params: { operation: 'paste' } }] },
-        { id: 's3', label: '元に戻す', icon: '↩️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+z` } }] },
-        { id: 's4', label: 'やり直す', icon: '↪️', actions: [{ type: 'sendKey', params: { keys: `${modifier}+shift+z` } }] },
-      ],
-    }],
+    profiles: [
+      {
+        id: "default",
+        name: "デフォルト",
+        isDefault: true,
+        matchRules: [],
+        pieKeys: [{ id: "pk_1", hotkey: "CapsLock", menuId: "menu_1" }],
+      },
+    ],
+    menus: [
+      {
+        id: "menu_1",
+        name: "クイックアクション",
+        appearanceOverrides: null,
+        slices: [
+          {
+            id: "s1",
+            label: "コピー",
+            icon: "📋",
+            actions: [{ type: "clipboard", params: { operation: "copy" } }],
+          },
+          {
+            id: "s2",
+            label: "貼り付け",
+            icon: "📌",
+            actions: [{ type: "clipboard", params: { operation: "paste" } }],
+          },
+          {
+            id: "s3",
+            label: "元に戻す",
+            icon: "↩️",
+            actions: [{ type: "sendKey", params: { keys: `${modifier}+z` } }],
+          },
+          {
+            id: "s4",
+            label: "やり直す",
+            icon: "↪️",
+            actions: [
+              { type: "sendKey", params: { keys: `${modifier}+shift+z` } },
+            ],
+          },
+        ],
+      },
+    ],
   };
 }

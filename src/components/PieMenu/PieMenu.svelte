@@ -1,9 +1,18 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import { PieMenuRenderer, type PieMenuRenderConfig, type SliceRenderData } from './PieMenuRenderer';
-  import { angleFromCenter, distance, getSliceAtPoint, getSliceIndex } from './geometry';
-  import { MenuAnimator } from './animation';
-  import { canEnterSubmenu, getParentPopState } from './submenuNavigation';
+  import { onDestroy, onMount } from "svelte";
+  import {
+    PieMenuRenderer,
+    type PieMenuRenderConfig,
+    type SliceRenderData,
+  } from "./PieMenuRenderer";
+  import {
+    angleFromCenter,
+    distance,
+    getSliceAtPoint,
+    getSliceIndex,
+  } from "./geometry";
+  import { MenuAnimator } from "./animation";
+  import { canEnterSubmenu, getParentPopState } from "./submenuNavigation";
 
   type MenuAction = { type: string; params: Record<string, unknown> };
 
@@ -75,8 +84,8 @@
     deadZoneRadius: number,
   ): Promise<void> {
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('set_active_menu_context', {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("set_active_menu_context", {
         menuId,
         originX,
         originY,
@@ -92,7 +101,7 @@
     menuId: string,
   ): Promise<{ slices: SliceRenderData[]; actions: MenuAction[][] } | null> {
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import("@tauri-apps/api/core");
       const settings = await invoke<{
         menus?: Array<{
           id: string;
@@ -102,14 +111,14 @@
             actions: MenuAction[];
           }>;
         }>;
-      }>('get_settings');
+      }>("get_settings");
       const menu = settings.menus?.find((m) => m.id === menuId);
       if (!menu) return null;
       return {
         slices: menu.slices.map((s) => ({
           label: s.label,
           icon: s.icon,
-          isSubmenu: s.actions.some((a) => a.type === 'submenu'),
+          isSubmenu: s.actions.some((a) => a.type === "submenu"),
         })),
         actions: menu.slices.map((s) => s.actions),
       };
@@ -145,7 +154,11 @@
       backendOriginY: parent.backendOriginY,
       slices: parent.slices,
       actions: parent.actions,
-      config: { ...current.config, centerX: parent.centerX, centerY: parent.centerY },
+      config: {
+        ...current.config,
+        centerX: parent.centerX,
+        centerY: parent.centerY,
+      },
     };
     renderVersion += 1;
     void setBackendMenuContext(
@@ -210,7 +223,13 @@
         config: { ...latest.config, centerX: cursorX, centerY: cursorY },
       };
       renderVersion += 1;
-      void setBackendMenuContext(menuId, backendOriginX, backendOriginY, data.slices.length, current.config.deadZoneRadius);
+      void setBackendMenuContext(
+        menuId,
+        backendOriginX,
+        backendOriginY,
+        data.slices.length,
+        current.config.deadZoneRadius,
+      );
       setHoveredSlice(null);
     } finally {
       pendingSubmenu = false;
@@ -224,7 +243,7 @@
       return {
         label: s.label,
         icon: s.icon,
-        isSubmenu: sliceActions.some((a) => a.type === 'submenu'),
+        isSubmenu: sliceActions.some((a) => a.type === "submenu"),
       };
     });
     const actions = payload.actions ?? rawSlices.map((s) => s.actions ?? []);
@@ -244,14 +263,14 @@
         innerRadius: payload.config?.innerRadius ?? 40,
         outerRadius: payload.config?.outerRadius ?? 140,
         deadZoneRadius: payload.config?.deadZoneRadius ?? 20,
-        backgroundColor: payload.config?.backgroundColor ?? '#00000080',
-        sliceFillColor: payload.config?.sliceFillColor ?? '#2a2a2aCC',
-        sliceHoverColor: payload.config?.sliceHoverColor ?? '#4a9eff99',
-        sliceBorderColor: payload.config?.sliceBorderColor ?? '#555555',
+        backgroundColor: payload.config?.backgroundColor ?? "#00000080",
+        sliceFillColor: payload.config?.sliceFillColor ?? "#2a2a2aCC",
+        sliceHoverColor: payload.config?.sliceHoverColor ?? "#4a9eff99",
+        sliceBorderColor: payload.config?.sliceBorderColor ?? "#555555",
         sliceBorderWidth: payload.config?.sliceBorderWidth ?? 1,
-        labelFont: payload.config?.labelFont ?? 'system-ui',
+        labelFont: payload.config?.labelFont ?? "system-ui",
         labelSize: payload.config?.labelSize ?? 13,
-        labelColor: payload.config?.labelColor ?? '#FFFFFF',
+        labelColor: payload.config?.labelColor ?? "#FFFFFF",
         iconSize: payload.config?.iconSize ?? 28,
         opacity: payload.config?.opacity ?? 0.95,
       },
@@ -266,9 +285,11 @@
   async function hideMenu(payload: HideMenuPayload | undefined): Promise<void> {
     const selected = payload?.selected ?? false;
     const current = menuState;
-    const backendOwnsSelection = Boolean(current && payload?.menuId === current.menuId);
+    const backendOwnsSelection = Boolean(
+      current && payload?.menuId === current.menuId,
+    );
     const selectedIndex = backendOwnsSelection
-      ? typeof payload?.selectedIndex === 'number'
+      ? typeof payload?.selectedIndex === "number"
         ? payload.selectedIndex
         : null
       : hoveredSlice;
@@ -277,8 +298,8 @@
       const actions = current.actions[selectedIndex];
       if (actions) {
         try {
-          const { invoke } = await import('@tauri-apps/api/core');
-          await invoke('execute_slice_actions', { actionsJson: actions });
+          const { invoke } = await import("@tauri-apps/api/core");
+          await invoke("execute_slice_actions", { actionsJson: actions });
         } catch (e) {
           console.error(e);
         }
@@ -333,11 +354,17 @@
       const angle = angleFromCenter(current.centerX, current.centerY, x, y);
       const directionIdx = idx ?? getSliceIndex(angle, current.slices.length);
       const sliceActions = current.actions[directionIdx];
-      const submenuAction = sliceActions?.find((a) => a.type === 'submenu');
+      const submenuAction = sliceActions?.find((a) => a.type === "submenu");
       if (submenuAction && submenuAction.params?.menuId) {
         const maxDepth = 3;
         if (canEnterSubmenu(pendingSubmenu, menuStack.length, maxDepth)) {
-          void enterSubmenu(submenuAction.params.menuId as string, x, y, rawX ?? x, rawY ?? y);
+          void enterSubmenu(
+            submenuAction.params.menuId as string,
+            x,
+            y,
+            rawX ?? x,
+            rawY ?? y,
+          );
         }
       }
     }
@@ -366,17 +393,21 @@
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
     renderer = new PieMenuRenderer(ctx, current.config);
-    animator = new MenuAnimator((state) => {
-      const active = menuState;
-      if (!active || !renderer || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      renderer.renderAnimated(active.slices, hoveredSlice, state);
-    }, 100, 80);
+    animator = new MenuAnimator(
+      (state) => {
+        const active = menuState;
+        if (!active || !renderer || !canvas) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        renderer.renderAnimated(active.slices, hoveredSlice, state);
+      },
+      100,
+      80,
+    );
 
     animator.show(current.slices.length);
     animator.setHovered(hoveredSlice);
@@ -404,18 +435,33 @@
 
     const setupTauriListeners = async (): Promise<void> => {
       try {
-        const { listen } = await import('@tauri-apps/api/event');
-        addUnlistener(await listen<ShowMenuPayload>('radialsan://show-menu', (event) => showMenu(event.payload)));
-        addUnlistener(await listen<HideMenuPayload>('radialsan://hide-menu', (event) => void hideMenu(event.payload)));
+        const { listen } = await import("@tauri-apps/api/event");
         addUnlistener(
-          await listen<MouseMovePayload>('radialsan://mouse-move', (event) => {
+          await listen<ShowMenuPayload>("radialsan://show-menu", (event) =>
+            showMenu(event.payload),
+          ),
+        );
+        addUnlistener(
+          await listen<HideMenuPayload>(
+            "radialsan://hide-menu",
+            (event) => void hideMenu(event.payload),
+          ),
+        );
+        addUnlistener(
+          await listen<MouseMovePayload>("radialsan://mouse-move", (event) => {
             updateHoveredSlice(
               event.payload.x,
               event.payload.y,
-              typeof event.payload.selectedIndex === 'number' ? event.payload.selectedIndex : null,
+              typeof event.payload.selectedIndex === "number"
+                ? event.payload.selectedIndex
+                : null,
               event.payload.menuId,
-              typeof event.payload.rawX === 'number' ? event.payload.rawX : undefined,
-              typeof event.payload.rawY === 'number' ? event.payload.rawY : undefined,
+              typeof event.payload.rawX === "number"
+                ? event.payload.rawX
+                : undefined,
+              typeof event.payload.rawY === "number"
+                ? event.payload.rawY
+                : undefined,
             );
           }),
         );
@@ -425,7 +471,7 @@
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         handleEscape();
       }
     };
@@ -434,14 +480,14 @@
     };
 
     void setupTauriListeners();
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
       disposed = true;
       for (const unlisten of unlisteners) unlisten();
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("mousemove", handleMouseMove);
       destroyRenderer();
     };
   });

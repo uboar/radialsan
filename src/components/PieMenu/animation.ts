@@ -77,7 +77,11 @@ export class MenuAnimator {
     // Lerp open progress
     const openSpeed = dt / this.openDurationMs;
     if (this.openProgress !== this.targetOpen) {
-      this.openProgress = lerp(this.openProgress, this.targetOpen, Math.min(openSpeed * 3, 1));
+      this.openProgress = lerp(
+        this.openProgress,
+        this.targetOpen,
+        Math.min(openSpeed * 3, 1),
+      );
       if (Math.abs(this.openProgress - this.targetOpen) < 0.01) {
         this.openProgress = this.targetOpen;
       }
@@ -93,7 +97,9 @@ export class MenuAnimator {
           this.targetSliceHover[i],
           Math.min(hoverSpeed * 3, 1),
         );
-        if (Math.abs(this.sliceHoverProgress[i] - this.targetSliceHover[i]) < 0.01) {
+        if (
+          Math.abs(this.sliceHoverProgress[i] - this.targetSliceHover[i]) < 0.01
+        ) {
           this.sliceHoverProgress[i] = this.targetSliceHover[i];
         }
         needsUpdate = true;

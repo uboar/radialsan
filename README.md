@@ -17,16 +17,16 @@ Cross-platform radial pie-menu launcher. Inspired by [AutoHotPie](https://github
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Tauri v2](https://v2.tauri.app/) (Rust) |
-| Frontend | React + TypeScript + Vite |
-| Styling | Tailwind CSS |
-| Menu Rendering | HTML5 Canvas |
-| Input Capture | [rdev](https://crates.io/crates/rdev) (global key press/release) |
-| Input Simulation | [enigo](https://crates.io/crates/enigo) |
-| Window Detection | [x-win](https://crates.io/crates/x-win) |
-| Scripting | [mlua](https://crates.io/crates/mlua) (Lua 5.4) |
+| Layer            | Technology                                                       |
+| ---------------- | ---------------------------------------------------------------- |
+| Framework        | [Tauri v2](https://v2.tauri.app/) (Rust)                         |
+| Frontend         | React + TypeScript + Vite                                        |
+| Styling          | Tailwind CSS                                                     |
+| Menu Rendering   | HTML5 Canvas                                                     |
+| Input Capture    | [rdev](https://crates.io/crates/rdev) (global key press/release) |
+| Input Simulation | [enigo](https://crates.io/crates/enigo)                          |
+| Window Detection | [x-win](https://crates.io/crates/x-win)                          |
+| Scripting        | [mlua](https://crates.io/crates/mlua) (Lua 5.4)                  |
 
 ## Development
 
@@ -74,11 +74,11 @@ cargo tauri build
 
 ## Permissions
 
-| OS | Permission | Required For |
-|---|---|---|
-| macOS | Accessibility | Global hotkey capture (rdev) |
-| macOS | Screen Recording | Window title detection (optional) |
-| Linux (Wayland) | `input` group | Global input via `/dev/input` |
+| OS              | Permission       | Required For                      |
+| --------------- | ---------------- | --------------------------------- |
+| macOS           | Accessibility    | Global hotkey capture (rdev)      |
+| macOS           | Screen Recording | Window title detection (optional) |
+| Linux (Wayland) | `input` group    | Global input via `/dev/input`     |
 
 ## Project Structure
 

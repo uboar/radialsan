@@ -1,11 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { t } from '../i18n';
-  import { handleLinkClick } from '../stores/router';
-  import { settingsStore, useSettingsStore } from '../stores/settingsStore';
-  import { convertAutoHotPieSettings } from '../utils/autohotpieImport';
-  import { exportMenu, exportBundle, parseRadialsanPackage, pickJsonFile } from '../utils/sharing';
-  import type { PieMenu } from '../types/settings';
+  import { onMount } from "svelte";
+  import { t } from "../i18n";
+  import { handleLinkClick } from "../stores/router";
+  import { settingsStore, useSettingsStore } from "../stores/settingsStore";
+  import { convertAutoHotPieSettings } from "../utils/autohotpieImport";
+  import {
+    exportMenu,
+    exportBundle,
+    parseRadialsanPackage,
+    pickJsonFile,
+  } from "../utils/sharing";
+  import type { PieMenu } from "../types/settings";
 
   onMount(() => {
     if (!$settingsStore.settings && !$settingsStore.loading) {
@@ -17,10 +22,15 @@
     const id = `menu_${Date.now()}`;
     settingsStore.addMenu({
       id,
-      name: $t('dashboard.newMenuName'),
+      name: $t("dashboard.newMenuName"),
       appearanceOverrides: null,
       slices: [
-        { id: `s_${Date.now()}_1`, label: $t('dashboard.newSliceLabel', { count: 1 }), icon: '⚡', actions: [{ type: 'noop', params: {} }] },
+        {
+          id: `s_${Date.now()}_1`,
+          label: $t("dashboard.newSliceLabel", { count: 1 }),
+          icon: "⚡",
+          actions: [{ type: "noop", params: {} }],
+        },
       ],
     });
     void settingsStore.saveSettings();
@@ -32,16 +42,19 @@
     try {
       await exportMenu(menu);
     } catch (err) {
-      alert($t('dashboard.exportFailed', { error: String(err) }));
+      alert($t("dashboard.exportFailed", { error: String(err) }));
     }
   }
 
   async function handleImport() {
     try {
       const text = await pickJsonFile();
-      const data = JSON.parse(text) as Partial<PieMenu> & { format?: string; profiles?: unknown[] };
+      const data = JSON.parse(text) as Partial<PieMenu> & {
+        format?: string;
+        profiles?: unknown[];
+      };
 
-      if (data.format === 'radialsan') {
+      if (data.format === "radialsan") {
         const pkg = parseRadialsanPackage(text);
         for (const menu of pkg.menus) {
           settingsStore.addMenu(menu);
@@ -58,16 +71,19 @@
           id: `menu_${now}`,
           name: data.name,
           appearanceOverrides: data.appearanceOverrides ?? null,
-          slices: data.slices.map((slice, index) => ({ ...slice, id: `s_${now}_${index}` })),
+          slices: data.slices.map((slice, index) => ({
+            ...slice,
+            id: `s_${now}_${index}`,
+          })),
         } as PieMenu);
       } else {
-        alert($t('dashboard.unrecognizedFileFormat'));
+        alert($t("dashboard.unrecognizedFileFormat"));
         return;
       }
 
       void settingsStore.saveSettings();
     } catch (err) {
-      alert($t('dashboard.importFailed', { error: String(err) }));
+      alert($t("dashboard.importFailed", { error: String(err) }));
     }
   }
 
@@ -78,14 +94,14 @@
     try {
       await exportBundle(settings.menus, settings.profiles);
     } catch (err) {
-      alert($t('dashboard.exportFailed', { error: String(err) }));
+      alert($t("dashboard.exportFailed", { error: String(err) }));
     }
   }
 
   function handleAutoHotPieImport() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
     input.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -95,7 +111,7 @@
         const ahpSettings = JSON.parse(text) as { appProfiles?: unknown };
 
         if (!ahpSettings.appProfiles) {
-          alert($t('dashboard.invalidAutoHotPieFile'));
+          alert($t("dashboard.invalidAutoHotPieFile"));
           return;
         }
 
@@ -115,9 +131,14 @@
         }
 
         void settingsStore.saveSettings();
-        alert($t('dashboard.importSummary', { menus: converted.menus?.length || 0, profiles: converted.profiles?.length || 0 }));
+        alert(
+          $t("dashboard.importSummary", {
+            menus: converted.menus?.length || 0,
+            profiles: converted.profiles?.length || 0,
+          }),
+        );
       } catch (err) {
-        alert($t('dashboard.autoHotPieImportFailed', { error: String(err) }));
+        alert($t("dashboard.autoHotPieImportFailed", { error: String(err) }));
       }
     };
     input.click();
@@ -125,42 +146,46 @@
 </script>
 
 {#if $settingsStore.loading || !$settingsStore.settings}
-  <div class="text-theme-text-secondary">{$t('common.loading')}</div>
+  <div class="text-theme-text-secondary">{$t("common.loading")}</div>
 {:else}
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <h2 class="shrink-0 text-2xl font-bold leading-tight">{$t('dashboard.title')}</h2>
+      <h2 class="shrink-0 text-2xl font-bold leading-tight">
+        {$t("dashboard.title")}
+      </h2>
       <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
         <button
           onclick={handleAutoHotPieImport}
           class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
-          {$t('dashboard.importAutoHotPie')}
+          {$t("dashboard.importAutoHotPie")}
         </button>
         <button
           onclick={handleImport}
           class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
-          {$t('dashboard.importMenu')}
+          {$t("dashboard.importMenu")}
         </button>
         <button
           onclick={handleExportAll}
           class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
-          {$t('dashboard.exportAll')}
+          {$t("dashboard.exportAll")}
         </button>
         <button
           onclick={handleNewMenu}
           class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium leading-none text-white transition-colors hover:bg-blue-500"
         >
-          {$t('dashboard.newMenu')}
+          {$t("dashboard.newMenu")}
         </button>
       </div>
     </div>
 
     {#if $settingsStore.settings.menus.length === 0}
-      <div class="rounded-lg border border-dashed border-theme-border bg-theme-bg-secondary p-6 text-sm text-theme-text-secondary">
-        {$t('dashboard.noMenus')}
+      <div
+        class="rounded-lg border border-dashed border-theme-border bg-theme-bg-secondary p-6 text-sm text-theme-text-secondary"
+      >
+        {$t("dashboard.noMenus")}
       </div>
     {:else}
       <div class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
@@ -171,25 +196,35 @@
             class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4 transition-colors hover:border-theme-text-muted"
           >
             <div class="mb-2 flex min-w-0 items-start justify-between gap-3">
-              <h3 class="min-w-0 truncate text-base font-semibold leading-6">{menu.name}</h3>
+              <h3 class="min-w-0 truncate text-base font-semibold leading-6">
+                {menu.name}
+              </h3>
               <button
                 onclick={(event) => handleExport(menu, event)}
                 class="shrink-0 text-xs text-theme-text-muted transition-colors hover:text-theme-text-primary"
-                title={$t('dashboard.exportMenuTitle')}
+                title={$t("dashboard.exportMenuTitle")}
               >
-                {$t('common.export')}
+                {$t("common.export")}
               </button>
             </div>
-            <p class="text-sm text-theme-text-secondary">{$t('dashboard.slices', { count: menu.slices.length })}</p>
+            <p class="text-sm text-theme-text-secondary">
+              {$t("dashboard.slices", { count: menu.slices.length })}
+            </p>
             <div class="mt-3 flex min-h-7 flex-wrap gap-1.5">
               {#each menu.slices.slice(0, 6) as slice (slice.id)}
-                <span class="inline-flex max-w-full items-center gap-1 rounded bg-theme-bg-tertiary px-2 py-0.5 text-xs">
+                <span
+                  class="inline-flex max-w-full items-center gap-1 rounded bg-theme-bg-tertiary px-2 py-0.5 text-xs"
+                >
                   <span class="shrink-0">{slice.icon}</span>
                   <span class="truncate">{slice.label}</span>
                 </span>
               {/each}
               {#if menu.slices.length > 6}
-                <span class="text-xs text-theme-text-muted">{$t('dashboard.moreSlices', { count: menu.slices.length - 6 })}</span>
+                <span class="text-xs text-theme-text-muted"
+                  >{$t("dashboard.moreSlices", {
+                    count: menu.slices.length - 6,
+                  })}</span
+                >
               {/if}
             </div>
           </a>

@@ -1,71 +1,89 @@
-import { describe, it, expect } from 'vitest';
-import { parseRadialsanPackage } from '../sharing';
+import { describe, it, expect } from "vitest";
+import { parseRadialsanPackage } from "../sharing";
 
-describe('parseRadialsanPackage', () => {
-  it('parses a valid menu package', () => {
+describe("parseRadialsanPackage", () => {
+  it("parses a valid menu package", () => {
     const pkg = JSON.stringify({
-      format: 'radialsan',
+      format: "radialsan",
       version: 1,
-      type: 'menu',
-      exportedAt: '2024-01-01',
-      menus: [{
-        id: 'old_id',
-        name: 'Test',
-        slices: [
-          { id: 's1', label: 'A', icon: '⚡', actions: [{ type: 'noop', params: {} }] },
-        ],
-      }],
+      type: "menu",
+      exportedAt: "2024-01-01",
+      menus: [
+        {
+          id: "old_id",
+          name: "Test",
+          slices: [
+            {
+              id: "s1",
+              label: "A",
+              icon: "⚡",
+              actions: [{ type: "noop", params: {} }],
+            },
+          ],
+        },
+      ],
     });
 
     const result = parseRadialsanPackage(pkg);
     expect(result.menus).toHaveLength(1);
-    expect(result.menus[0].id).not.toBe('old_id'); // ID should be regenerated
-    expect(result.menus[0].name).toBe('Test');
+    expect(result.menus[0].id).not.toBe("old_id"); // ID should be regenerated
+    expect(result.menus[0].name).toBe("Test");
   });
 
-  it('throws on non-radialsan format', () => {
+  it("throws on non-radialsan format", () => {
     expect(() => parseRadialsanPackage('{"not": "radialsan"}')).toThrow();
   });
 
-  it('throws on missing menus', () => {
+  it("throws on missing menus", () => {
     expect(() => parseRadialsanPackage('{"format": "radialsan"}')).toThrow();
   });
 
-  it('regenerates profile IDs and remaps menu references', () => {
+  it("regenerates profile IDs and remaps menu references", () => {
     const pkg = JSON.stringify({
-      format: 'radialsan',
+      format: "radialsan",
       version: 1,
-      type: 'profile',
-      exportedAt: '2024-01-01',
-      menus: [{ id: 'menu_old', name: 'M', slices: [] }],
-      profiles: [{
-        id: 'prof_old',
-        name: 'P',
-        isDefault: true,
-        matchRules: [],
-        pieKeys: [{ id: 'pk1', hotkey: 'F5', menuId: 'menu_old' }],
-      }],
+      type: "profile",
+      exportedAt: "2024-01-01",
+      menus: [{ id: "menu_old", name: "M", slices: [] }],
+      profiles: [
+        {
+          id: "prof_old",
+          name: "P",
+          isDefault: true,
+          matchRules: [],
+          pieKeys: [{ id: "pk1", hotkey: "F5", menuId: "menu_old" }],
+        },
+      ],
     });
 
     const result = parseRadialsanPackage(pkg);
     expect(result.profiles).toHaveLength(1);
     expect(result.profiles![0].isDefault).toBe(false); // Never import as default
-    expect(result.profiles![0].id).not.toBe('prof_old');
+    expect(result.profiles![0].id).not.toBe("prof_old");
     // pieKey menuId should be remapped to new menu ID
     expect(result.profiles![0].pieKeys[0].menuId).toBe(result.menus[0].id);
   });
 
-  it('remaps submenu action references', () => {
+  it("remaps submenu action references", () => {
     const pkg = JSON.stringify({
-      format: 'radialsan',
+      format: "radialsan",
       version: 1,
-      type: 'menu',
-      exportedAt: '2024-01-01',
+      type: "menu",
+      exportedAt: "2024-01-01",
       menus: [
-        { id: 'menu_a', name: 'A', slices: [
-          { id: 's1', label: 'Sub', icon: '▶', actions: [{ type: 'submenu', params: { menuId: 'menu_b' } }] },
-        ]},
-        { id: 'menu_b', name: 'B', slices: [] },
+        {
+          id: "menu_a",
+          name: "A",
+          slices: [
+            {
+              id: "s1",
+              label: "Sub",
+              icon: "▶",
+              actions: [{ type: "submenu", params: { menuId: "menu_b" } }],
+            },
+          ],
+        },
+        { id: "menu_b", name: "B", slices: [] },
       ],
     });
 

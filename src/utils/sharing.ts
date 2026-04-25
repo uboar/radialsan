@@ -1,12 +1,12 @@
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
-import type { PieMenu, Profile, PieKey } from '../types/settings';
+import { save, open } from "@tauri-apps/plugin-dialog";
+import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
+import type { PieMenu, Profile, PieKey } from "../types/settings";
 
 export interface RadialsanPackage {
-  format: 'radialsan';
+  format: "radialsan";
   version: 1;
   exportedAt: string;
-  type: 'menu' | 'profile' | 'bundle';
+  type: "menu" | "profile" | "bundle";
   menus: PieMenu[];
   profiles?: Profile[];
 }
@@ -16,10 +16,10 @@ export interface RadialsanPackage {
  */
 export async function exportMenu(menu: PieMenu): Promise<void> {
   const pkg: RadialsanPackage = {
-    format: 'radialsan',
+    format: "radialsan",
     version: 1,
     exportedAt: new Date().toISOString(),
-    type: 'menu',
+    type: "menu",
     menus: [menu],
   };
   await saveJsonFile(pkg, `${sanitizeFilename(menu.name)}.radialsan.json`);
@@ -28,16 +28,21 @@ export async function exportMenu(menu: PieMenu): Promise<void> {
 /**
  * Export a profile with its associated menus
  */
-export async function exportProfile(profile: Profile, allMenus: PieMenu[]): Promise<void> {
+export async function exportProfile(
+  profile: Profile,
+  allMenus: PieMenu[],
+): Promise<void> {
   // Find menus referenced by this profile's pieKeys
-  const referencedMenuIds = new Set(profile.pieKeys.map((pk: PieKey) => pk.menuId));
+  const referencedMenuIds = new Set(
+    profile.pieKeys.map((pk: PieKey) => pk.menuId),
+  );
   const menus = allMenus.filter((m: PieMenu) => referencedMenuIds.has(m.id));
 
   const pkg: RadialsanPackage = {
-    format: 'radialsan',
+    format: "radialsan",
     version: 1,
     exportedAt: new Date().toISOString(),
-    type: 'profile',
+    type: "profile",
     menus,
     profiles: [profile],
   };
@@ -47,16 +52,22 @@ export async function exportProfile(profile: Profile, allMenus: PieMenu[]): Prom
 /**
  * Export all menus and profiles as a bundle
  */
-export async function exportBundle(menus: PieMenu[], profiles: Profile[]): Promise<void> {
+export async function exportBundle(
+  menus: PieMenu[],
+  profiles: Profile[],
+): Promise<void> {
   const pkg: RadialsanPackage = {
-    format: 'radialsan',
+    format: "radialsan",
     version: 1,
     exportedAt: new Date().toISOString(),
-    type: 'bundle',
+    type: "bundle",
     menus,
     profiles,
   };
-  await saveJsonFile(pkg, `radialsan_backup_${new Date().toISOString().slice(0, 10)}.radialsan.json`);
+  await saveJsonFile(
+    pkg,
+    `radialsan_backup_${new Date().toISOString().slice(0, 10)}.radialsan.json`,
+  );
 }
 
 /**
@@ -66,11 +77,11 @@ export async function exportBundle(menus: PieMenu[], profiles: Profile[]): Promi
 export function parseRadialsanPackage(jsonText: string): RadialsanPackage {
   const data = JSON.parse(jsonText);
 
-  if (data.format !== 'radialsan') {
-    throw new Error('Not a radialsan package file');
+  if (data.format !== "radialsan") {
+    throw new Error("Not a radialsan package file");
   }
   if (!data.menus || !Array.isArray(data.menus)) {
-    throw new Error('Invalid package: missing menus array');
+    throw new Error("Invalid package: missing menus array");
   }
 
   // Regenerate IDs to avoid conflicts
@@ -92,12 +103,19 @@ export function parseRadialsanPackage(jsonText: string): RadialsanPackage {
         ...s,
         id: `s_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
         // Update submenu references
-        actions: s.actions.map(a => {
-          if (a.type === 'submenu' && a.params && typeof a.params === 'object') {
+        actions: s.actions.map((a) => {
+          if (
+            a.type === "submenu" &&
+            a.params &&
+            typeof a.params === "object"
+          ) {
             const params = a.params as Record<string, unknown>;
             const oldMenuId = params.menuId as string;
             if (oldMenuId && idMap.has(oldMenuId)) {
-              return { ...a, params: { ...params, menuId: idMap.get(oldMenuId) } };
+              return {
+                ...a,
+                params: { ...params, menuId: idMap.get(oldMenuId) },
+              };
             }
           }
           return a;
@@ -111,7 +129,7 @@ export function parseRadialsanPackage(jsonText: string): RadialsanPackage {
       ...profile,
       id: `profile_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       isDefault: false, // Never import as default
-      pieKeys: profile.pieKeys.map(pk => ({
+      pieKeys: profile.pieKeys.map((pk) => ({
         ...pk,
         id: `pk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         menuId: idMap.get(pk.menuId) || pk.menuId,
@@ -127,24 +145,27 @@ export function parseRadialsanPackage(jsonText: string): RadialsanPackage {
  */
 export async function pickJsonFile(): Promise<string> {
   const selected = await open({
-    filters: [{ name: 'radialsan JSON', extensions: ['json'] }],
+    filters: [{ name: "radialsan JSON", extensions: ["json"] }],
     multiple: false,
   });
-  if (!selected) throw new Error('No file selected');
+  if (!selected) throw new Error("No file selected");
   const text = await readTextFile(selected);
   return text;
 }
 
-async function saveJsonFile(data: unknown, defaultFilename: string): Promise<void> {
+async function saveJsonFile(
+  data: unknown,
+  defaultFilename: string,
+): Promise<void> {
   const json = JSON.stringify(data, null, 2);
   const filePath = await save({
     defaultPath: defaultFilename,
-    filters: [{ name: 'radialsan JSON', extensions: ['json'] }],
+    filters: [{ name: "radialsan JSON", extensions: ["json"] }],
   });
   if (!filePath) return; // User cancelled
   await writeTextFile(filePath, json);
 }
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  return name.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
 }

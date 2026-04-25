@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from '../../i18n';
-  import ActionEditor from './ActionEditor.svelte';
-  import IconPicker from './IconPicker.svelte';
-  import type { Action, Slice } from '../../types/settings';
+  import { t } from "../../i18n";
+  import ActionEditor from "./ActionEditor.svelte";
+  import IconPicker from "./IconPicker.svelte";
+  import type { Action, Slice } from "../../types/settings";
 
   export let slice: Slice;
   export let onChange: (updates: Partial<Slice>) => void;
@@ -16,10 +16,17 @@
 </script>
 
 <div class="space-y-4">
-  <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.sliceProperties')}</h3>
+  <h3
+    class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide"
+  >
+    {$t("editor.sliceProperties")}
+  </h3>
 
   <div class="min-w-0">
-    <label class="block text-xs text-theme-text-secondary mb-1" for="slice-label">{$t('editor.label')}</label>
+    <label
+      class="block text-xs text-theme-text-secondary mb-1"
+      for="slice-label">{$t("editor.label")}</label
+    >
     <input
       id="slice-label"
       type="text"
@@ -30,14 +37,22 @@
   </div>
 
   <div class="min-w-0">
-    <div class="block text-xs text-theme-text-secondary mb-1">{$t('editor.iconEmojiOrText')}</div>
+    <div class="block text-xs text-theme-text-secondary mb-1">
+      {$t("editor.iconEmojiOrText")}
+    </div>
     <IconPicker value={slice.icon} onChange={(icon) => onChange({ icon })} />
   </div>
 
   <div class="min-w-0 border-t border-theme-border pt-4">
-    <h4 class="text-xs text-theme-text-secondary mb-2 uppercase tracking-wide">{$t('editor.action')}</h4>
+    <h4 class="text-xs text-theme-text-secondary mb-2 uppercase tracking-wide">
+      {$t("editor.action")}
+    </h4>
     {#each slice.actions as action, index (index)}
-      <ActionEditor action={action} onChange={(nextAction) => handleActionChange(index, nextAction)} {menuOptions} />
+      <ActionEditor
+        {action}
+        onChange={(nextAction) => handleActionChange(index, nextAction)}
+        {menuOptions}
+      />
     {/each}
   </div>
 </div>

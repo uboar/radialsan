@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PieMenu from './PieMenu/PieMenu.svelte';
+  import PieMenu from "./PieMenu/PieMenu.svelte";
 </script>
 
 <div class="overlay-root">

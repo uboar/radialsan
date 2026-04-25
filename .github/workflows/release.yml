@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -68,7 +68,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'radialsan ${{ github.ref_name }}'
+          releaseName: "radialsan ${{ github.ref_name }}"
           releaseBody: |
             See the [full changelog](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}).
 

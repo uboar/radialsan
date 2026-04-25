@@ -1,5 +1,5 @@
-import { get, writable } from 'svelte/store';
-import type { Settings } from '../types/settings';
+import { get, writable } from "svelte/store";
+import type { Settings } from "../types/settings";
 
 interface HistoryState {
   undoStack: string[];
@@ -92,7 +92,9 @@ interface UseHistoryStore {
   getState: () => HistoryStoreApi;
 }
 
-export const useHistoryStore = ((selector?: (state: HistoryStoreApi) => unknown) => {
+export const useHistoryStore = ((
+  selector?: (state: HistoryStoreApi) => unknown,
+) => {
   const current = getState();
   return selector ? selector(current) : current;
 }) as UseHistoryStore;

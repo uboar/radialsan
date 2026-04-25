@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import { PieMenuRenderer } from '../PieMenu/PieMenuRenderer';
-  import type { Slice } from '../../types/settings';
+  import { onDestroy, onMount } from "svelte";
+  import { PieMenuRenderer } from "../PieMenu/PieMenuRenderer";
+  import type { Slice } from "../../types/settings";
 
   export let slices: Slice[] = [];
   export let selectedIndex: number | null = null;
@@ -32,7 +32,7 @@
     canvas.width = size;
     canvas.height = size;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const centerX = size / 2;
@@ -81,6 +81,9 @@
   }
 </script>
 
-<div bind:this={container} class="flex items-center justify-center bg-theme-bg-primary rounded-xl p-4 border border-theme-border">
+<div
+  bind:this={container}
+  class="flex items-center justify-center bg-theme-bg-primary rounded-xl p-4 border border-theme-border"
+>
   <canvas bind:this={canvas} class="max-w-full"></canvas>
 </div>

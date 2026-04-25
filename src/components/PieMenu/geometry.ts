@@ -1,13 +1,23 @@
 // Geometry utilities for pie menu calculations.
 // Coordinate system: 0 radians = top (12 o'clock), increasing clockwise.
 
-export function angleFromCenter(cx: number, cy: number, x: number, y: number): number {
+export function angleFromCenter(
+  cx: number,
+  cy: number,
+  x: number,
+  y: number,
+): number {
   // Standard atan2 has 0=right, CCW positive.
   // Convert to our system: 0=top, CW positive.
   return (Math.atan2(x - cx, -(y - cy)) + 2 * Math.PI) % (2 * Math.PI);
 }
 
-export function distance(x1: number, y1: number, x2: number, y2: number): number {
+export function distance(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
   const dx = x2 - x1;
   const dy = y2 - y1;
   return Math.sqrt(dx * dx + dy * dy);
@@ -21,7 +31,11 @@ export function getSliceIndex(angle: number, numSlices: number): number {
   return Math.floor(shifted / sliceWidth) % numSlices;
 }
 
-export function isInRing(dist: number, innerRadius: number, outerRadius: number): boolean {
+export function isInRing(
+  dist: number,
+  innerRadius: number,
+  outerRadius: number,
+): boolean {
   return dist >= innerRadius && dist <= outerRadius;
 }
 
@@ -63,6 +77,9 @@ export function polarToCartesian(
   };
 }
 
-export function getSliceCenterAngle(sliceIndex: number, numSlices: number): number {
+export function getSliceCenterAngle(
+  sliceIndex: number,
+  numSlices: number,
+): number {
   return ((2 * Math.PI) / numSlices) * sliceIndex;
 }

@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import MenuPreview from '../components/Editor/MenuPreview.svelte';
-  import SliceList from '../components/Editor/SliceList.svelte';
-  import SliceEditor from '../components/Editor/SliceEditor.svelte';
-  import AppearancePanel from '../components/Editor/AppearancePanel.svelte';
-  import { t } from '../i18n';
-  import { navigate } from '../stores/router';
-  import { settingsStore } from '../stores/settingsStore';
-  import { historyStore } from '../stores/historyStore';
-  import type { Appearance, Settings, Slice } from '../types/settings';
+  import { onDestroy, onMount } from "svelte";
+  import MenuPreview from "../components/Editor/MenuPreview.svelte";
+  import SliceList from "../components/Editor/SliceList.svelte";
+  import SliceEditor from "../components/Editor/SliceEditor.svelte";
+  import AppearancePanel from "../components/Editor/AppearancePanel.svelte";
+  import { t } from "../i18n";
+  import { navigate } from "../stores/router";
+  import { settingsStore } from "../stores/settingsStore";
+  import { historyStore } from "../stores/historyStore";
+  import type { Appearance, Settings, Slice } from "../types/settings";
 
   export let id: string | undefined = undefined;
 
   let settings: Settings | null = null;
   let selectedSliceId: string | null = null;
-  let activeTab: 'slices' | 'appearance' = 'slices';
+  let activeTab: "slices" | "appearance" = "slices";
   let canUndoValue = false;
   let canRedoValue = false;
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -25,20 +25,22 @@
   $: menuId = id;
   $: menu = settings?.menus.find((candidate) => candidate.id === menuId);
   $: selectedSlice = menu?.slices.find((slice) => slice.id === selectedSliceId);
-  $: selectedIndex = menu?.slices.findIndex((slice) => slice.id === selectedSliceId) ?? -1;
+  $: selectedIndex =
+    menu?.slices.findIndex((slice) => slice.id === selectedSliceId) ?? -1;
   $: appearance = settings?.global.appearance;
-  $: menuOptions = settings?.menus
-    .filter((candidate) => candidate.id !== menuId)
-    .map((candidate) => ({ id: candidate.id, name: candidate.name })) ?? [];
+  $: menuOptions =
+    settings?.menus
+      .filter((candidate) => candidate.id !== menuId)
+      .map((candidate) => ({ id: candidate.id, name: candidate.name })) ?? [];
 
   onMount(() => {
     if (!$settingsStore.settings && !$settingsStore.loading) {
       void settingsStore.loadSettings();
     }
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   });
 
@@ -73,12 +75,20 @@
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "z" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
       handleUndo();
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && event.shiftKey) {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "z" &&
+      event.shiftKey
+    ) {
       event.preventDefault();
       handleRedo();
     }
@@ -103,9 +113,9 @@
     pushSnapshot();
     const newSlice: Slice = {
       id: `s_${Date.now()}`,
-      label: $t('editor.newSliceLabel', { count: menu.slices.length + 1 }),
-      icon: '⚡',
-      actions: [{ type: 'noop', params: {} }],
+      label: $t("editor.newSliceLabel", { count: menu.slices.length + 1 }),
+      icon: "⚡",
+      actions: [{ type: "noop", params: {} }],
     };
     settingsStore.updateMenu(menuId, { slices: [...menu.slices, newSlice] });
     selectedSliceId = newSlice.id;
@@ -115,7 +125,9 @@
   function handleDeleteSlice(sliceId: string) {
     if (!settings || !menu || !menuId) return;
     pushSnapshot();
-    settingsStore.updateMenu(menuId, { slices: menu.slices.filter((slice) => slice.id !== sliceId) });
+    settingsStore.updateMenu(menuId, {
+      slices: menu.slices.filter((slice) => slice.id !== sliceId),
+    });
     if (selectedSliceId === sliceId) selectedSliceId = null;
     debouncedSave();
   }
@@ -124,7 +136,9 @@
     if (!settings || !menu || !menuId || !selectedSliceId) return;
     pushSnapshot();
     settingsStore.updateMenu(menuId, {
-      slices: menu.slices.map((slice) => (slice.id === selectedSliceId ? { ...slice, ...updates } : slice)),
+      slices: menu.slices.map((slice) =>
+        slice.id === selectedSliceId ? { ...slice, ...updates } : slice,
+      ),
     });
     debouncedSave();
   }
@@ -132,29 +146,31 @@
   function handleAppearanceChange(updates: Partial<Appearance>) {
     if (!settings || !appearance) return;
     pushSnapshot();
-    settingsStore.updateGlobalSettings({ appearance: { ...appearance, ...updates } });
+    settingsStore.updateGlobalSettings({
+      appearance: { ...appearance, ...updates },
+    });
     debouncedSave();
   }
 
   function handleDeleteMenu() {
-    if (!menuId || !confirm($t('editor.deleteConfirm'))) return;
+    if (!menuId || !confirm($t("editor.deleteConfirm"))) return;
     settingsStore.deleteMenu(menuId);
     void settingsStore.saveSettings();
-    navigate('/');
+    navigate("/");
   }
 </script>
 
 {#if !settings || !menu || !appearance}
-  <div class="text-theme-text-secondary">{$t('editor.menuNotFound')}</div>
+  <div class="text-theme-text-secondary">{$t("editor.menuNotFound")}</div>
 {:else}
   <div class="flex min-h-[calc(100vh-3rem)] flex-col">
     <div class="mb-6 flex flex-wrap items-center gap-3">
       <button
         type="button"
-        on:click={() => navigate('/')}
+        on:click={() => navigate("/")}
         class="shrink-0 text-sm text-theme-text-secondary hover:text-theme-text-primary"
       >
-        {$t('editor.back')}
+        {$t("editor.back")}
       </button>
       <input
         type="text"
@@ -168,7 +184,7 @@
           on:click={handleUndo}
           disabled={!canUndoValue}
           class="rounded bg-theme-bg-tertiary px-2 py-1 text-sm hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-30"
-          title={$t('editor.undoTitle')}
+          title={$t("editor.undoTitle")}
         >
           ↶
         </button>
@@ -177,7 +193,7 @@
           on:click={handleRedo}
           disabled={!canRedoValue}
           class="rounded bg-theme-bg-tertiary px-2 py-1 text-sm hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-30"
-          title={$t('editor.redoTitle')}
+          title={$t("editor.redoTitle")}
         >
           ↷
         </button>
@@ -187,11 +203,13 @@
         on:click={handleDeleteMenu}
         class="ml-auto shrink-0 text-sm text-theme-text-muted transition-colors hover:text-red-400"
       >
-        {$t('editor.deleteMenu')}
+        {$t("editor.deleteMenu")}
       </button>
     </div>
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[minmax(22rem,0.95fr)_minmax(24rem,1.05fr)]">
+    <div
+      class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[minmax(22rem,0.95fr)_minmax(24rem,1.05fr)]"
+    >
       <div class="min-w-0">
         <MenuPreview
           slices={menu.slices}
@@ -205,28 +223,30 @@
           <button
             type="button"
             on:click={() => {
-              activeTab = 'slices';
+              activeTab = "slices";
             }}
-            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab === 'slices'
+            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab ===
+            'slices'
               ? 'bg-theme-bg-tertiary text-theme-text-primary'
               : 'text-theme-text-secondary hover:text-theme-text-primary'}"
           >
-            {$t('editor.slices')}
+            {$t("editor.slices")}
           </button>
           <button
             type="button"
             on:click={() => {
-              activeTab = 'appearance';
+              activeTab = "appearance";
             }}
-            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab === 'appearance'
+            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab ===
+            'appearance'
               ? 'bg-theme-bg-tertiary text-theme-text-primary'
               : 'text-theme-text-secondary hover:text-theme-text-primary'}"
           >
-            {$t('editor.appearance')}
+            {$t("editor.appearance")}
           </button>
         </div>
 
-        {#if activeTab === 'slices'}
+        {#if activeTab === "slices"}
           <div class="space-y-4">
             <SliceList
               slices={menu.slices}
@@ -240,13 +260,17 @@
             />
             {#if selectedSlice}
               <div class="border-t border-theme-border pt-4">
-                <SliceEditor slice={selectedSlice} onChange={handleSliceChange} {menuOptions} />
+                <SliceEditor
+                  slice={selectedSlice}
+                  onChange={handleSliceChange}
+                  {menuOptions}
+                />
               </div>
             {/if}
           </div>
         {/if}
 
-        {#if activeTab === 'appearance'}
+        {#if activeTab === "appearance"}
           <AppearancePanel {appearance} onChange={handleAppearanceChange} />
         {/if}
       </div>

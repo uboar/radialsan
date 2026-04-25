@@ -1,6 +1,10 @@
-import { getSliceCenterAngle, polarToCartesian } from './geometry';
-import { easeOutCubic } from './animation';
-import { getLucideIconNode, type LucideIconAttrs, type LucideIconNode } from '../../utils/lucideIconRegistry';
+import { getSliceCenterAngle, polarToCartesian } from "./geometry";
+import { easeOutCubic } from "./animation";
+import {
+  getLucideIconNode,
+  type LucideIconAttrs,
+  type LucideIconNode,
+} from "../../utils/lucideIconRegistry";
 
 export interface PieMenuRenderConfig {
   centerX: number;
@@ -46,7 +50,10 @@ export class PieMenuRenderer {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
-  private drawSlices(slices: SliceRenderData[], hoveredIndex: number | null): void {
+  private drawSlices(
+    slices: SliceRenderData[],
+    hoveredIndex: number | null,
+  ): void {
     const {
       centerX: cx,
       centerY: cy,
@@ -74,7 +81,8 @@ export class PieMenuRenderer {
       this.ctx.arc(cx, cy, innerRadius, canvasEnd, canvasStart, true);
       this.ctx.closePath();
 
-      this.ctx.fillStyle = i === hoveredIndex ? sliceHoverColor : sliceFillColor;
+      this.ctx.fillStyle =
+        i === hoveredIndex ? sliceHoverColor : sliceFillColor;
       this.ctx.fill();
 
       if (sliceBorderWidth > 0) {
@@ -85,19 +93,36 @@ export class PieMenuRenderer {
     }
   }
 
-  private drawLabels(slices: SliceRenderData[], hoveredIndex: number | null): void {
-    const { centerX: cx, centerY: cy, innerRadius, outerRadius, labelFont, labelSize, labelColor, iconSize } =
-      this.config;
+  private drawLabels(
+    slices: SliceRenderData[],
+    hoveredIndex: number | null,
+  ): void {
+    const {
+      centerX: cx,
+      centerY: cy,
+      innerRadius,
+      outerRadius,
+      labelFont,
+      labelSize,
+      labelColor,
+      iconSize,
+    } = this.config;
     const labelRadius = (innerRadius + outerRadius) / 2;
 
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
 
     for (let i = 0; i < slices.length; i++) {
       const angle = getSliceCenterAngle(i, slices.length);
       const pos = polarToCartesian(cx, cy, labelRadius, angle);
 
-      const drewLucideIcon = this.drawLucideIcon(slices[i].icon, pos.x, pos.y - labelSize * 0.6, iconSize, labelColor);
+      const drewLucideIcon = this.drawLucideIcon(
+        slices[i].icon,
+        pos.x,
+        pos.y - labelSize * 0.6,
+        iconSize,
+        labelColor,
+      );
       if (!drewLucideIcon) {
         this.ctx.font = `${iconSize}px ${labelFont}`;
         this.ctx.fillStyle = labelColor;
@@ -105,7 +130,7 @@ export class PieMenuRenderer {
       }
 
       // Draw label.
-      this.ctx.font = `${i === hoveredIndex ? 'bold ' : ''}${labelSize}px ${labelFont}`;
+      this.ctx.font = `${i === hoveredIndex ? "bold " : ""}${labelSize}px ${labelFont}`;
       this.ctx.fillStyle = labelColor;
       this.ctx.fillText(slices[i].label, pos.x, pos.y + iconSize * 0.4);
 
@@ -115,20 +140,31 @@ export class PieMenuRenderer {
         const indicatorPos = polarToCartesian(cx, cy, outerRadius - 10, angle);
         this.ctx.font = `${labelSize * 0.8}px ${labelFont}`;
         this.ctx.fillStyle = labelColor;
-        this.ctx.fillText('▶', indicatorPos.x, indicatorPos.y);
+        this.ctx.fillText("▶", indicatorPos.x, indicatorPos.y);
       }
     }
   }
 
   private drawCenterCircle(): void {
-    const { centerX: cx, centerY: cy, deadZoneRadius, backgroundColor } = this.config;
+    const {
+      centerX: cx,
+      centerY: cy,
+      deadZoneRadius,
+      backgroundColor,
+    } = this.config;
     this.ctx.beginPath();
     this.ctx.arc(cx, cy, deadZoneRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = backgroundColor;
     this.ctx.fill();
   }
 
-  private drawLucideIcon(icon: string, centerX: number, centerY: number, size: number, color: string): boolean {
+  private drawLucideIcon(
+    icon: string,
+    centerX: number,
+    centerY: number,
+    size: number,
+    color: string,
+  ): boolean {
     const iconNode = getLucideIconNode(icon);
     if (!iconNode) return false;
 
@@ -180,14 +216,31 @@ export class PieMenuRenderer {
       const canvasEnd = endAngle - Math.PI / 2;
 
       this.ctx.beginPath();
-      this.ctx.arc(this.config.centerX, this.config.centerY, this.config.outerRadius, canvasStart, canvasEnd);
-      this.ctx.arc(this.config.centerX, this.config.centerY, this.config.innerRadius, canvasEnd, canvasStart, true);
+      this.ctx.arc(
+        this.config.centerX,
+        this.config.centerY,
+        this.config.outerRadius,
+        canvasStart,
+        canvasEnd,
+      );
+      this.ctx.arc(
+        this.config.centerX,
+        this.config.centerY,
+        this.config.innerRadius,
+        canvasEnd,
+        canvasStart,
+        true,
+      );
       this.ctx.closePath();
 
       // Blend between fill and hover color based on hover progress
       const hp = hoverProgress[i] || 0;
       if (hp > 0) {
-        this.ctx.fillStyle = blendColors(this.config.sliceFillColor, this.config.sliceHoverColor, hp);
+        this.ctx.fillStyle = blendColors(
+          this.config.sliceFillColor,
+          this.config.sliceHoverColor,
+          hp,
+        );
       } else {
         this.ctx.fillStyle = this.config.sliceFillColor;
       }
@@ -222,30 +275,30 @@ function drawLucideNode(
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
   for (const [elementName, attrs] of iconNode) {
     switch (elementName) {
-      case 'circle':
+      case "circle":
         drawCircle(ctx, attrs);
         break;
-      case 'ellipse':
+      case "ellipse":
         drawEllipse(ctx, attrs);
         break;
-      case 'line':
+      case "line":
         drawLine(ctx, attrs);
         break;
-      case 'path':
+      case "path":
         drawPath(ctx, attrs);
         break;
-      case 'polygon':
+      case "polygon":
         drawPoints(ctx, attrs, true);
         break;
-      case 'polyline':
+      case "polyline":
         drawPoints(ctx, attrs, false);
         break;
-      case 'rect':
+      case "rect":
         drawRect(ctx, attrs);
         break;
     }
@@ -255,22 +308,36 @@ function drawLucideNode(
 }
 
 function drawPath(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs): void {
-  if (typeof attrs.d !== 'string') return;
+  if (typeof attrs.d !== "string") return;
 
   const path = new Path2D(attrs.d);
   if (hasFill(attrs)) ctx.fill(path);
   ctx.stroke(path);
 }
 
-function drawCircle(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs): void {
+function drawCircle(
+  ctx: CanvasRenderingContext2D,
+  attrs: LucideIconAttrs,
+): void {
   ctx.beginPath();
   ctx.arc(num(attrs.cx), num(attrs.cy), num(attrs.r), 0, Math.PI * 2);
   drawShape(ctx, attrs);
 }
 
-function drawEllipse(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs): void {
+function drawEllipse(
+  ctx: CanvasRenderingContext2D,
+  attrs: LucideIconAttrs,
+): void {
   ctx.beginPath();
-  ctx.ellipse(num(attrs.cx), num(attrs.cy), num(attrs.rx), num(attrs.ry), 0, 0, Math.PI * 2);
+  ctx.ellipse(
+    num(attrs.cx),
+    num(attrs.cy),
+    num(attrs.rx),
+    num(attrs.ry),
+    0,
+    0,
+    Math.PI * 2,
+  );
   drawShape(ctx, attrs);
 }
 
@@ -305,14 +372,21 @@ function drawRect(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs): void {
   drawShape(ctx, attrs);
 }
 
-function drawPoints(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs, closePath: boolean): void {
-  if (typeof attrs.points !== 'string') return;
+function drawPoints(
+  ctx: CanvasRenderingContext2D,
+  attrs: LucideIconAttrs,
+  closePath: boolean,
+): void {
+  if (typeof attrs.points !== "string") return;
 
   const points = attrs.points
     .trim()
     .split(/\s+/)
-    .map((point) => point.split(',').map(Number))
-    .filter((point): point is [number, number] => point.length === 2 && point.every(Number.isFinite));
+    .map((point) => point.split(",").map(Number))
+    .filter(
+      (point): point is [number, number] =>
+        point.length === 2 && point.every(Number.isFinite),
+    );
 
   if (points.length === 0) return;
 
@@ -325,17 +399,20 @@ function drawPoints(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs, close
   drawShape(ctx, attrs);
 }
 
-function drawShape(ctx: CanvasRenderingContext2D, attrs: LucideIconAttrs): void {
+function drawShape(
+  ctx: CanvasRenderingContext2D,
+  attrs: LucideIconAttrs,
+): void {
   if (hasFill(attrs)) ctx.fill();
   ctx.stroke();
 }
 
 function hasFill(attrs: LucideIconAttrs): boolean {
-  return typeof attrs.fill === 'string' && attrs.fill !== 'none';
+  return typeof attrs.fill === "string" && attrs.fill !== "none";
 }
 
 function num(value: string | number | undefined): number {
-  if (typeof value === 'number') return value;
+  if (typeof value === "number") return value;
   if (!value) return 0;
   return Number.parseFloat(value) || 0;
 }
@@ -351,9 +428,14 @@ function blendColors(color1: string, color2: string, t: number): string {
   return `rgba(${r},${g},${b},${a})`;
 }
 
-function parseColor(hex: string): { r: number; g: number; b: number; a: number } {
+function parseColor(hex: string): {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+} {
   // Remove # prefix
-  let h = hex.replace('#', '');
+  let h = hex.replace("#", "");
   let a = 1;
   if (h.length === 8) {
     a = parseInt(h.slice(6, 8), 16) / 255;

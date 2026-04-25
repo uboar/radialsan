@@ -1,18 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
-import { MenuAnimator, easeOutCubic } from '../animation';
+import { describe, it, expect, vi } from "vitest";
+import { MenuAnimator, easeOutCubic } from "../animation";
 
-describe('easeOutCubic', () => {
-  it('returns 0 at t=0', () => expect(easeOutCubic(0)).toBe(0));
-  it('returns 1 at t=1', () => expect(easeOutCubic(1)).toBe(1));
-  it('returns > 0.5 at t=0.5 (ease out)', () => expect(easeOutCubic(0.5)).toBeGreaterThan(0.5));
+describe("easeOutCubic", () => {
+  it("returns 0 at t=0", () => expect(easeOutCubic(0)).toBe(0));
+  it("returns 1 at t=1", () => expect(easeOutCubic(1)).toBe(1));
+  it("returns > 0.5 at t=0.5 (ease out)", () =>
+    expect(easeOutCubic(0.5)).toBeGreaterThan(0.5));
 });
 
-describe('MenuAnimator', () => {
-  it('calls onUpdate when shown', () => {
+describe("MenuAnimator", () => {
+  it("calls onUpdate when shown", () => {
     vi.useFakeTimers();
     const onUpdate = vi.fn();
     // Mock requestAnimationFrame
-    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => {
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb) => {
       setTimeout(cb, 16);
       return 0;
     });
@@ -32,7 +33,7 @@ describe('MenuAnimator', () => {
     vi.restoreAllMocks();
   });
 
-  it('isFullyClosed returns true initially', () => {
+  it("isFullyClosed returns true initially", () => {
     const animator = new MenuAnimator(() => {});
     expect(animator.isFullyClosed()).toBe(true);
     animator.destroy();

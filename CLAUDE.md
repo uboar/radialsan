@@ -14,10 +14,10 @@ Tauri v2 (Rust) + React (TypeScript) で構築。
 
 ### ウィンドウ構成
 
-| ウィンドウ | エントリポイント | 用途 |
-|---|---|---|
-| `main` | `index.html` → `src/main.tsx` | 設定・エディタUI (トレイから開く) |
-| `overlay` | `overlay.html` → `src/overlay.tsx` | ラジアルメニュー描画 (フルスクリーン透明) |
+| ウィンドウ | エントリポイント                   | 用途                                      |
+| ---------- | ---------------------------------- | ----------------------------------------- |
+| `main`     | `index.html` → `src/main.tsx`      | 設定・エディタUI (トレイから開く)         |
+| `overlay`  | `overlay.html` → `src/overlay.tsx` | ラジアルメニュー描画 (フルスクリーン透明) |
 
 ### イベントフロー
 
@@ -83,14 +83,14 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 
 ### テスト構成 (84テスト)
 
-| レイヤー | 件数 | 場所 | 内容 |
-|---|---|---|---|
-| Rust ユニット | 38 | `src-tauri/src/*.rs` (#[cfg(test)]) | 設定パース、キーマッピング、プロファイルマッチング、アクション、Lua |
-| Vitest geometry | 26 | `src/components/PieMenu/__tests__/geometry.test.ts` | 角度計算、ヒット判定、座標変換 |
-| Vitest animation | 5 | `src/components/PieMenu/__tests__/animation.test.ts` | easeOutCubic、MenuAnimator |
-| Vitest history | 7 | `src/stores/__tests__/historyStore.test.ts` | Undo/Redo スタック |
-| Vitest import | 3 | `src/utils/__tests__/autohotpieImport.test.ts` | AutoHotPie変換 |
-| Vitest sharing | 5 | `src/utils/__tests__/sharing.test.ts` | パッケージパース、ID再生成 |
+| レイヤー         | 件数 | 場所                                                 | 内容                                                                |
+| ---------------- | ---- | ---------------------------------------------------- | ------------------------------------------------------------------- |
+| Rust ユニット    | 38   | `src-tauri/src/*.rs` (#[cfg(test)])                  | 設定パース、キーマッピング、プロファイルマッチング、アクション、Lua |
+| Vitest geometry  | 26   | `src/components/PieMenu/__tests__/geometry.test.ts`  | 角度計算、ヒット判定、座標変換                                      |
+| Vitest animation | 5    | `src/components/PieMenu/__tests__/animation.test.ts` | easeOutCubic、MenuAnimator                                          |
+| Vitest history   | 7    | `src/stores/__tests__/historyStore.test.ts`          | Undo/Redo スタック                                                  |
+| Vitest import    | 3    | `src/utils/__tests__/autohotpieImport.test.ts`       | AutoHotPie変換                                                      |
+| Vitest sharing   | 5    | `src/utils/__tests__/sharing.test.ts`                | パッケージパース、ID再生成                                          |
 
 ### テスト方針
 
@@ -102,6 +102,7 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 ### テスト追加のパターン
 
 **Rust アクション追加時**:
+
 ```rust
 // actions.rs の dispatch に追加
 "newAction" => execute_new_action(params),
@@ -112,6 +113,7 @@ fn test_execute_new_action_missing_params() { ... }
 ```
 
 **フロントエンド ユーティリティ追加時**:
+
 ```
 src/utils/newUtil.ts
 src/utils/__tests__/newUtil.test.ts
@@ -122,6 +124,7 @@ src/utils/__tests__/newUtil.test.ts
 ### CI (`ci.yml`) — main ブランチ push / PR
 
 3OS マトリクス (ubuntu-22.04, macos-latest, windows-latest):
+
 1. npm ci
 2. npx tsc --noEmit
 3. npx vitest run
@@ -132,6 +135,7 @@ src/utils/__tests__/newUtil.test.ts
 ### Release (`release.yml`) — `v*` タグ push
 
 `tauri-apps/tauri-action` で自動ビルド:
+
 - Windows x64: `.msi` + `.exe`
 - macOS ARM: `.dmg` + `.app.tar.gz`
 - macOS Intel: `.dmg` (macos-latest + x86_64 target)
@@ -206,11 +210,11 @@ git push origin main --tags
 
 ### 依存クレートのバージョン
 
-| クレート | 用途 | 注意 |
-|---|---|---|
-| tauri 2 | フレームワーク | features: tray-icon, devtools, image-png |
-| rdev 0.5 | 入力キャプチャ | macOS: Accessibility 権限必要 |
-| enigo 0.2 | 入力シミュレーション | Keyboard / Mouse trait を use する |
-| x-win 4 | ウィンドウ検出 | macOS: Screen Recording 権限 (タイトル取得時) |
-| mlua 0.10 | Lua | features: lua54, vendored |
-| auto-launch 0.5 | 自動起動 | macOS API が他 OS と異なる |
+| クレート        | 用途                 | 注意                                          |
+| --------------- | -------------------- | --------------------------------------------- |
+| tauri 2         | フレームワーク       | features: tray-icon, devtools, image-png      |
+| rdev 0.5        | 入力キャプチャ       | macOS: Accessibility 権限必要                 |
+| enigo 0.2       | 入力シミュレーション | Keyboard / Mouse trait を use する            |
+| x-win 4         | ウィンドウ検出       | macOS: Screen Recording 権限 (タイトル取得時) |
+| mlua 0.10       | Lua                  | features: lua54, vendored                     |
+| auto-launch 0.5 | 自動起動             | macOS API が他 OS と異なる                    |

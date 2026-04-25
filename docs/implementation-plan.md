@@ -9,6 +9,7 @@
 - [x] Vite マルチページ設定、Vitest セットアップ
 
 ### Step 2: 設定データモデル ✅
+
 - [x] Rust: Settings/Profile/Menu/Slice/Action 構造体 (serde, camelCase)
 - [x] Default実装 (4スライス: Copy/Paste/Undo/Redo, CapsLockホットキー)
 - [x] JSON読み書き + プロファイルマッチング (contains/exact/regex)
@@ -16,6 +17,7 @@
 - [x] 6ユニットテスト
 
 ### Step 3: グローバル入力リスナー ✅
+
 - [x] rdev::listen 専用スレッド (KeyPress/KeyRelease/MouseMove)
 - [x] ホットキー文字列パーサ (A-Z, 0-9, F1-F12, CapsLock, Mouse4/5, 修飾キー組み合わせ)
 - [x] クイックタップ判定、修飾キー状態追跡
@@ -23,6 +25,7 @@
 - [x] 8ユニットテスト
 
 ### Step 4: Canvas ラジアルメニュー描画 ✅
+
 - [x] geometry.ts: angleFromCenter, getSliceAtPoint, polarToCartesian 等
 - [x] PieMenuRenderer.ts: Canvas描画クラス (スライス, ラベル, ホバーハイライト)
 - [x] PieMenu.tsx: Tauriイベント連携 React コンポーネント
@@ -30,17 +33,20 @@
 - [x] 26 Vitestユニットテスト
 
 ### Step 5: アクション実行エンジン ✅
+
 - [x] actions.rs: execute_action ディスパッチャ (sendKey, openUrl, runCommand, clipboard, delay等)
 - [x] キー文字列パーサ + enigo連携
 - [x] commands.rs: Tauri IPCコマンド (execute_slice_actions, get_default_settings)
 - [x] 11ユニットテスト
 
 ### Step 6: システムトレイ & ウィンドウ管理 ✅
+
 - [x] tray.rs: トレイアイコン + メニュー (Open Settings / Quit)
 - [x] lib.rs: 全コンポーネント統合 (設定, 入力リスナー, イベントブリッジ, トレイ)
 - [x] mainウィンドウ閉じる→非表示、overlayのカーソルイベント制御
 
 ### Step 7: Phase 1 統合 ✅
+
 - [x] cargo test 25/25, vitest 26/26, tsc OK, cargo build OK
 - [x] デフォルトメニュー (Copy/Paste/Undo/Redo) でエンドツーエンド統合
 
@@ -53,6 +59,7 @@
 **目的**: メインウィンドウに設定UIのフレームワークを構築する
 
 **作業内容**:
+
 - [ ] 依存追加: `react-router-dom`, `zustand`, `tailwindcss`, `@radix-ui/react-*` (shadcn/ui互換)
 - [ ] Tailwind CSS セットアップ (postcss, tailwind.config)
 - [ ] React Router でページ構成:
@@ -67,6 +74,7 @@
 - [ ] Tauri capabilities に `fs` パーミッション追加
 
 **新規ファイル**:
+
 ```
 src/
   stores/
@@ -90,6 +98,7 @@ src/
 **目的**: GUIでラジアルメニューを作成・編集できるビジュアルエディタを実装する
 
 **作業内容**:
+
 - [ ] メニュー一覧ページ (Dashboard.tsx)
   - カード形式でメニュー表示（名前、スライス数、プレビュー）
   - 「新規メニュー作成」ボタン → ID自動生成、デフォルト設定で作成
@@ -121,6 +130,7 @@ src/
 - [ ] 設定変更の自動保存 (debounce 500ms)
 
 **新規ファイル**:
+
 ```
 src/
   pages/
@@ -141,6 +151,7 @@ src/
 **目的**: アクティブウィンドウに応じてメニューを自動切替するプロファイルシステム
 
 **Rust 側**:
+
 - [ ] `x-win` クレート追加 (Cargo.toml)
 - [ ] `profiles.rs`: アクティブウィンドウ監視モジュール
   - 500ms間隔ポーリングでフォアグラウンドウィンドウのタイトル+プロセス名取得
@@ -150,6 +161,7 @@ src/
 - [ ] `lib.rs` に profiles ポーリングスレッドを追加
 
 **React UI 側**:
+
 - [ ] プロファイル管理ページ (Profiles.tsx)
   - プロファイル一覧（名前、マッチルール、バインドされたホットキー）
   - プロファイル作成/編集/削除
@@ -162,6 +174,7 @@ src/
 - [ ] デフォルトプロファイルは削除不可、マッチルール編集不可
 
 **新規ファイル**:
+
 ```
 src-tauri/src/profiles.rs
 src/
@@ -181,6 +194,7 @@ src/
 **目的**: スライス選択で別のラジアルメニューを展開する階層メニュー
 
 **Canvas 側**:
+
 - [ ] PieMenu.tsx: サブメニュー遷移ロジック
   - submenuアクション持ちスライスにホバー + 外径超え → 子メニュー展開
   - メニュースタック管理 (親メニュー情報を保持)
@@ -189,6 +203,7 @@ src/
 - [ ] PieMenuRenderer: サブメニューインジケータ描画（▶マーク）
 
 **エディタ側**:
+
 - [ ] ActionEditor: submenu型選択時にメニューIDドロップダウン
 - [ ] 循環参照チェック（A→B→A を禁止）
 
@@ -210,23 +225,27 @@ src/
 ## Phase 3: 品質向上 ✅ COMPLETED
 
 ### Step 13: アニメーション & UX ✅
+
 - [x] MenuAnimator (requestAnimationFrame, easeOutCubic)
 - [x] メニュー開閉スケールアニメーション + ホバー色ブレンド遷移
 - [x] HiDPI Canvas (devicePixelRatio)
 - [x] 5 animation テスト
 
 ### Step 14: アイコンシステム ✅
+
 - [x] lucide-react (90+アイコン) 統合
 - [x] IconPicker (emoji/Lucideモード, 検索, グリッド)
 - [x] PieMenuRenderer: Lucideアイコンプレースホルダー描画
 
 ### Step 15: エディタ拡張 ✅
+
 - [x] Undo/Redo (Zustand historyStore, 50スナップショット, Ctrl+Z/Ctrl+Shift+Z)
 - [x] メニューJSON export (.radialsan.json) / import
 - [x] AutoHotPie設定インポート (AHKキー変換, プロファイル/メニュー変換)
 - [x] 10テスト (history 7 + autohotpie 3)
 
 ### Step 16: システム連携 ✅
+
 - [x] auto-launch クレートでOS起動時自動起動
 - [x] 設定保存時の自動バックアップ (max 10)
 - [x] GlobalSettings: スライダー/トグル操作UI
@@ -236,19 +255,22 @@ src/
 ## Phase 4: 拡張性 ✅ COMPLETED
 
 ### Step 17: Lua スクリプティング ✅
+
 - [x] mlua (Lua 5.4 vendored) 組み込み
-- [x] radialsan.* API (send_key, send_text, delay, open_url, open_file, run_command, mouse_click, clipboard, log)
+- [x] radialsan.\* API (send_key, send_text, delay, open_url, open_file, run_command, mouse_click, clipboard, log)
 - [x] runLuaアクション (インラインスクリプト or ファイルパス)
 - [x] ActionEditorにスクリプトエディタUI
 - [x] 7ユニットテスト
 
 ### Step 18: 共有 & コミュニティ ✅
+
 - [x] .radialsan.json パッケージ形式 (menu/profile/bundle)
 - [x] Export/Import (ID再生成, サブメニュー参照リマップ)
 - [x] プロファイルCRUD UI (作成/編集/削除)
 - [x] 5 sharing テスト
 
 ### Step 19: i18n ✅
+
 - [x] react-i18next 導入
 - [x] 英語/日本語翻訳ファイル
 - [x] 全ページ・コンポーネントのi18n化
@@ -258,17 +280,17 @@ src/
 
 ## 技術選定まとめ
 
-| カテゴリ | 選定 | 理由 |
-|---|---|---|
-| フレームワーク | Tauri v2 | 軽量、Rust バックエンド、マルチプラットフォーム |
-| フロントエンド | React + TypeScript | エコシステム充実、型安全 |
-| ビルド | Vite | 高速 HMR、Tauri 公式サポート |
-| テスト (JS) | Vitest + React Testing Library | Vite ネイティブ、高速 |
-| テスト (Rust) | `cargo test` | 標準ツールチェイン |
-| E2E | Playwright + Tauri driver | クロスプラットフォーム E2E |
-| UI コンポーネント | shadcn/ui (候補) | カスタマイズ性、Tailwind CSS ベース |
-| 状態管理 | Zustand (候補) | 軽量、React 向け |
-| 入力リスニング | rdev | press/release 対応、3OS 対応 |
-| 入力シミュレーション | enigo v0.2+ | 3OS 対応、統一 API |
-| ウィンドウ検出 | x-win | 3OS 対応、Wayland 部分対応 |
-| CI/CD | GitHub Actions | 3OS マトリクスビルド |
+| カテゴリ             | 選定                           | 理由                                            |
+| -------------------- | ------------------------------ | ----------------------------------------------- |
+| フレームワーク       | Tauri v2                       | 軽量、Rust バックエンド、マルチプラットフォーム |
+| フロントエンド       | React + TypeScript             | エコシステム充実、型安全                        |
+| ビルド               | Vite                           | 高速 HMR、Tauri 公式サポート                    |
+| テスト (JS)          | Vitest + React Testing Library | Vite ネイティブ、高速                           |
+| テスト (Rust)        | `cargo test`                   | 標準ツールチェイン                              |
+| E2E                  | Playwright + Tauri driver      | クロスプラットフォーム E2E                      |
+| UI コンポーネント    | shadcn/ui (候補)               | カスタマイズ性、Tailwind CSS ベース             |
+| 状態管理             | Zustand (候補)                 | 軽量、React 向け                                |
+| 入力リスニング       | rdev                           | press/release 対応、3OS 対応                    |
+| 入力シミュレーション | enigo v0.2+                    | 3OS 対応、統一 API                              |
+| ウィンドウ検出       | x-win                          | 3OS 対応、Wayland 部分対応                      |
+| CI/CD                | GitHub Actions                 | 3OS マトリクスビルド                            |

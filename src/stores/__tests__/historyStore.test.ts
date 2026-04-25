@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useHistoryStore } from '../historyStore';
+import { describe, it, expect, beforeEach } from "vitest";
+import { useHistoryStore } from "../historyStore";
 
 const mockSettings = (version: number) => ({
   version,
@@ -8,29 +8,29 @@ const mockSettings = (version: number) => ({
   menus: [],
 });
 
-describe('historyStore', () => {
+describe("historyStore", () => {
   beforeEach(() => {
     useHistoryStore.getState().clear();
   });
 
-  it('pushSnapshot adds to undo stack', () => {
+  it("pushSnapshot adds to undo stack", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
     expect(useHistoryStore.getState().undoStack.length).toBe(2);
   });
 
-  it('undo restores previous state', () => {
+  it("undo restores previous state", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
     const restored = useHistoryStore.getState().undo();
     expect(restored?.version).toBe(1);
   });
 
-  it('undo returns null when no history', () => {
+  it("undo returns null when no history", () => {
     expect(useHistoryStore.getState().undo()).toBeNull();
   });
 
-  it('redo restores after undo', () => {
+  it("redo restores after undo", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
     useHistoryStore.getState().undo();
@@ -38,7 +38,7 @@ describe('historyStore', () => {
     expect(restored?.version).toBe(2);
   });
 
-  it('canUndo/canRedo return correct values', () => {
+  it("canUndo/canRedo return correct values", () => {
     expect(useHistoryStore.getState().canUndo()).toBe(false);
     expect(useHistoryStore.getState().canRedo()).toBe(false);
 
@@ -51,7 +51,7 @@ describe('historyStore', () => {
     expect(useHistoryStore.getState().canRedo()).toBe(true);
   });
 
-  it('new snapshot clears redo stack', () => {
+  it("new snapshot clears redo stack", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
     useHistoryStore.getState().undo();
@@ -61,7 +61,7 @@ describe('historyStore', () => {
     expect(useHistoryStore.getState().canRedo()).toBe(false);
   });
 
-  it('clear resets all stacks', () => {
+  it("clear resets all stacks", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
     useHistoryStore.getState().clear();
