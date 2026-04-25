@@ -73,7 +73,7 @@
 </script>
 
 <div class="space-y-3">
-  <div>
+  <div class="min-w-0">
     <label class="block text-xs text-theme-text-secondary mb-1" for="action-type">{$t('editor.actionType')}</label>
     <select
       id="action-type"
@@ -92,7 +92,7 @@
     <div class="space-y-2">
       <div>
         <label class="block text-xs text-theme-text-secondary mb-1" for="send-key-key">{$t('actions.keys')}</label>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex min-w-0 flex-wrap items-center gap-2">
           <select
             id="send-key-key"
             value={sendKeyCombo.key}
@@ -109,7 +109,7 @@
             type="button"
             on:click={handleRecordSendKey}
             disabled={recordingSendKey}
-            class={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            class={`rounded-lg px-3 py-2 text-sm font-medium leading-none transition-colors ${
               recordingSendKey
                 ? 'bg-red-600/20 text-red-400 border border-red-600/50 animate-pulse'
                 : 'bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 text-theme-text-primary border border-theme-border'
@@ -118,16 +118,16 @@
             {recordingSendKey ? $t('actions.recording') : $t('actions.recordKey')}
           </button>
 
-          <span class="px-3 py-2 bg-theme-bg-tertiary border border-theme-border rounded-lg text-sm text-theme-text-primary font-mono">
+          <span class="rounded-lg border border-theme-border bg-theme-bg-tertiary px-3 py-2 font-mono text-sm leading-none text-theme-text-primary">
             {(params.keys as string) || '-'}
           </span>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-theme-text-secondary mr-1">{$t('actions.keyModifiers')}:</span>
+        <span class="mr-1 shrink-0 text-xs text-theme-text-secondary">{$t('actions.keyModifiers')}:</span>
         {#each MODIFIER_NAMES as modifier}
-          <label class="flex items-center gap-1 text-xs cursor-pointer">
+          <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs">
             <input
               type="checkbox"
               checked={sendKeyCombo.modifiers.includes(modifier)}
@@ -142,7 +142,7 @@
   {/if}
 
   {#if action.type === 'sendText'}
-    <div>
+    <div class="min-w-0">
       <label class="block text-xs text-theme-text-secondary mb-1" for="send-text-value">{$t('actions.text')}</label>
       <input
         id="send-text-value"
@@ -262,7 +262,7 @@
   {/if}
 
   {#if action.type === 'clipboard'}
-    <div>
+    <div class="min-w-0">
       <label class="block text-xs text-theme-text-secondary mb-1" for="clipboard-operation">{$t('actions.clipboardOperation')}</label>
       <select
         id="clipboard-operation"
@@ -278,7 +278,7 @@
   {/if}
 
   {#if action.type === 'mediaControl'}
-    <div>
+    <div class="min-w-0">
       <label class="block text-xs text-theme-text-secondary mb-1" for="media-action">{$t('actions.mediaAction')}</label>
       <select
         id="media-action"

@@ -79,38 +79,38 @@
 {#if !$settingsStore.settings}
   <div class="text-theme-text-muted">{$t('common.loading')}</div>
 {:else}
-  <div>
-    <h2 class="text-2xl font-bold mb-6">{$t('settings.title')}</h2>
-    <div class="space-y-6 max-w-lg">
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+  <div class="space-y-6">
+    <h2 class="text-2xl font-bold leading-tight">{$t('settings.title')}</h2>
+    <div class="grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4">
         <h3 class="font-semibold mb-3">{$t('settings.general')}</h3>
-        <div class="flex items-center justify-between py-2">
-          <span class="text-sm">{$t('settings.launchAtStartup')}</span>
+        <div class="flex items-center justify-between gap-4 py-2">
+          <span class="min-w-0 text-sm leading-5">{$t('settings.launchAtStartup')}</span>
           <button
             type="button"
             aria-label={$t('settings.launchAtStartup')}
             onclick={handleAutoLaunchToggle}
-            class={`w-10 h-5 rounded-full transition-colors ${autoLaunch ? 'bg-blue-600' : 'bg-theme-bg-tertiary'}`}
+            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${autoLaunch ? 'bg-blue-600' : 'bg-theme-bg-tertiary'}`}
           >
             <div class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${autoLaunch ? 'translate-x-5' : ''}`}></div>
           </button>
         </div>
-        <div class="flex items-center justify-between py-2">
-          <span class="text-sm">{$t('settings.showTrayIcon')}</span>
-          <div class="w-10 h-5 rounded-full bg-blue-600">
+        <div class="flex items-center justify-between gap-4 py-2">
+          <span class="min-w-0 text-sm leading-5">{$t('settings.showTrayIcon')}</span>
+          <div class="h-5 w-10 shrink-0 rounded-full bg-blue-600">
             <div class="w-4 h-4 bg-white rounded-full translate-x-5 mx-0.5"></div>
           </div>
         </div>
       </div>
 
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4">
         <h3 class="font-semibold mb-3">{$t('settings.theme')}</h3>
-        <div class="flex gap-2">
+        <div class="grid grid-cols-3 gap-2">
           {#each themeOptions as option (option.value)}
             <button
               type="button"
               onclick={() => handleThemeChange(option.value)}
-              class={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
                 $settingsStore.settings.global.theme === option.value
                   ? 'bg-blue-600 text-white'
                   : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
@@ -122,18 +122,18 @@
         </div>
       </div>
 
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4 lg:col-span-2">
         <h3 class="font-semibold mb-3">{$t('settings.activation')}</h3>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between py-2">
-            <span class="text-sm">{$t('settings.suppressTriggerKeyInput')}</span>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="flex items-center justify-between gap-4 py-2 lg:col-span-3">
+            <span class="min-w-0 text-sm leading-5">{$t('settings.suppressTriggerKeyInput')}</span>
             <button
               type="button"
               role="switch"
               aria-checked={$settingsStore.settings.global.menuActivation.suppressTriggerKeyInput}
               aria-label={$t('settings.suppressTriggerKeyInput')}
               onclick={handleSuppressTriggerKeyInputToggle}
-              class={`w-10 h-5 rounded-full transition-colors ${
+              class={`h-5 w-10 shrink-0 rounded-full transition-colors ${
                 $settingsStore.settings.global.menuActivation.suppressTriggerKeyInput
                   ? 'bg-blue-600'
                   : 'bg-theme-bg-tertiary'
@@ -146,9 +146,10 @@
               ></div>
             </button>
           </div>
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="quick-tap-threshold">
-              {$t('settings.quickTapThreshold')}: {$settingsStore.settings.global.menuActivation.quickTapThresholdMs}ms
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="quick-tap-threshold">
+              <span class="truncate">{$t('settings.quickTapThreshold')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.menuActivation.quickTapThresholdMs}ms</span>
             </label>
             <input
               id="quick-tap-threshold"
@@ -161,9 +162,10 @@
               class="w-full accent-blue-600"
             />
           </div>
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="submenu-hover-delay">
-              {$t('settings.submenuHoverDelay')}: {$settingsStore.settings.global.menuActivation.submenuHoverDelayMs}ms
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="submenu-hover-delay">
+              <span class="truncate">{$t('settings.submenuHoverDelay')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.menuActivation.submenuHoverDelayMs}ms</span>
             </label>
             <input
               id="submenu-hover-delay"
@@ -176,9 +178,10 @@
               class="w-full accent-blue-600"
             />
           </div>
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="max-submenu-depth">
-              {$t('settings.maxSubmenuDepth')}: {$settingsStore.settings.global.menuActivation.maxSubmenuDepth}
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="max-submenu-depth">
+              <span class="truncate">{$t('settings.maxSubmenuDepth')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.menuActivation.maxSubmenuDepth}</span>
             </label>
             <input
               id="max-submenu-depth"
@@ -193,12 +196,13 @@
         </div>
       </div>
 
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4 lg:col-span-2">
         <h3 class="font-semibold mb-3">{$t('settings.defaultAppearance')}</h3>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="default-inner-radius">
-              {$t('settings.innerRadius')}: {$settingsStore.settings.global.appearance.innerRadius}px
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="default-inner-radius">
+              <span class="truncate">{$t('settings.innerRadius')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.appearance.innerRadius}px</span>
             </label>
             <input
               id="default-inner-radius"
@@ -210,9 +214,10 @@
               class="w-full accent-blue-600"
             />
           </div>
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="default-outer-radius">
-              {$t('settings.outerRadius')}: {$settingsStore.settings.global.appearance.outerRadius}px
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="default-outer-radius">
+              <span class="truncate">{$t('settings.outerRadius')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.appearance.outerRadius}px</span>
             </label>
             <input
               id="default-outer-radius"
@@ -224,9 +229,10 @@
               class="w-full accent-blue-600"
             />
           </div>
-          <div>
-            <label class="block text-sm text-theme-text-secondary mb-1" for="default-opacity">
-              {$t('settings.opacity')}: {$settingsStore.settings.global.appearance.opacity}
+          <div class="min-w-0">
+            <label class="mb-2 flex items-center justify-between gap-3 text-sm text-theme-text-secondary" for="default-opacity">
+              <span class="truncate">{$t('settings.opacity')}</span>
+              <span class="shrink-0 font-mono text-xs text-theme-text-primary">{$settingsStore.settings.global.appearance.opacity}</span>
             </label>
             <input
               id="default-opacity"
@@ -242,13 +248,13 @@
         </div>
       </div>
 
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4">
         <h3 class="font-semibold mb-3">{$t('settings.language')}</h3>
-        <div class="flex gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <button
             type="button"
             onclick={() => handleLanguageChange('en')}
-            class={`px-4 py-2 rounded-lg text-sm transition-colors ${
+            class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
               $language === 'en' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
             }`}
           >
@@ -257,7 +263,7 @@
           <button
             type="button"
             onclick={() => handleLanguageChange('ja')}
-            class={`px-4 py-2 rounded-lg text-sm transition-colors ${
+            class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
               $language === 'ja' ? 'bg-blue-600 text-white' : 'bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary'
             }`}
           >
@@ -266,11 +272,11 @@
         </div>
       </div>
 
-      <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+      <div class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4">
         <h3 class="font-semibold mb-3">{$t('settings.about')}</h3>
-        <p class="text-sm text-theme-text-secondary">radialsan {$t('settings.version')}</p>
-        <p class="text-sm text-theme-text-muted mt-1">{$t('settings.description')}</p>
-        <p class="text-sm text-theme-text-muted">{$t('settings.autoBackupNote')}</p>
+        <p class="text-sm leading-5 text-theme-text-secondary">radialsan {$t('settings.version')}</p>
+        <p class="mt-1 text-sm leading-5 text-theme-text-muted">{$t('settings.description')}</p>
+        <p class="text-sm leading-5 text-theme-text-muted">{$t('settings.autoBackupNote')}</p>
       </div>
     </div>
   </div>

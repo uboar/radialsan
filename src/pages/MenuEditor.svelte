@@ -147,12 +147,12 @@
 {#if !settings || !menu || !appearance}
   <div class="text-theme-text-secondary">{$t('editor.menuNotFound')}</div>
 {:else}
-  <div class="flex flex-col h-full">
-    <div class="flex items-center gap-4 mb-6">
+  <div class="flex min-h-[calc(100vh-3rem)] flex-col">
+    <div class="mb-6 flex flex-wrap items-center gap-3">
       <button
         type="button"
         on:click={() => navigate('/')}
-        class="text-theme-text-secondary hover:text-theme-text-primary text-sm"
+        class="shrink-0 text-sm text-theme-text-secondary hover:text-theme-text-primary"
       >
         {$t('editor.back')}
       </button>
@@ -160,14 +160,14 @@
         type="text"
         value={menu.name}
         on:input={(event) => handleMenuNameChange(event.currentTarget.value)}
-        class="text-2xl font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1"
+        class="min-w-48 flex-1 truncate rounded border-none bg-transparent px-1 text-2xl font-bold leading-tight outline-none focus:ring-1 focus:ring-blue-500"
       />
-      <div class="flex items-center gap-1 ml-2">
+      <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
           on:click={handleUndo}
           disabled={!canUndoValue}
-          class="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
+          class="rounded bg-theme-bg-tertiary px-2 py-1 text-sm hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-30"
           title={$t('editor.undoTitle')}
         >
           ↶
@@ -176,7 +176,7 @@
           type="button"
           on:click={handleRedo}
           disabled={!canRedoValue}
-          class="px-2 py-1 text-sm rounded bg-theme-bg-tertiary disabled:opacity-30 hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed"
+          class="rounded bg-theme-bg-tertiary px-2 py-1 text-sm hover:bg-theme-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-30"
           title={$t('editor.redoTitle')}
         >
           ↷
@@ -185,14 +185,14 @@
       <button
         type="button"
         on:click={handleDeleteMenu}
-        class="ml-auto text-sm text-theme-text-muted hover:text-red-400 transition-colors"
+        class="ml-auto shrink-0 text-sm text-theme-text-muted transition-colors hover:text-red-400"
       >
         {$t('editor.deleteMenu')}
       </button>
     </div>
 
-    <div class="flex gap-6 flex-1 min-h-0">
-      <div class="w-1/2 flex flex-col gap-4">
+    <div class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[minmax(22rem,0.95fr)_minmax(24rem,1.05fr)]">
+      <div class="min-w-0">
         <MenuPreview
           slices={menu.slices}
           selectedIndex={selectedIndex >= 0 ? selectedIndex : null}
@@ -200,14 +200,14 @@
         />
       </div>
 
-      <div class="w-1/2 flex flex-col gap-4 overflow-auto">
-        <div class="flex gap-1 bg-theme-bg-secondary rounded-lg p-1">
+      <div class="min-w-0 overflow-auto">
+        <div class="mb-4 flex gap-1 rounded-lg bg-theme-bg-secondary p-1">
           <button
             type="button"
             on:click={() => {
               activeTab = 'slices';
             }}
-            class="flex-1 text-sm py-1.5 rounded-md transition-colors {activeTab === 'slices'
+            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab === 'slices'
               ? 'bg-theme-bg-tertiary text-theme-text-primary'
               : 'text-theme-text-secondary hover:text-theme-text-primary'}"
           >
@@ -218,7 +218,7 @@
             on:click={() => {
               activeTab = 'appearance';
             }}
-            class="flex-1 text-sm py-1.5 rounded-md transition-colors {activeTab === 'appearance'
+            class="flex-1 rounded-md py-1.5 text-sm leading-none transition-colors {activeTab === 'appearance'
               ? 'bg-theme-bg-tertiary text-theme-text-primary'
               : 'text-theme-text-secondary hover:text-theme-text-primary'}"
           >

@@ -187,19 +187,19 @@
 {#if !$settingsStore.settings}
   <div class="text-theme-text-secondary">{$t('common.loading')}</div>
 {:else}
-  <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold">{$t('profiles.title')}</h2>
-      <div class="flex items-center gap-2">
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h2 class="shrink-0 text-2xl font-bold leading-tight">{$t('profiles.title')}</h2>
+      <div class="flex flex-wrap items-center justify-end gap-2">
         <button
           onclick={handleImportProfile}
-          class="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
           {$t('profiles.importProfile')}
         </button>
         <button
           onclick={handleNewProfile}
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium leading-none text-white transition-colors hover:bg-blue-500"
         >
           {$t('profiles.newProfile')}
         </button>
@@ -208,7 +208,7 @@
 
     <div class="space-y-3">
       {#each $settingsStore.settings.profiles as profile (profile.id)}
-        <div class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+        <div class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4">
           {#if editingId === profile.id}
             <div class="space-y-3">
               <div>
@@ -222,9 +222,9 @@
               </div>
 
               <div>
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs text-theme-text-secondary">{$t('profiles.matchRules')}</span>
-                  <div class="flex items-center gap-3">
+                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span class="shrink-0 text-xs text-theme-text-secondary">{$t('profiles.matchRules')}</span>
+                  <div class="flex flex-wrap items-center justify-end gap-3">
                     <button
                       type="button"
                       onclick={loadWindowCandidates}
@@ -246,11 +246,11 @@
                 {/if}
                 {#each editRules as rule, index}
                   {@const candidateValues = getRuleCandidateValues(rule.field)}
-                  <div class="grid grid-cols-1 md:grid-cols-[minmax(8rem,auto)_minmax(7rem,auto)_minmax(10rem,1fr)_minmax(10rem,1fr)_auto] items-center gap-2 mb-2">
+                  <div class="mb-2 grid grid-cols-1 items-center gap-2 xl:grid-cols-[9rem_8rem_minmax(10rem,1fr)_minmax(10rem,1fr)_auto]">
                     <select
                       value={rule.field}
                       onchange={(event) => handleUpdateRule(index, { field: event.currentTarget.value as MatchRule['field'] })}
-                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                     >
                       <option value="processName">{$t('profiles.processName')}</option>
                       <option value="windowTitle">{$t('profiles.windowTitle')}</option>
@@ -258,7 +258,7 @@
                     <select
                       value={rule.matchMode}
                       onchange={(event) => handleUpdateRule(index, { matchMode: event.currentTarget.value as MatchRule['matchMode'] })}
-                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                     >
                       <option value="contains">{$t('profiles.contains')}</option>
                       <option value="exact">{$t('profiles.exact')}</option>
@@ -269,7 +269,7 @@
                       value={rule.value}
                       oninput={(event) => handleUpdateRule(index, { value: event.currentTarget.value })}
                       placeholder={$t('profiles.valuePlaceholder')}
-                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                     />
                     <select
                       value={candidateValues.includes(rule.value) ? rule.value : ''}
@@ -279,7 +279,7 @@
                         }
                       }}
                       disabled={candidateValues.length === 0}
-                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
                     >
                       <option value="">{$t('profiles.selectFromRunning')}</option>
                       {#each candidateValues as value}
@@ -288,7 +288,7 @@
                     </select>
                     <button
                       onclick={() => handleRemoveRule(index)}
-                      class="text-theme-text-muted hover:text-red-400 text-xs"
+                      class="justify-self-start text-xs text-theme-text-muted hover:text-red-400 xl:justify-self-end"
                     >
                       {$t('profiles.removeHotkey')}
                     </button>
@@ -297,8 +297,8 @@
               </div>
 
               <div>
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs text-theme-text-secondary">{$t('profiles.hotkeys')}</span>
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <span class="shrink-0 text-xs text-theme-text-secondary">{$t('profiles.hotkeys')}</span>
                   <button type="button" onclick={handleAddPieKey} class="text-xs text-blue-400 hover:text-blue-300">
                     {$t('profiles.addHotkey')}
                   </button>
@@ -309,12 +309,12 @@
                 <div class="space-y-2">
                   {#each editPieKeys as pieKey (pieKey.id)}
                     {@const parsed = parseHotkeyString(pieKey.hotkey)}
-                    <div class="flex flex-col gap-2 p-3 bg-theme-bg-tertiary rounded-lg border border-theme-border">
-                      <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-xs text-theme-text-secondary mr-1">{$t('profiles.hotkeyModifiers')}:</span>
+                    <div class="flex min-w-0 flex-col gap-2 rounded-lg border border-theme-border bg-theme-bg-tertiary p-3">
+                      <div class="flex min-w-0 items-center gap-2">
+                        <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                          <span class="mr-1 shrink-0 text-xs text-theme-text-secondary">{$t('profiles.hotkeyModifiers')}:</span>
                           {#each MODIFIER_NAMES as modifier}
-                            <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs">
                               <input
                                 type="checkbox"
                                 checked={parsed.modifiers.includes(modifier)}
@@ -327,9 +327,9 @@
                         </div>
                       </div>
 
-                      <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-xs text-theme-text-secondary">{$t('profiles.hotkeyKey')}:</span>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex min-w-0 items-center gap-1.5">
+                          <span class="shrink-0 text-xs text-theme-text-secondary">{$t('profiles.hotkeyKey')}:</span>
                           <select
                             value={parsed.key}
                             onchange={(event) => handleKeyChange(pieKey, event.currentTarget.value)}
@@ -345,7 +345,7 @@
                         <button
                           onclick={() => handleRecordKey(pieKey)}
                           disabled={recordingPieKeyId === pieKey.id}
-                          class={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                          class={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                             recordingPieKeyId === pieKey.id
                               ? 'bg-red-600/20 text-red-400 border border-red-600/50 animate-pulse'
                               : 'bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 text-theme-text-primary border border-theme-border'
@@ -354,18 +354,18 @@
                           {recordingPieKeyId === pieKey.id ? $t('profiles.recording') : $t('profiles.recordKey')}
                         </button>
 
-                        <span class="px-2 py-1 bg-theme-bg-secondary border border-theme-border rounded text-xs text-theme-text-primary font-mono">
+                        <span class="rounded border border-theme-border bg-theme-bg-secondary px-2 py-1 font-mono text-xs text-theme-text-primary">
                           {pieKey.hotkey}
                         </span>
                       </div>
 
-                      <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1.5 flex-1">
-                          <span class="text-xs text-theme-text-secondary">{$t('profiles.hotkeyMenu')}:</span>
+                      <div class="flex min-w-0 flex-wrap items-center gap-2">
+                        <div class="flex min-w-48 flex-1 items-center gap-1.5">
+                          <span class="shrink-0 text-xs text-theme-text-secondary">{$t('profiles.hotkeyMenu')}:</span>
                           <select
                             value={pieKey.menuId}
                             onchange={(event) => handleUpdatePieKey(pieKey.id, { menuId: event.currentTarget.value })}
-                            class="flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 text-theme-text-primary"
+                            class="min-w-0 flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 text-theme-text-primary"
                           >
                             <option value="" disabled>{$t('profiles.selectMenu')}</option>
                             {#each $settingsStore.settings.menus as menu (menu.id)}
@@ -402,14 +402,14 @@
               </div>
             </div>
           {:else}
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold">{profile.name}</h3>
+            <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-2">
+                <h3 class="min-w-0 truncate font-semibold">{profile.name}</h3>
                 {#if profile.isDefault}
-                  <span class="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded">{$t('profiles.default')}</span>
+                  <span class="shrink-0 rounded bg-blue-600/20 px-2 py-0.5 text-xs text-blue-400">{$t('profiles.default')}</span>
                 {/if}
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex shrink-0 items-center gap-2">
                 <button
                   onclick={() => handleExportProfile(profile)}
                   class="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors"
@@ -433,7 +433,7 @@
                 {/if}
               </div>
             </div>
-            <p class="text-sm text-theme-text-secondary mt-1">
+            <p class="mt-1 truncate text-sm text-theme-text-secondary">
               {profile.matchRules.length === 0
                 ? $t('profiles.matchesAll')
                 : profile.matchRules.map((rule) => `${getMatchFieldLabel(rule.field)} ${getMatchModeLabel(rule.matchMode)} "${rule.value}"`).join(', ')}
@@ -447,10 +447,10 @@
                 <div class="flex flex-wrap gap-1.5">
                   {#each profile.pieKeys as pieKey (pieKey.id)}
                     {@const menuName = $settingsStore.settings.menus.find((menu) => menu.id === pieKey.menuId)?.name ?? pieKey.menuId}
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-theme-bg-tertiary border border-theme-border rounded text-xs">
+                    <span class="inline-flex max-w-full items-center gap-1 rounded border border-theme-border bg-theme-bg-tertiary px-2 py-0.5 text-xs">
                       <span class="font-mono text-blue-400">{pieKey.hotkey}</span>
                       <span class="text-theme-text-muted">→</span>
-                      <span class="text-theme-text-primary">{menuName}</span>
+                      <span class="min-w-0 truncate text-theme-text-primary">{menuName}</span>
                     </span>
                   {/each}
                 </div>

@@ -127,67 +127,74 @@
 {#if $settingsStore.loading || !$settingsStore.settings}
   <div class="text-theme-text-secondary">{$t('common.loading')}</div>
 {:else}
-  <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold">{$t('dashboard.title')}</h2>
-      <div class="flex items-center gap-2">
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h2 class="shrink-0 text-2xl font-bold leading-tight">{$t('dashboard.title')}</h2>
+      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
         <button
           onclick={handleAutoHotPieImport}
-          class="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
           {$t('dashboard.importAutoHotPie')}
         </button>
         <button
           onclick={handleImport}
-          class="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
           {$t('dashboard.importMenu')}
         </button>
         <button
           onclick={handleExportAll}
-          class="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
         >
           {$t('dashboard.exportAll')}
         </button>
         <button
           onclick={handleNewMenu}
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+          class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium leading-none text-white transition-colors hover:bg-blue-500"
         >
           {$t('dashboard.newMenu')}
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {#each $settingsStore.settings.menus as menu (menu.id)}
-        <a
-          href={`/menu/${menu.id}`}
-          onclick={(event) => handleLinkClick(event, `/menu/${menu.id}`)}
-          class="p-4 bg-theme-bg-secondary border border-theme-border rounded-xl hover:border-theme-text-muted transition-colors"
-        >
-          <div class="flex items-start justify-between mb-1">
-            <h3 class="font-semibold">{menu.name}</h3>
-            <button
-              onclick={(event) => handleExport(menu, event)}
-              class="text-xs text-theme-text-muted hover:text-theme-text-primary transition-colors ml-2 shrink-0"
-              title={$t('dashboard.exportMenuTitle')}
-            >
-              {$t('common.export')}
-            </button>
-          </div>
-          <p class="text-sm text-theme-text-secondary">{$t('dashboard.slices', { count: menu.slices.length })}</p>
-          <div class="mt-3 flex flex-wrap gap-1">
-            {#each menu.slices.slice(0, 6) as slice (slice.id)}
-              <span class="text-xs bg-theme-bg-tertiary px-2 py-0.5 rounded">
-                {slice.icon} {slice.label}
-              </span>
-            {/each}
-            {#if menu.slices.length > 6}
-              <span class="text-xs text-theme-text-muted">{$t('dashboard.moreSlices', { count: menu.slices.length - 6 })}</span>
-            {/if}
-          </div>
-        </a>
-      {/each}
-    </div>
+    {#if $settingsStore.settings.menus.length === 0}
+      <div class="rounded-lg border border-dashed border-theme-border bg-theme-bg-secondary p-6 text-sm text-theme-text-secondary">
+        {$t('dashboard.noMenus')}
+      </div>
+    {:else}
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
+        {#each $settingsStore.settings.menus as menu (menu.id)}
+          <a
+            href={`/menu/${menu.id}`}
+            onclick={(event) => handleLinkClick(event, `/menu/${menu.id}`)}
+            class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4 transition-colors hover:border-theme-text-muted"
+          >
+            <div class="mb-2 flex min-w-0 items-start justify-between gap-3">
+              <h3 class="min-w-0 truncate text-base font-semibold leading-6">{menu.name}</h3>
+              <button
+                onclick={(event) => handleExport(menu, event)}
+                class="shrink-0 text-xs text-theme-text-muted transition-colors hover:text-theme-text-primary"
+                title={$t('dashboard.exportMenuTitle')}
+              >
+                {$t('common.export')}
+              </button>
+            </div>
+            <p class="text-sm text-theme-text-secondary">{$t('dashboard.slices', { count: menu.slices.length })}</p>
+            <div class="mt-3 flex min-h-7 flex-wrap gap-1.5">
+              {#each menu.slices.slice(0, 6) as slice (slice.id)}
+                <span class="inline-flex max-w-full items-center gap-1 rounded bg-theme-bg-tertiary px-2 py-0.5 text-xs">
+                  <span class="shrink-0">{slice.icon}</span>
+                  <span class="truncate">{slice.label}</span>
+                </span>
+              {/each}
+              {#if menu.slices.length > 6}
+                <span class="text-xs text-theme-text-muted">{$t('dashboard.moreSlices', { count: menu.slices.length - 6 })}</span>
+              {/if}
+            </div>
+          </a>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}

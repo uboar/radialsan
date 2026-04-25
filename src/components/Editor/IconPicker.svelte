@@ -28,14 +28,14 @@
   }
 </script>
 
-<div class="relative">
-  <div class="flex gap-2">
+<div class="relative min-w-0">
+  <div class="grid grid-cols-1 gap-2 sm:grid-cols-[auto_minmax(0,1fr)]">
     <button
       type="button"
       on:click={() => {
         isOpen = !isOpen;
       }}
-      class="flex items-center gap-2 px-3 py-2 bg-theme-bg-tertiary border border-theme-border rounded-lg text-sm hover:bg-theme-bg-tertiary/80 transition-colors"
+      class="flex items-center justify-center gap-2 rounded-lg border border-theme-border bg-theme-bg-tertiary px-3 py-2 text-sm transition-colors hover:bg-theme-bg-tertiary/80 sm:justify-start"
     >
       <span class="flex h-5 w-5 items-center justify-center text-lg">
         {#if selectedLucideName}
@@ -56,7 +56,7 @@
   </div>
 
   {#if isOpen}
-    <div class="absolute z-50 top-full left-0 mt-1 w-80 bg-theme-bg-secondary border border-theme-border rounded-xl shadow-xl p-3">
+    <div class="absolute left-0 top-full z-50 mt-1 w-[min(20rem,calc(100vw-3rem))] rounded-lg border border-theme-border bg-theme-bg-secondary p-3 shadow-xl">
       <input
         type="text"
         bind:value={search}

@@ -18,7 +18,7 @@
 <div class="space-y-4">
   <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.sliceProperties')}</h3>
 
-  <div>
+  <div class="min-w-0">
     <label class="block text-xs text-theme-text-secondary mb-1" for="slice-label">{$t('editor.label')}</label>
     <input
       id="slice-label"
@@ -29,12 +29,12 @@
     />
   </div>
 
-  <div>
+  <div class="min-w-0">
     <div class="block text-xs text-theme-text-secondary mb-1">{$t('editor.iconEmojiOrText')}</div>
     <IconPicker value={slice.icon} onChange={(icon) => onChange({ icon })} />
   </div>
 
-  <div class="border-t border-theme-border pt-4">
+  <div class="min-w-0 border-t border-theme-border pt-4">
     <h4 class="text-xs text-theme-text-secondary mb-2 uppercase tracking-wide">{$t('editor.action')}</h4>
     {#each slice.actions as action, index (index)}
       <ActionEditor action={action} onChange={(nextAction) => handleActionChange(index, nextAction)} {menuOptions} />

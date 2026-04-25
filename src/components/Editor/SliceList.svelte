@@ -70,12 +70,12 @@
 </script>
 
 <div class="space-y-2">
-  <div class="flex items-center justify-between mb-2">
+  <div class="mb-2 flex items-center justify-between gap-2">
     <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.slices')}</h3>
     <button
       type="button"
       on:click={onAdd}
-      class="text-xs px-2 py-1 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-theme-text-primary transition-colors"
+      class="rounded bg-theme-bg-tertiary px-2 py-1 text-xs text-theme-text-primary transition-colors hover:bg-theme-bg-tertiary/80"
     >
       {$t('editor.addSlice')}
     </button>
@@ -84,7 +84,7 @@
   <div class="space-y-1">
     {#each slices as slice (slice.id)}
       <div
-        class="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors {slice.id === selectedId
+        class="flex min-w-0 cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors {slice.id === selectedId
           ? 'bg-blue-600/20 border border-blue-500/50'
           : 'bg-theme-bg-tertiary/50 border border-transparent hover:bg-theme-bg-tertiary'} {dragOverId === slice.id && draggedId !== slice.id
           ? 'ring-1 ring-blue-500/70'
@@ -103,7 +103,7 @@
         }}
         on:dragend={handleDragEnd}
       >
-        <span class="cursor-grab text-theme-text-muted hover:text-theme-text-primary px-1">⠿</span>
+        <span class="shrink-0 cursor-grab px-1 text-theme-text-muted hover:text-theme-text-primary">⠿</span>
         <span class="flex h-6 w-6 shrink-0 items-center justify-center text-lg">
           {#if getLucideIconName(slice.icon)}
             <LucideIcon icon={slice.icon} size={20} />
@@ -112,11 +112,11 @@
           {/if}
         </span>
         <span class="flex-1 text-sm truncate">{slice.label}</span>
-        <span class="text-xs text-theme-text-muted">{getActionLabel(slice.actions[0]?.type)}</span>
+        <span class="max-w-28 shrink-0 truncate text-xs text-theme-text-muted">{getActionLabel(slice.actions[0]?.type)}</span>
         <button
           type="button"
           on:click|stopPropagation={() => onDelete(slice.id)}
-          class="text-theme-text-muted hover:text-red-400 text-sm px-1"
+          class="shrink-0 px-1 text-sm text-theme-text-muted hover:text-red-400"
         >
           ×
         </button>

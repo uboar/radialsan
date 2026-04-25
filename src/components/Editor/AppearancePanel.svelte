@@ -9,9 +9,12 @@
 <div class="space-y-4">
   <h3 class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide">{$t('editor.appearance')}</h3>
 
-  <div class="grid grid-cols-2 gap-3">
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="inner-radius">{$t('settings.innerRadius')}</label>
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div class="min-w-0">
+      <label class="mb-1 flex items-center justify-between gap-3 text-xs text-theme-text-secondary" for="inner-radius">
+        <span class="truncate">{$t('settings.innerRadius')}</span>
+        <span class="shrink-0 font-mono text-theme-text-muted">{appearance.innerRadius}px</span>
+      </label>
       <input
         id="inner-radius"
         type="range"
@@ -21,10 +24,12 @@
         on:input={(event) => onChange({ innerRadius: Number(event.currentTarget.value) })}
         class="w-full accent-blue-600"
       />
-      <span class="text-xs text-theme-text-muted">{appearance.innerRadius}px</span>
     </div>
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="outer-radius">{$t('settings.outerRadius')}</label>
+    <div class="min-w-0">
+      <label class="mb-1 flex items-center justify-between gap-3 text-xs text-theme-text-secondary" for="outer-radius">
+        <span class="truncate">{$t('settings.outerRadius')}</span>
+        <span class="shrink-0 font-mono text-theme-text-muted">{appearance.outerRadius}px</span>
+      </label>
       <input
         id="outer-radius"
         type="range"
@@ -34,13 +39,12 @@
         on:input={(event) => onChange({ outerRadius: Number(event.currentTarget.value) })}
         class="w-full accent-blue-600"
       />
-      <span class="text-xs text-theme-text-muted">{appearance.outerRadius}px</span>
     </div>
   </div>
 
-  <div class="grid grid-cols-2 gap-3">
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="background-color">{$t('appearance.background')}</label>
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div class="min-w-0">
+      <label class="mb-1 block truncate text-xs text-theme-text-secondary" for="background-color">{$t('appearance.background')}</label>
       <input
         id="background-color"
         type="color"
@@ -49,8 +53,8 @@
         class="w-full h-8 bg-theme-bg-tertiary border border-theme-border rounded cursor-pointer"
       />
     </div>
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="slice-fill-color">{$t('appearance.sliceFill')}</label>
+    <div class="min-w-0">
+      <label class="mb-1 block truncate text-xs text-theme-text-secondary" for="slice-fill-color">{$t('appearance.sliceFill')}</label>
       <input
         id="slice-fill-color"
         type="color"
@@ -59,8 +63,8 @@
         class="w-full h-8 bg-theme-bg-tertiary border border-theme-border rounded cursor-pointer"
       />
     </div>
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="hover-color">{$t('appearance.hoverColor')}</label>
+    <div class="min-w-0">
+      <label class="mb-1 block truncate text-xs text-theme-text-secondary" for="hover-color">{$t('appearance.hoverColor')}</label>
       <input
         id="hover-color"
         type="color"
@@ -69,8 +73,8 @@
         class="w-full h-8 bg-theme-bg-tertiary border border-theme-border rounded cursor-pointer"
       />
     </div>
-    <div>
-      <label class="block text-xs text-theme-text-secondary mb-1" for="border-color">{$t('appearance.border')}</label>
+    <div class="min-w-0">
+      <label class="mb-1 block truncate text-xs text-theme-text-secondary" for="border-color">{$t('appearance.border')}</label>
       <input
         id="border-color"
         type="color"
@@ -81,8 +85,11 @@
     </div>
   </div>
 
-  <div>
-    <label class="block text-xs text-theme-text-secondary mb-1" for="opacity">{$t('settings.opacity')}</label>
+  <div class="min-w-0">
+    <label class="mb-1 flex items-center justify-between gap-3 text-xs text-theme-text-secondary" for="opacity">
+      <span class="truncate">{$t('settings.opacity')}</span>
+      <span class="shrink-0 font-mono text-theme-text-muted">{appearance.opacity}</span>
+    </label>
     <input
       id="opacity"
       type="range"
@@ -93,11 +100,13 @@
       on:input={(event) => onChange({ opacity: Number(event.currentTarget.value) })}
       class="w-full accent-blue-600"
     />
-    <span class="text-xs text-theme-text-muted">{appearance.opacity}</span>
   </div>
 
-  <div>
-    <label class="block text-xs text-theme-text-secondary mb-1" for="label-size">{$t('appearance.labelSize')}</label>
+  <div class="min-w-0">
+    <label class="mb-1 flex items-center justify-between gap-3 text-xs text-theme-text-secondary" for="label-size">
+      <span class="truncate">{$t('appearance.labelSize')}</span>
+      <span class="shrink-0 font-mono text-theme-text-muted">{appearance.labelSize}px</span>
+    </label>
     <input
       id="label-size"
       type="range"
@@ -107,6 +116,5 @@
       on:input={(event) => onChange({ labelSize: Number(event.currentTarget.value) })}
       class="w-full accent-blue-600"
     />
-    <span class="text-xs text-theme-text-muted">{appearance.labelSize}px</span>
   </div>
 </div>

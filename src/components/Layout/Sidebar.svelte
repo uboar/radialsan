@@ -13,20 +13,20 @@
   }
 </script>
 
-<nav class="w-56 min-h-screen bg-theme-bg-secondary border-r border-theme-border p-4 flex flex-col gap-1">
-  <h1 class="text-lg font-bold text-theme-text-primary mb-6 px-2">radialsan</h1>
+<nav class="flex h-screen w-64 shrink-0 flex-col gap-1 border-r border-theme-border bg-theme-bg-secondary p-5">
+  <h1 class="mb-7 truncate px-2 text-xl font-bold leading-tight text-theme-text-primary">radialsan</h1>
   {#each navItems as item (item.to)}
     <a
       href={item.to}
       onclick={(event) => handleLinkClick(event, item.to)}
-      class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+      class={`flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
         isActive(item.to)
           ? 'bg-theme-bg-tertiary text-theme-text-primary'
           : 'text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-tertiary/50'
       }`}
     >
-      <span>{item.icon}</span>
-      <span>{$t(item.labelKey)}</span>
+      <span class="flex w-5 shrink-0 justify-center">{item.icon}</span>
+      <span class="truncate">{$t(item.labelKey)}</span>
     </a>
   {/each}
 </nav>
