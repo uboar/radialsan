@@ -97,13 +97,15 @@
     editName = profile.name;
     editRules = profile.matchRules.map((rule) => ({ ...rule }));
     editPieKeys = profile.pieKeys.map((pieKey) => ({ ...pieKey }));
-    void loadWindowCandidates();
+    if (!profile.isDefault) {
+      void loadWindowCandidates();
+    }
   }
 
-  function handleSaveEdit(profileId: string) {
-    settingsStore.updateProfile(profileId, {
+  function handleSaveEdit(profile: Profile) {
+    settingsStore.updateProfile(profile.id, {
       name: editName,
-      matchRules: editRules,
+      ...(profile.isDefault ? {} : { matchRules: editRules }),
       pieKeys: editPieKeys,
     });
     void settingsStore.saveSettings();
@@ -284,112 +286,123 @@
                   <span class="shrink-0 text-xs text-theme-text-secondary"
                     >{$t("profiles.matchRules")}</span
                   >
-                  <div class="flex flex-wrap items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onclick={loadWindowCandidates}
-                      disabled={isLoadingWindowCandidates}
-                      class="text-xs text-theme-text-muted hover:text-theme-text-primary disabled:opacity-50"
-                    >
-                      {isLoadingWindowCandidates
-                        ? $t("profiles.loadingCandidates")
-                        : $t("profiles.refreshCandidates")}
-                    </button>
-                    <button
-                      type="button"
-                      onclick={handleAddRule}
-                      class="text-xs text-blue-400 hover:text-blue-300"
-                    >
-                      {$t("profiles.addRule")}
-                    </button>
-                  </div>
+                  {#if !profile.isDefault}
+                    <div class="flex flex-wrap items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onclick={loadWindowCandidates}
+                        disabled={isLoadingWindowCandidates}
+                        class="text-xs text-theme-text-muted hover:text-theme-text-primary disabled:opacity-50"
+                      >
+                        {isLoadingWindowCandidates
+                          ? $t("profiles.loadingCandidates")
+                          : $t("profiles.refreshCandidates")}
+                      </button>
+                      <button
+                        type="button"
+                        onclick={handleAddRule}
+                        class="text-xs text-blue-400 hover:text-blue-300"
+                      >
+                        {$t("profiles.addRule")}
+                      </button>
+                    </div>
+                  {/if}
                 </div>
-                {#if windowCandidateError}
-                  <p class="mb-2 text-xs text-red-400">
-                    {$t("profiles.windowCandidatesFailed", {
-                      error: windowCandidateError,
-                    })}
-                  </p>
-                {/if}
-                {#if editRules.length === 0}
+                {#if profile.isDefault}
                   <p class="text-xs text-theme-text-muted">
-                    {$t("profiles.noRules")}
+                    {$t("profiles.defaultMatchRulesDisabled")}
                   </p>
-                {/if}
-                {#each editRules as rule, index}
-                  {@const candidateValues = getRuleCandidateValues(rule.field)}
-                  <div
-                    class="mb-2 grid grid-cols-1 items-center gap-2 xl:grid-cols-[9rem_8rem_minmax(10rem,1fr)_minmax(10rem,1fr)_auto]"
-                  >
-                    <select
-                      value={rule.field}
-                      onchange={(event) =>
-                        handleUpdateRule(index, {
-                          field: event.currentTarget
-                            .value as MatchRule["field"],
-                        })}
-                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                {:else}
+                  {#if windowCandidateError}
+                    <p class="mb-2 text-xs text-red-400">
+                      {$t("profiles.windowCandidatesFailed", {
+                        error: windowCandidateError,
+                      })}
+                    </p>
+                  {/if}
+                  {#if editRules.length === 0}
+                    <p class="text-xs text-theme-text-muted">
+                      {$t("profiles.noRules")}
+                    </p>
+                  {/if}
+                  {#each editRules as rule, index}
+                    {@const candidateValues = getRuleCandidateValues(
+                      rule.field,
+                    )}
+                    <div
+                      class="mb-2 grid grid-cols-1 items-center gap-2 xl:grid-cols-[9rem_8rem_minmax(10rem,1fr)_minmax(10rem,1fr)_auto]"
                     >
-                      <option value="processName"
-                        >{$t("profiles.processName")}</option
+                      <select
+                        value={rule.field}
+                        onchange={(event) =>
+                          handleUpdateRule(index, {
+                            field: event.currentTarget
+                              .value as MatchRule["field"],
+                          })}
+                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                       >
-                      <option value="windowTitle"
-                        >{$t("profiles.windowTitle")}</option
+                        <option value="processName"
+                          >{$t("profiles.processName")}</option
+                        >
+                        <option value="windowTitle"
+                          >{$t("profiles.windowTitle")}</option
+                        >
+                      </select>
+                      <select
+                        value={rule.matchMode}
+                        onchange={(event) =>
+                          handleUpdateRule(index, {
+                            matchMode: event.currentTarget
+                              .value as MatchRule["matchMode"],
+                          })}
+                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                       >
-                    </select>
-                    <select
-                      value={rule.matchMode}
-                      onchange={(event) =>
-                        handleUpdateRule(index, {
-                          matchMode: event.currentTarget
-                            .value as MatchRule["matchMode"],
-                        })}
-                      class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="contains">{$t("profiles.contains")}</option
-                      >
-                      <option value="exact">{$t("profiles.exact")}</option>
-                      <option value="regex">{$t("profiles.regex")}</option>
-                    </select>
-                    <input
-                      type="text"
-                      value={rule.value}
-                      oninput={(event) =>
-                        handleUpdateRule(index, {
-                          value: event.currentTarget.value,
-                        })}
-                      placeholder={$t("profiles.valuePlaceholder")}
-                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
-                    />
-                    <select
-                      value={candidateValues.includes(rule.value)
-                        ? rule.value
-                        : ""}
-                      onchange={(event) => {
-                        if (event.currentTarget.value) {
+                        <option value="contains"
+                          >{$t("profiles.contains")}</option
+                        >
+                        <option value="exact">{$t("profiles.exact")}</option>
+                        <option value="regex">{$t("profiles.regex")}</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={rule.value}
+                        oninput={(event) =>
                           handleUpdateRule(index, {
                             value: event.currentTarget.value,
-                          });
-                        }
-                      }}
-                      disabled={candidateValues.length === 0}
-                      class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
-                    >
-                      <option value=""
-                        >{$t("profiles.selectFromRunning")}</option
+                          })}
+                        placeholder={$t("profiles.valuePlaceholder")}
+                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                      <select
+                        value={candidateValues.includes(rule.value)
+                          ? rule.value
+                          : ""}
+                        onchange={(event) => {
+                          if (event.currentTarget.value) {
+                            handleUpdateRule(index, {
+                              value: event.currentTarget.value,
+                            });
+                          }
+                        }}
+                        disabled={candidateValues.length === 0}
+                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
                       >
-                      {#each candidateValues as value}
-                        <option {value}>{value}</option>
-                      {/each}
-                    </select>
-                    <button
-                      onclick={() => handleRemoveRule(index)}
-                      class="justify-self-start text-xs text-theme-text-muted hover:text-red-400 xl:justify-self-end"
-                    >
-                      {$t("profiles.removeHotkey")}
-                    </button>
-                  </div>
-                {/each}
+                        <option value=""
+                          >{$t("profiles.selectFromRunning")}</option
+                        >
+                        {#each candidateValues as value}
+                          <option {value}>{value}</option>
+                        {/each}
+                      </select>
+                      <button
+                        onclick={() => handleRemoveRule(index)}
+                        class="justify-self-start text-xs text-theme-text-muted hover:text-red-400 xl:justify-self-end"
+                      >
+                        {$t("profiles.removeHotkey")}
+                      </button>
+                    </div>
+                  {/each}
+                {/if}
               </div>
 
               <div>
@@ -525,7 +538,7 @@
 
               <div class="flex gap-2">
                 <button
-                  onclick={() => handleSaveEdit(profile.id)}
+                  onclick={() => handleSaveEdit(profile)}
                   class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium transition-colors"
                 >
                   {$t("common.save")}
@@ -576,14 +589,16 @@
               </div>
             </div>
             <p class="mt-1 truncate text-sm text-theme-text-secondary">
-              {profile.matchRules.length === 0
+              {profile.isDefault
                 ? $t("profiles.matchesAll")
-                : profile.matchRules
-                    .map(
-                      (rule) =>
-                        `${getMatchFieldLabel(rule.field)} ${getMatchModeLabel(rule.matchMode)} "${rule.value}"`,
-                    )
-                    .join(", ")}
+                : profile.matchRules.length === 0
+                  ? $t("profiles.matchesAll")
+                  : profile.matchRules
+                      .map(
+                        (rule) =>
+                          `${getMatchFieldLabel(rule.field)} ${getMatchModeLabel(rule.matchMode)} "${rule.value}"`,
+                      )
+                      .join(", ")}
             </p>
             <div class="mt-2">
               {#if profile.pieKeys.length === 0}

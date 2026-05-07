@@ -124,6 +124,7 @@
     "selectMenu": "Select menu",
     "profileName": "Profile Name",
     "matchRules": "Match Rules",
+    "defaultMatchRulesDisabled": "The default profile is used when no other profile matches, so match rules are not editable.",
     "addRule": "+ Add Rule",
     "noRules": "No rules - matches all applications",
     "processName": "Process Name",
