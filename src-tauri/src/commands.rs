@@ -179,6 +179,9 @@ pub fn save_settings(
         *current = settings.clone();
     }
 
+    crate::tray::set_tray_visible(&app_handle, settings.global.show_tray_icon)
+        .map_err(|e| e.to_string())?;
+
     let listener = {
         let input_listener = state.input_listener.lock().map_err(|e| e.to_string())?;
         input_listener.as_ref().cloned()

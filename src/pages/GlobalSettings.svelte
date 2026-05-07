@@ -74,6 +74,16 @@
       !settings.global.menuActivation.suppressTriggerKeyInput,
     );
   }
+
+  function handleShowTrayIconToggle() {
+    const settings = $settingsStore.settings;
+    if (!settings) return;
+
+    settingsStore.updateGlobalSettings({
+      showTrayIcon: !settings.global.showTrayIcon,
+    });
+    void settingsStore.saveSettings();
+  }
 </script>
 
 {#if !$settingsStore.settings}
@@ -105,11 +115,26 @@
           <span class="min-w-0 text-sm leading-5"
             >{$t("settings.showTrayIcon")}</span
           >
-          <div class="h-5 w-10 shrink-0 rounded-full bg-blue-600">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={$settingsStore.settings.global.showTrayIcon}
+            aria-label={$t("settings.showTrayIcon")}
+            onclick={handleShowTrayIconToggle}
+            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${
+              $settingsStore.settings.global.showTrayIcon
+                ? "bg-blue-600"
+                : "bg-theme-bg-tertiary"
+            }`}
+          >
             <div
-              class="w-4 h-4 bg-white rounded-full translate-x-5 mx-0.5"
+              class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${
+                $settingsStore.settings.global.showTrayIcon
+                  ? "translate-x-5"
+                  : ""
+              }`}
             ></div>
-          </div>
+          </button>
         </div>
       </div>
 

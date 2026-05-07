@@ -132,14 +132,32 @@ pub fn run() {
                 *state.settings.lock().unwrap() = settings.clone();
             }
 
-            // Set up system tray
-            tray::setup_tray(app.handle())?;
+            if settings.global.show_tray_icon {
+                tray::setup_tray(app.handle())?;
+            }
 
             // Hide main window close button → minimize to tray
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
+                let app_handle = app.handle().clone();
                 main_window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        let show_tray_icon = app_handle
+                            .try_state::<AppState>()
+                            .map(|state| {
+                                state
+                                    .settings
+                                    .lock()
+                                    .map(|settings| settings.global.show_tray_icon)
+                                    .unwrap_or(true)
+                            })
+                            .unwrap_or(true);
+
+                        if !show_tray_icon {
+                            app_handle.exit(0);
+                            return;
+                        }
+
                         api.prevent_close();
                         let _ = main_window_clone.hide();
                     }

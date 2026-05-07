@@ -5,8 +5,15 @@ use tauri::{
     AppHandle, Manager,
 };
 
+const TRAY_ID: &str = "radialsan-main-tray";
+
 /// Set up the system tray icon with a context menu.
 pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        tray.set_visible(true)?;
+        return Ok(());
+    }
+
     let open_settings =
         MenuItem::with_id(app, "open_settings", "Open Settings", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -14,7 +21,7 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 
     let icon = Image::from_bytes(include_bytes!("../icons/32x32.png"))?;
 
-    let _tray = TrayIconBuilder::new()
+    let _tray = TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon)
         .menu(&menu)
         .tooltip("radialsan")
@@ -31,6 +38,17 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         })
         .build(app)?;
+
+    Ok(())
+}
+
+/// Apply the persisted tray preference to the running app.
+pub fn set_tray_visible(app: &AppHandle, visible: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if visible {
+        setup_tray(app)?;
+    } else if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        tray.set_visible(false)?;
+    }
 
     Ok(())
 }
