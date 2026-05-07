@@ -18,6 +18,7 @@
   let canUndoValue = false;
   let canRedoValue = false;
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
+  let initializedMenuId: string | null = null;
 
   $: settings = $settingsStore.settings;
   $: canUndoValue = $historyStore.undoStack.length >= 2;
@@ -32,6 +33,10 @@
     settings?.menus
       .filter((candidate) => candidate.id !== menuId)
       .map((candidate) => ({ id: candidate.id, name: candidate.name })) ?? [];
+  $: if (settings && menu && menuId && initializedMenuId !== menuId) {
+    initializedMenuId = menuId;
+    historyStore.initialize(settings);
+  }
 
   onMount(() => {
     if (!$settingsStore.settings && !$settingsStore.loading) {
@@ -46,18 +51,20 @@
 
   onDestroy(() => {
     if (saveTimer) clearTimeout(saveTimer);
+    historyStore.clear();
   });
-
-  function pushSnapshot() {
-    if (!settings) return;
-    historyStore.pushSnapshot(settings);
-  }
 
   function debouncedSave() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       void settingsStore.saveSettings();
     }, 500);
+  }
+
+  function commitSettings(nextSettings: Settings) {
+    settingsStore.setSettings(nextSettings);
+    historyStore.pushSnapshot(nextSettings);
+    debouncedSave();
   }
 
   function restoreSnapshot(snapshot: Settings | null | undefined) {
@@ -96,60 +103,87 @@
 
   function handleMenuNameChange(name: string) {
     if (!settings || !menuId) return;
-    pushSnapshot();
-    settingsStore.updateMenu(menuId, { name });
-    debouncedSave();
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((menu) =>
+        menu.id === menuId ? { ...menu, name } : menu,
+      ),
+    });
   }
 
   function handleSliceReorder(slices: Slice[]) {
     if (!settings || !menuId) return;
-    pushSnapshot();
-    settingsStore.updateMenu(menuId, { slices });
-    debouncedSave();
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((menu) =>
+        menu.id === menuId ? { ...menu, slices } : menu,
+      ),
+    });
   }
 
   function handleAddSlice() {
     if (!settings || !menu || !menuId) return;
-    pushSnapshot();
     const newSlice: Slice = {
       id: `s_${Date.now()}`,
       label: $t("editor.newSliceLabel", { count: menu.slices.length + 1 }),
       icon: "⚡",
       actions: [{ type: "noop", params: {} }],
     };
-    settingsStore.updateMenu(menuId, { slices: [...menu.slices, newSlice] });
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((candidate) =>
+        candidate.id === menuId
+          ? { ...candidate, slices: [...menu.slices, newSlice] }
+          : candidate,
+      ),
+    });
     selectedSliceId = newSlice.id;
-    debouncedSave();
   }
 
   function handleDeleteSlice(sliceId: string) {
     if (!settings || !menu || !menuId) return;
-    pushSnapshot();
-    settingsStore.updateMenu(menuId, {
-      slices: menu.slices.filter((slice) => slice.id !== sliceId),
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((candidate) =>
+        candidate.id === menuId
+          ? {
+              ...candidate,
+              slices: menu.slices.filter((slice) => slice.id !== sliceId),
+            }
+          : candidate,
+      ),
     });
     if (selectedSliceId === sliceId) selectedSliceId = null;
-    debouncedSave();
   }
 
   function handleSliceChange(updates: Partial<Slice>) {
     if (!settings || !menu || !menuId || !selectedSliceId) return;
-    pushSnapshot();
-    settingsStore.updateMenu(menuId, {
-      slices: menu.slices.map((slice) =>
-        slice.id === selectedSliceId ? { ...slice, ...updates } : slice,
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((candidate) =>
+        candidate.id === menuId
+          ? {
+              ...candidate,
+              slices: menu.slices.map((slice) =>
+                slice.id === selectedSliceId
+                  ? { ...slice, ...updates }
+                  : slice,
+              ),
+            }
+          : candidate,
       ),
     });
-    debouncedSave();
   }
 
   function handleAppearanceChange(updates: Partial<Appearance>) {
     if (!settings || !appearance) return;
-    pushSnapshot();
-    settingsStore.updateGlobalSettings({
-      appearance: { ...appearance, ...updates },
+    commitSettings({
+      ...settings,
+      global: {
+        ...settings.global,
+        appearance: { ...appearance, ...updates },
+      },
     });
-    debouncedSave();
   }
 
   function handleDeleteMenu() {

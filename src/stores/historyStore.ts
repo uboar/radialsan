@@ -8,6 +8,7 @@ interface HistoryState {
 }
 
 interface HistoryActions {
+  initialize: (settings: Settings) => void;
   pushSnapshot: (settings: Settings) => void;
   undo: () => Settings | null;
   redo: () => Settings | null;
@@ -25,13 +26,27 @@ const state = writable<HistoryState>({
 });
 
 export const historyActions: HistoryActions = {
-  pushSnapshot: (settings) => {
-    const json = JSON.stringify(settings);
+  initialize: (settings) => {
     state.update((current) => ({
       ...current,
-      undoStack: [...current.undoStack.slice(-current.maxHistory + 1), json],
+      undoStack: [JSON.stringify(settings)],
       redoStack: [],
     }));
+  },
+
+  pushSnapshot: (settings) => {
+    const json = JSON.stringify(settings);
+    state.update((current) => {
+      if (current.undoStack[current.undoStack.length - 1] === json) {
+        return current;
+      }
+
+      return {
+        ...current,
+        undoStack: [...current.undoStack.slice(-current.maxHistory + 1), json],
+        redoStack: [],
+      };
+    });
   },
 
   undo: () => {

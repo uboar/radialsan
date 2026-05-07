@@ -19,6 +19,37 @@ describe("historyStore", () => {
     expect(useHistoryStore.getState().undoStack.length).toBe(2);
   });
 
+  it("initialize seeds the baseline undo target", () => {
+    useHistoryStore.getState().initialize(mockSettings(1));
+    expect(useHistoryStore.getState().undoStack.length).toBe(1);
+    expect(useHistoryStore.getState().canUndo()).toBe(false);
+
+    useHistoryStore.getState().pushSnapshot(mockSettings(2));
+    expect(useHistoryStore.getState().canUndo()).toBe(true);
+
+    const restored = useHistoryStore.getState().undo();
+    expect(restored?.version).toBe(1);
+  });
+
+  it("initialize replaces old history and clears redo", () => {
+    useHistoryStore.getState().initialize(mockSettings(1));
+    useHistoryStore.getState().pushSnapshot(mockSettings(2));
+    useHistoryStore.getState().undo();
+    expect(useHistoryStore.getState().canRedo()).toBe(true);
+
+    useHistoryStore.getState().initialize(mockSettings(10));
+    expect(useHistoryStore.getState().undoStack.length).toBe(1);
+    expect(useHistoryStore.getState().canUndo()).toBe(false);
+    expect(useHistoryStore.getState().canRedo()).toBe(false);
+    expect(JSON.parse(useHistoryStore.getState().undoStack[0]).version).toBe(10);
+  });
+
+  it("does not append duplicate snapshots", () => {
+    useHistoryStore.getState().initialize(mockSettings(1));
+    useHistoryStore.getState().pushSnapshot(mockSettings(1));
+    expect(useHistoryStore.getState().undoStack.length).toBe(1);
+  });
+
   it("undo restores previous state", () => {
     useHistoryStore.getState().pushSnapshot(mockSettings(1));
     useHistoryStore.getState().pushSnapshot(mockSettings(2));
@@ -36,6 +67,14 @@ describe("historyStore", () => {
     useHistoryStore.getState().undo();
     const restored = useHistoryStore.getState().redo();
     expect(restored?.version).toBe(2);
+  });
+
+  it("redo restores the first edit after undoing to baseline", () => {
+    useHistoryStore.getState().initialize(mockSettings(1));
+    useHistoryStore.getState().pushSnapshot(mockSettings(2));
+
+    expect(useHistoryStore.getState().undo()?.version).toBe(1);
+    expect(useHistoryStore.getState().redo()?.version).toBe(2);
   });
 
   it("canUndo/canRedo return correct values", () => {
