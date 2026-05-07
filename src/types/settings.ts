@@ -90,20 +90,20 @@ export interface Profile {
 }
 
 export interface AppearanceOverrides {
-  innerRadius?: number;
-  outerRadius?: number;
-  deadZoneRadius?: number;
-  backgroundColor?: string;
-  sliceFillColor?: string;
-  sliceHoverColor?: string;
-  sliceBorderColor?: string;
-  sliceBorderWidth?: number;
-  labelFont?: string;
-  labelSize?: number;
-  labelColor?: string;
-  iconSize?: number;
-  animationDurationMs?: number;
-  opacity?: number;
+  innerRadius?: number | null;
+  outerRadius?: number | null;
+  deadZoneRadius?: number | null;
+  backgroundColor?: string | null;
+  sliceFillColor?: string | null;
+  sliceHoverColor?: string | null;
+  sliceBorderColor?: string | null;
+  sliceBorderWidth?: number | null;
+  labelFont?: string | null;
+  labelSize?: number | null;
+  labelColor?: string | null;
+  iconSize?: number | null;
+  animationDurationMs?: number | null;
+  opacity?: number | null;
 }
 
 export interface Action {
@@ -130,6 +130,24 @@ export interface Settings {
   global: GlobalSettings;
   profiles: Profile[];
   menus: PieMenu[];
+}
+
+export function mergeAppearance(
+  globalAppearance: Appearance,
+  overrides: AppearanceOverrides | null | undefined,
+): Appearance {
+  const appearance: Appearance = { ...globalAppearance };
+  if (!overrides) return appearance;
+
+  for (const [key, value] of Object.entries(overrides) as Array<
+    [keyof AppearanceOverrides, AppearanceOverrides[keyof AppearanceOverrides]]
+  >) {
+    if (value !== undefined && value !== null) {
+      Object.assign(appearance, { [key]: value });
+    }
+  }
+
+  return appearance;
 }
 
 export interface RuntimeStatus {

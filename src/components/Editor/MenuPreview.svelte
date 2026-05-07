@@ -1,25 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { PieMenuRenderer } from "../PieMenu/PieMenuRenderer";
-  import type { Slice } from "../../types/settings";
+  import type { Appearance, Slice } from "../../types/settings";
 
   export let slices: Slice[] = [];
   export let selectedIndex: number | null = null;
-  export let appearance: {
-    innerRadius: number;
-    outerRadius: number;
-    deadZoneRadius: number;
-    backgroundColor: string;
-    sliceFillColor: string;
-    sliceHoverColor: string;
-    sliceBorderColor: string;
-    sliceBorderWidth: number;
-    labelFont: string;
-    labelSize: number;
-    labelColor: string;
-    iconSize: number;
-    opacity: number;
-  };
+  export let appearance: Appearance;
 
   let canvas: HTMLCanvasElement | undefined;
   let container: HTMLDivElement | undefined;

@@ -175,7 +175,7 @@ pub struct Profile {
     pub pie_keys: Vec<PieKey>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AppearanceOverrides {
     pub inner_radius: Option<f64>,
@@ -251,6 +251,60 @@ impl Default for Appearance {
             animation_duration_ms: 120,
             opacity: 1.0,
         }
+    }
+}
+
+impl Appearance {
+    pub fn with_overrides(&self, overrides: Option<&AppearanceOverrides>) -> Self {
+        let Some(overrides) = overrides else {
+            return self.clone();
+        };
+
+        let mut appearance = self.clone();
+        if let Some(value) = overrides.inner_radius {
+            appearance.inner_radius = value;
+        }
+        if let Some(value) = overrides.outer_radius {
+            appearance.outer_radius = value;
+        }
+        if let Some(value) = overrides.dead_zone_radius {
+            appearance.dead_zone_radius = value;
+        }
+        if let Some(value) = &overrides.background_color {
+            appearance.background_color = value.clone();
+        }
+        if let Some(value) = &overrides.slice_fill_color {
+            appearance.slice_fill_color = value.clone();
+        }
+        if let Some(value) = &overrides.slice_hover_color {
+            appearance.slice_hover_color = value.clone();
+        }
+        if let Some(value) = &overrides.slice_border_color {
+            appearance.slice_border_color = value.clone();
+        }
+        if let Some(value) = overrides.slice_border_width {
+            appearance.slice_border_width = value;
+        }
+        if let Some(value) = &overrides.label_font {
+            appearance.label_font = value.clone();
+        }
+        if let Some(value) = overrides.label_size {
+            appearance.label_size = value;
+        }
+        if let Some(value) = &overrides.label_color {
+            appearance.label_color = value.clone();
+        }
+        if let Some(value) = overrides.icon_size {
+            appearance.icon_size = value;
+        }
+        if let Some(value) = overrides.animation_duration_ms {
+            appearance.animation_duration_ms = value;
+        }
+        if let Some(value) = overrides.opacity {
+            appearance.opacity = value;
+        }
+
+        appearance
     }
 }
 
@@ -505,6 +559,25 @@ mod tests {
         assert_eq!(restored.menus[0].slices.len(), 4);
         assert_eq!(restored.profiles[0].pie_keys[0].hotkey, "CapsLock");
         assert!(restored.global.menu_activation.suppress_trigger_key_input);
+    }
+
+    #[test]
+    fn test_appearance_overrides_merge_with_global_defaults() {
+        let global = Appearance::default();
+        let overrides = AppearanceOverrides {
+            outer_radius: Some(180.0),
+            slice_hover_color: Some("#ff00ff99".to_string()),
+            opacity: Some(0.5),
+            ..AppearanceOverrides::default()
+        };
+
+        let merged = global.with_overrides(Some(&overrides));
+
+        assert_eq!(merged.inner_radius, global.inner_radius);
+        assert_eq!(merged.outer_radius, 180.0);
+        assert_eq!(merged.slice_fill_color, global.slice_fill_color);
+        assert_eq!(merged.slice_hover_color, "#ff00ff99");
+        assert_eq!(merged.opacity, 0.5);
     }
 
     #[test]

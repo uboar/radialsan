@@ -170,7 +170,8 @@
     "sliceFill": "Slice Fill",
     "hoverColor": "Hover Color",
     "border": "Border",
-    "labelSize": "Label Size"
+    "labelSize": "Label Size",
+    "resetOverrides": "Reset overrides"
   },
   "iconPicker": {
     "emoji": "Emoji",

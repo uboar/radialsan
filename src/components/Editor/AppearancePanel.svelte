@@ -3,15 +3,29 @@
   import type { Appearance } from "../../types/settings";
 
   export let appearance: Appearance;
+  export let hasOverrides = false;
   export let onChange: (updates: Partial<Appearance>) => void;
+  export let onReset: (() => void) | undefined = undefined;
 </script>
 
 <div class="space-y-4">
-  <h3
-    class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide"
-  >
-    {$t("editor.appearance")}
-  </h3>
+  <div class="flex items-center justify-between gap-3">
+    <h3
+      class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide"
+    >
+      {$t("editor.appearance")}
+    </h3>
+    {#if onReset}
+      <button
+        type="button"
+        on:click={() => onReset?.()}
+        disabled={!hasOverrides}
+        class="shrink-0 rounded bg-theme-bg-tertiary px-2 py-1 text-xs text-theme-text-secondary transition-colors hover:text-theme-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {$t("appearance.resetOverrides")}
+      </button>
+    {/if}
+  </div>
 
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
     <div class="min-w-0">

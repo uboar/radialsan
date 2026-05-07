@@ -8,7 +8,13 @@
   import { navigate } from "../stores/router";
   import { settingsStore } from "../stores/settingsStore";
   import { historyStore } from "../stores/historyStore";
-  import type { Appearance, Settings, Slice } from "../types/settings";
+  import { mergeAppearance } from "../types/settings";
+  import type {
+    Appearance,
+    AppearanceOverrides,
+    Settings,
+    Slice,
+  } from "../types/settings";
 
   export let id: string | undefined = undefined;
 
@@ -28,7 +34,13 @@
   $: selectedSlice = menu?.slices.find((slice) => slice.id === selectedSliceId);
   $: selectedIndex =
     menu?.slices.findIndex((slice) => slice.id === selectedSliceId) ?? -1;
-  $: appearance = settings?.global.appearance;
+  $: appearance =
+    settings && menu
+      ? mergeAppearance(settings.global.appearance, menu.appearanceOverrides)
+      : undefined;
+  $: hasAppearanceOverrides =
+    !!menu?.appearanceOverrides &&
+    Object.keys(menu.appearanceOverrides).length > 0;
   $: menuOptions =
     settings?.menus
       .filter((candidate) => candidate.id !== menuId)
@@ -176,13 +188,30 @@
   }
 
   function handleAppearanceChange(updates: Partial<Appearance>) {
-    if (!settings || !appearance) return;
+    if (!settings || !menu || !menuId) return;
     commitSettings({
       ...settings,
-      global: {
-        ...settings.global,
-        appearance: { ...appearance, ...updates },
-      },
+      menus: settings.menus.map((candidate) =>
+        candidate.id === menuId
+          ? {
+              ...candidate,
+              appearanceOverrides: {
+                ...(menu.appearanceOverrides ?? {}),
+                ...(updates as AppearanceOverrides),
+              },
+            }
+          : candidate,
+      ),
+    });
+  }
+
+  function handleAppearanceReset() {
+    if (!settings || !menuId || !hasAppearanceOverrides) return;
+    commitSettings({
+      ...settings,
+      menus: settings.menus.map((menu) =>
+        menu.id === menuId ? { ...menu, appearanceOverrides: null } : menu,
+      ),
     });
   }
 
@@ -305,7 +334,12 @@
         {/if}
 
         {#if activeTab === "appearance"}
-          <AppearancePanel {appearance} onChange={handleAppearanceChange} />
+          <AppearancePanel
+            {appearance}
+            hasOverrides={hasAppearanceOverrides}
+            onChange={handleAppearanceChange}
+            onReset={handleAppearanceReset}
+          />
         {/if}
       </div>
     </div>

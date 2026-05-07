@@ -170,7 +170,8 @@
     "sliceFill": "スライス塗り",
     "hoverColor": "ホバー色",
     "border": "境界線",
-    "labelSize": "ラベルサイズ"
+    "labelSize": "ラベルサイズ",
+    "resetOverrides": "上書きをリセット"
   },
   "iconPicker": {
     "emoji": "絵文字",

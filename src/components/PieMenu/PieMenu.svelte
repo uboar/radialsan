@@ -13,6 +13,8 @@
   } from "./geometry";
   import { MenuAnimator } from "./animation";
   import { canEnterSubmenu, getParentPopState } from "./submenuNavigation";
+  import { mergeAppearance } from "../../types/settings";
+  import type { Appearance, Settings } from "../../types/settings";
 
   type MenuAction = { type: string; params: Record<string, unknown> };
 
@@ -32,6 +34,7 @@
     menuId: string;
     slices: SliceRenderData[];
     actions: MenuAction[][];
+    config: PieMenuRenderConfig;
     centerX: number;
     centerY: number;
     backendOriginX: number;
@@ -97,30 +100,52 @@
     }
   }
 
-  async function loadSubmenu(
-    menuId: string,
-  ): Promise<{ slices: SliceRenderData[]; actions: MenuAction[][] } | null> {
+  function toRenderConfig(
+    appearance: Appearance,
+    centerX: number,
+    centerY: number,
+  ): PieMenuRenderConfig {
+    return {
+      centerX,
+      centerY,
+      innerRadius: appearance.innerRadius,
+      outerRadius: appearance.outerRadius,
+      deadZoneRadius: appearance.deadZoneRadius,
+      backgroundColor: appearance.backgroundColor,
+      sliceFillColor: appearance.sliceFillColor,
+      sliceHoverColor: appearance.sliceHoverColor,
+      sliceBorderColor: appearance.sliceBorderColor,
+      sliceBorderWidth: appearance.sliceBorderWidth,
+      labelFont: appearance.labelFont,
+      labelSize: appearance.labelSize,
+      labelColor: appearance.labelColor,
+      iconSize: appearance.iconSize,
+      opacity: appearance.opacity,
+    };
+  }
+
+  async function loadSubmenu(menuId: string): Promise<{
+    slices: SliceRenderData[];
+    actions: MenuAction[][];
+    config: PieMenuRenderConfig;
+  } | null> {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const settings = await invoke<{
-        menus?: Array<{
-          id: string;
-          slices: Array<{
-            label: string;
-            icon: string;
-            actions: MenuAction[];
-          }>;
-        }>;
-      }>("get_settings");
+      const settings = await invoke<Settings>("get_settings");
       const menu = settings.menus?.find((m) => m.id === menuId);
       if (!menu) return null;
+      const appearance = mergeAppearance(
+        settings.global.appearance,
+        menu.appearanceOverrides,
+      );
       return {
         slices: menu.slices.map((s) => ({
           label: s.label,
           icon: s.icon,
           isSubmenu: s.actions.some((a) => a.type === "submenu"),
         })),
-        actions: menu.slices.map((s) => s.actions),
+        actions: menu.slices.map((s) => s.actions as MenuAction[]),
+        config: toRenderConfig(appearance, 0, 0),
       };
     } catch {
       return null;
@@ -141,7 +166,7 @@
     renderVersion += 1;
   }
 
-  function restoreParent(parent: MenuStackEntry, deadZoneRadius: number): void {
+  function restoreParent(parent: MenuStackEntry): void {
     const current = menuState;
     if (!current) return;
 
@@ -155,7 +180,7 @@
       slices: parent.slices,
       actions: parent.actions,
       config: {
-        ...current.config,
+        ...parent.config,
         centerX: parent.centerX,
         centerY: parent.centerY,
       },
@@ -166,19 +191,19 @@
       parent.backendOriginX,
       parent.backendOriginY,
       parent.slices.length,
-      deadZoneRadius,
+      parent.config.deadZoneRadius,
     );
     setHoveredSlice(null);
   }
 
-  function popToParent(deadZoneRadius: number): void {
+  function popToParent(): void {
     const stack = [...menuStack];
     const parent = stack.pop();
     if (!parent) return;
 
     menuStack = stack;
     parentPopArmed = false;
-    restoreParent(parent, deadZoneRadius);
+    restoreParent(parent);
   }
 
   async function enterSubmenu(
@@ -203,6 +228,7 @@
         menuId: current.menuId,
         slices: current.slices,
         actions: current.actions,
+        config: current.config,
         centerX: current.centerX,
         centerY: current.centerY,
         backendOriginX: current.backendOriginX,
@@ -220,7 +246,7 @@
         backendOriginY,
         slices: data.slices,
         actions: data.actions,
-        config: { ...latest.config, centerX: cursorX, centerY: cursorY },
+        config: { ...data.config, centerX: cursorX, centerY: cursorY },
       };
       renderVersion += 1;
       void setBackendMenuContext(
@@ -228,7 +254,7 @@
         backendOriginX,
         backendOriginY,
         data.slices.length,
-        current.config.deadZoneRadius,
+        data.config.deadZoneRadius,
       );
       setHoveredSlice(null);
     } finally {
@@ -311,7 +337,7 @@
 
   function handleEscape(): void {
     if (!menuState?.visible || menuStack.length === 0) return;
-    popToParent(menuState.config.deadZoneRadius ?? 30);
+    popToParent();
   }
 
   function updateHoveredSlice(
@@ -377,7 +403,7 @@
     );
     parentPopArmed = parentPopState.armed;
     if (parentPopState.shouldPop) {
-      popToParent(current.config.deadZoneRadius);
+      popToParent();
     }
   }
 

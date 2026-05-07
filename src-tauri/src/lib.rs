@@ -277,7 +277,10 @@ fn bridge_input_events(rx: std::sync::mpsc::Receiver<InputEvent>, app_handle: &t
                             .map(|s| serde_json::to_value(&s.actions).unwrap_or_default())
                             .collect();
 
-                        let appearance = &settings.global.appearance;
+                        let appearance = settings
+                            .global
+                            .appearance
+                            .with_overrides(menu.appearance_overrides.as_ref());
                         let slice_count = menu.slices.len();
                         let dead_zone_radius = appearance.dead_zone_radius;
                         let payload = serde_json::json!({
