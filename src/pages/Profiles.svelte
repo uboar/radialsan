@@ -28,7 +28,21 @@
   let recordingPieKeyId: string | null = null;
   let windowCandidates: WindowCandidate[] = [];
   let isLoadingWindowCandidates = false;
-  let windowCandidateError: string | null = null;
+  let windowCandidateError:
+    | { kind: "unavailable" }
+    | { kind: "failed"; detail: string | null }
+    | null = null;
+
+  function isTauriRuntime() {
+    return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  }
+
+  function getErrorDetail(err: unknown): string | null {
+    const message = err instanceof Error ? err.message : String(err);
+    const detail = message.split("\n")[0]?.trim();
+    if (!detail) return null;
+    return detail.length > 160 ? `${detail.slice(0, 157)}...` : detail;
+  }
 
   function parseHotkeyString(hotkey: string): {
     modifiers: ModifierName[];
@@ -136,15 +150,22 @@
   }
 
   async function loadWindowCandidates() {
-    isLoadingWindowCandidates = true;
+    windowCandidates = [];
     windowCandidateError = null;
+
+    if (!isTauriRuntime()) {
+      windowCandidateError = { kind: "unavailable" };
+      return;
+    }
+
+    isLoadingWindowCandidates = true;
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       windowCandidates = await invoke<WindowCandidate[]>(
         "get_window_candidates",
       );
     } catch (err) {
-      windowCandidateError = String(err);
+      windowCandidateError = { kind: "failed", detail: getErrorDetail(err) };
       windowCandidates = [];
     } finally {
       isLoadingWindowCandidates = false;
@@ -315,9 +336,18 @@
                 {:else}
                   {#if windowCandidateError}
                     <p class="mb-2 text-xs text-red-400">
-                      {$t("profiles.windowCandidatesFailed", {
-                        error: windowCandidateError,
-                      })}
+                      {#if windowCandidateError.kind === "unavailable"}
+                        {$t("profiles.windowCandidatesUnavailable")}
+                      {:else}
+                        {$t("profiles.windowCandidatesFailed")}
+                        {#if windowCandidateError.detail}
+                          <span class="text-theme-text-muted">
+                            {$t("profiles.windowCandidatesFailedDetail", {
+                              detail: windowCandidateError.detail,
+                            })}
+                          </span>
+                        {/if}
+                      {/if}
                     </p>
                   {/if}
                   {#if editRules.length === 0}
