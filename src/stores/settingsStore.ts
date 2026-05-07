@@ -97,6 +97,10 @@ export const settingsActions: SettingsActions = {
     mutateSettings((settings) => ({
       ...settings,
       menus: settings.menus.filter((menu) => menu.id !== menuId),
+      profiles: settings.profiles.map((profile) => ({
+        ...profile,
+        pieKeys: profile.pieKeys.filter((pieKey) => pieKey.menuId !== menuId),
+      })),
     }));
   },
 
