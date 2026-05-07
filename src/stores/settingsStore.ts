@@ -10,6 +10,7 @@ interface SettingsState {
 interface SettingsActions {
   loadSettings: () => Promise<void>;
   saveSettings: () => Promise<void>;
+  clearError: () => void;
   setSettings: (settings: Settings) => void;
   addMenu: (menu: PieMenu) => void;
   updateMenu: (menuId: string, updates: Partial<PieMenu>) => void;
@@ -61,10 +62,15 @@ export const settingsActions: SettingsActions = {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       await invoke("save_settings", { settings });
+      state.update((current) => ({ ...current, error: null }));
     } catch (e) {
       console.error("Failed to save settings", e);
       state.update((current) => ({ ...current, error: String(e) }));
     }
+  },
+
+  clearError: () => {
+    state.update((current) => ({ ...current, error: null }));
   },
 
   setSettings: (settings) => {

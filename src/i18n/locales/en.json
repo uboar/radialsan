@@ -186,6 +186,12 @@
     "activeWindowBody": "Grant Screen Recording permission in System Settings > Privacy & Security > Screen Recording so radialsan can inspect the frontmost window.",
     "details": "Details: {{detail}}"
   },
+  "saveError": {
+    "title": "Settings could not be saved",
+    "body": "Your latest changes may not persist. Try saving again.",
+    "details": "Details: {{detail}}",
+    "dismiss": "Dismiss save error"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
