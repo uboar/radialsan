@@ -19,17 +19,17 @@
   class="flex h-screen overflow-hidden bg-theme-bg-primary text-theme-text-primary"
 >
   <Sidebar />
-  <main class="min-w-0 flex-1 overflow-auto">
-    <div class="mx-auto w-full max-w-7xl px-6 py-6 lg:px-8">
+  <main class="glass-panel m-3 min-w-0 flex-1 overflow-hidden rounded-[14px]">
+    <div class="thin-scrollbar h-full overflow-auto p-4">
       <RuntimeStatusBanner />
       {#if $settingsStore.error}
         <section
-          class="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4"
+          class="mb-4 rounded-[10px] border border-[#F6B95F]/40 bg-[#F6B95F]/10 p-4"
           role="alert"
         >
           <div class="flex gap-3">
             <div class="min-w-0 flex-1">
-              <h2 class="text-sm font-semibold text-amber-200">
+              <h2 class="text-sm font-semibold text-[#F8C45D]">
                 {$t("saveError.title")}
               </h2>
               <p class="mt-1 text-sm text-theme-text-secondary">
@@ -43,7 +43,7 @@
             </div>
             <button
               type="button"
-              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary"
+              class="icon-button shrink-0"
               aria-label={$t("saveError.dismiss")}
               title={$t("saveError.dismiss")}
               on:click={() => settingsStore.clearError()}

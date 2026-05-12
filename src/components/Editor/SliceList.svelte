@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { GripVertical, Plus, Trash2 } from "lucide-svelte";
   import { t } from "../../i18n";
   import { getLucideIconName } from "../../utils/lucideIconRegistry";
   import LucideIcon from "./LucideIcon.svelte";
@@ -74,30 +75,25 @@
 </script>
 
 <div class="space-y-2">
-  <div class="mb-2 flex items-center justify-between gap-2">
-    <h3
-      class="text-sm font-semibold text-theme-text-secondary uppercase tracking-wide"
-    >
+  <div class="mb-3 flex items-center justify-between gap-2">
+    <h3 class="section-label">
       {$t("editor.slices")}
     </h3>
-    <button
-      type="button"
-      on:click={onAdd}
-      class="rounded bg-theme-bg-tertiary px-2 py-1 text-xs text-theme-text-primary transition-colors hover:bg-theme-bg-tertiary/80"
-    >
+    <button type="button" on:click={onAdd} class="secondary-command px-2 py-1">
+      <Plus size={14} />
       {$t("editor.addSlice")}
     </button>
   </div>
 
-  <div class="space-y-1">
+  <div class="space-y-1.5">
     {#each slices as slice (slice.id)}
       <div
-        class="flex min-w-0 cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors {slice.id ===
+        class="group flex min-w-0 cursor-pointer items-center gap-2 rounded-lg border p-2 transition-colors {slice.id ===
         selectedId
-          ? 'bg-blue-600/20 border border-blue-500/50'
-          : 'bg-theme-bg-tertiary/50 border border-transparent hover:bg-theme-bg-tertiary'} {dragOverId ===
+          ? 'border-cyan-300/50 bg-cyan-300/15 text-theme-text-primary shadow-[0_0_0_1px_rgba(110,231,249,0.08)]'
+          : 'border-transparent bg-theme-bg-tertiary/45 text-theme-text-secondary hover:border-theme-border hover:bg-theme-bg-tertiary/80 hover:text-theme-text-primary'} {dragOverId ===
           slice.id && draggedId !== slice.id
-          ? 'ring-1 ring-blue-500/70'
+          ? 'ring-1 ring-cyan-300/70'
           : ''}"
         role="button"
         tabindex="0"
@@ -114,9 +110,10 @@
         on:dragend={handleDragEnd}
       >
         <span
-          class="shrink-0 cursor-grab px-1 text-theme-text-muted hover:text-theme-text-primary"
-          >⠿</span
+          class="flex h-7 w-4 shrink-0 cursor-grab items-center justify-center text-theme-text-muted group-hover:text-theme-text-secondary"
         >
+          <GripVertical size={15} />
+        </span>
         <span class="flex h-6 w-6 shrink-0 items-center justify-center text-lg">
           {#if getLucideIconName(slice.icon)}
             <LucideIcon icon={slice.icon} size={20} />
@@ -124,16 +121,17 @@
             {slice.icon}
           {/if}
         </span>
-        <span class="flex-1 text-sm truncate">{slice.label}</span>
+        <span class="flex-1 truncate text-sm font-medium">{slice.label}</span>
         <span class="max-w-28 shrink-0 truncate text-xs text-theme-text-muted"
           >{getActionLabel(slice.actions[0]?.type)}</span
         >
         <button
           type="button"
           on:click|stopPropagation={() => onDelete(slice.id)}
-          class="shrink-0 px-1 text-sm text-theme-text-muted hover:text-red-400"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-theme-text-muted transition-colors hover:bg-[#FF6B7A]/10 hover:text-[#FF8A96]"
+          title={$t("common.delete")}
         >
-          ×
+          <Trash2 size={14} />
         </button>
       </div>
     {/each}

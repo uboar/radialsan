@@ -43,6 +43,7 @@
     "iconPlaceholder": "絵文字またはアイコン名を入力",
     "action": "アクション",
     "actionType": "アクションタイプ",
+    "preview": "プレビュー",
     "undo": "元に戻す",
     "redo": "やり直す",
     "undoTitle": "元に戻す (Ctrl+Z)",

@@ -93,19 +93,19 @@
       {value}
       on:input={(event) => onChange(event.currentTarget.value)}
       placeholder={$t("editor.iconPlaceholder")}
-      class="flex-1 bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+      class="workbench-field flex-1 rounded-lg px-3 py-2 text-sm"
     />
   </div>
 
   {#if isOpen}
     <div
-      class="absolute left-0 top-full z-50 mt-1 w-[min(20rem,calc(100vw-3rem))] rounded-lg border border-theme-border bg-theme-bg-secondary p-3 shadow-xl"
+      class="glass-panel-strong absolute left-0 top-full z-50 mt-1 w-[min(20rem,calc(100vw-3rem))] rounded-lg p-3 shadow-xl"
     >
       <input
         type="text"
         bind:value={search}
         placeholder={$t("iconPicker.searchIcons")}
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none focus:border-blue-500"
+        class="workbench-field mb-2 w-full rounded-lg px-3 py-1.5 text-sm"
       />
 
       <div class="flex gap-1 mb-2">

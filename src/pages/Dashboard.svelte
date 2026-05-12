@@ -154,28 +154,16 @@
         {$t("dashboard.title")}
       </h2>
       <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
-        <button
-          onclick={handleAutoHotPieImport}
-          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
-        >
+        <button onclick={handleAutoHotPieImport} class="secondary-command">
           {$t("dashboard.importAutoHotPie")}
         </button>
-        <button
-          onclick={handleImport}
-          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
-        >
+        <button onclick={handleImport} class="secondary-command">
           {$t("dashboard.importMenu")}
         </button>
-        <button
-          onclick={handleExportAll}
-          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
-        >
+        <button onclick={handleExportAll} class="secondary-command">
           {$t("dashboard.exportAll")}
         </button>
-        <button
-          onclick={handleNewMenu}
-          class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium leading-none text-white transition-colors hover:bg-blue-500"
-        >
+        <button onclick={handleNewMenu} class="primary-command">
           {$t("dashboard.newMenu")}
         </button>
       </div>
@@ -183,7 +171,7 @@
 
     {#if $settingsStore.settings.menus.length === 0}
       <div
-        class="rounded-lg border border-dashed border-theme-border bg-theme-bg-secondary p-6 text-sm text-theme-text-secondary"
+        class="workbench-card rounded-lg border-dashed p-6 text-sm text-theme-text-secondary"
       >
         {$t("dashboard.noMenus")}
       </div>
@@ -193,7 +181,7 @@
           <a
             href={`/menu/${menu.id}`}
             onclick={(event) => handleLinkClick(event, `/menu/${menu.id}`)}
-            class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4 transition-colors hover:border-theme-text-muted"
+            class="workbench-card min-w-0 rounded-lg p-4 transition-colors hover:border-cyan-300/40"
           >
             <div class="mb-2 flex min-w-0 items-start justify-between gap-3">
               <h3 class="min-w-0 truncate text-base font-semibold leading-6">
@@ -213,7 +201,7 @@
             <div class="mt-3 flex min-h-7 flex-wrap gap-1.5">
               {#each menu.slices.slice(0, 6) as slice (slice.id)}
                 <span
-                  class="inline-flex max-w-full items-center gap-1 rounded bg-theme-bg-tertiary px-2 py-0.5 text-xs"
+                  class="inline-flex max-w-full items-center gap-1 rounded bg-theme-bg-tertiary/70 px-2 py-0.5 text-xs"
                 >
                   <span class="shrink-0">{slice.icon}</span>
                   <span class="truncate">{slice.label}</span>

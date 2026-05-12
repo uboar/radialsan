@@ -129,7 +129,7 @@
       id="action-type"
       value={action.type}
       on:change={(event) => updateType(event.currentTarget.value)}
-      class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+      class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
     >
       {#each ACTION_TYPES as type}
         <option value={type.value}>{$t(type.labelKey)}</option>
@@ -151,7 +151,7 @@
             value={sendKeyCombo.key}
             on:change={(event) =>
               handleSendKeyChange(event.currentTarget.value)}
-            class="min-w-36 bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-theme-text-primary"
+            class="workbench-field min-w-36 rounded-lg px-3 py-2 text-sm"
           >
             <option value="" disabled>{$t("actions.selectKey")}</option>
             {#each SEND_KEY_OPTIONS as key}
@@ -165,7 +165,7 @@
             disabled={recordingSendKey}
             class={`rounded-lg px-3 py-2 text-sm font-medium leading-none transition-colors ${
               recordingSendKey
-                ? "bg-red-600/20 text-red-400 border border-red-600/50 animate-pulse"
+                ? "bg-[#FF6B7A]/15 text-[#FF6B7A] border border-[#FF6B7A]/45 animate-pulse"
                 : "bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 text-theme-text-primary border border-theme-border"
             }`}
           >
@@ -194,7 +194,7 @@
               type="checkbox"
               checked={sendKeyCombo.modifiers.includes(modifier)}
               on:change={() => handleSendKeyModifierToggle(modifier)}
-              class="rounded border-theme-border bg-theme-bg-tertiary text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+              class="rounded border-theme-border bg-theme-bg-tertiary text-cyan-300 focus:ring-cyan-300 focus:ring-offset-0"
             />
             <span class="text-theme-text-primary">{modifier}</span>
           </label>
@@ -214,7 +214,7 @@
         type="text"
         value={(params.text as string) || ""}
         on:input={(event) => updateParam("text", event.currentTarget.value)}
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+        class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
       />
     </div>
   {/if}
@@ -231,7 +231,7 @@
           value={(params.button as string) || "left"}
           on:change={(event) =>
             updateParam("button", event.currentTarget.value)}
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         >
           <option value="left">{$t("actions.buttonLeft")}</option>
           <option value="right">{$t("actions.buttonRight")}</option>
@@ -254,7 +254,7 @@
               "clicks",
               Number.parseInt(event.currentTarget.value, 10) || 1,
             )}
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         />
       </div>
     </div>
@@ -271,7 +271,7 @@
         value={(params.url as string) || ""}
         on:input={(event) => updateParam("url", event.currentTarget.value)}
         placeholder="https://..."
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+        class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
       />
     </div>
   {/if}
@@ -287,7 +287,7 @@
         type="text"
         value={(params.path as string) || ""}
         on:input={(event) => updateParam("path", event.currentTarget.value)}
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+        class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
       />
     </div>
   {/if}
@@ -305,7 +305,7 @@
           value={(params.command as string) || ""}
           on:input={(event) =>
             updateParam("command", event.currentTarget.value)}
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         />
       </div>
       <label class="flex items-center gap-2 text-sm">
@@ -314,7 +314,7 @@
           checked={(params.shell as boolean) || false}
           on:change={(event) =>
             updateParam("shell", event.currentTarget.checked)}
-          class="accent-blue-600"
+          class="accent-cyan-300"
         />
         {$t("actions.runInShell")}
       </label>
@@ -335,7 +335,7 @@
           on:input={(event) =>
             updateParam("interpreter", event.currentTarget.value)}
           placeholder="python, node, bash..."
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         />
       </div>
       <div>
@@ -349,7 +349,7 @@
           value={(params.scriptPath as string) || ""}
           on:input={(event) =>
             updateParam("scriptPath", event.currentTarget.value)}
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         />
       </div>
     </div>
@@ -368,7 +368,7 @@
           "copy"}
         on:change={(event) =>
           updateParam("operation", event.currentTarget.value)}
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+        class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
       >
         <option value="copy">{$t("actions.copy")}</option>
         <option value="cut">{$t("actions.cut")}</option>
@@ -387,7 +387,7 @@
         id="media-action"
         value={(params.action as string) || "playPause"}
         on:change={(event) => updateParam("action", event.currentTarget.value)}
-        class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+        class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
       >
         <option value="playPause">{$t("actions.playPause")}</option>
         <option value="next">{$t("actions.nextTrack")}</option>
@@ -412,7 +412,7 @@
           on:input={(event) => updateParam("script", event.currentTarget.value)}
           placeholder={$t("actions.luaPlaceholder")}
           rows="6"
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500 resize-y"
+          class="workbench-field w-full resize-y rounded-lg px-3 py-2 font-mono text-sm"
         ></textarea>
       </div>
       <p class="text-xs text-theme-text-muted">
@@ -433,7 +433,7 @@
           value={(params.menuId as string) || ""}
           on:change={(event) =>
             updateParam("menuId", event.currentTarget.value)}
-          class="w-full bg-theme-bg-tertiary border border-theme-border rounded-lg px-3 py-2 text-sm"
+          class="workbench-field w-full rounded-lg px-3 py-2 text-sm"
         >
           <option value="">{$t("actions.selectMenu")}</option>
           {#each menuOptions as menu}
@@ -442,12 +442,12 @@
         </select>
       </div>
       {#if menuOptions.length === 0}
-        <p class="text-xs text-amber-400">
+        <p class="text-xs text-[#F8C45D]">
           {$t("actions.submenuNoMenus")}
         </p>
       {/if}
       {#if (params.menuId as string) && !menuOptions.some((menu) => menu.id === params.menuId)}
-        <p class="text-xs text-red-400">
+        <p class="text-xs text-[#FF6B7A]">
           {$t("actions.submenuInvalid")}
         </p>
       {/if}

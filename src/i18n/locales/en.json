@@ -43,6 +43,7 @@
     "iconPlaceholder": "Type emoji or icon name",
     "action": "Action",
     "actionType": "Action Type",
+    "preview": "Preview",
     "undo": "Undo",
     "redo": "Redo",
     "undoTitle": "Undo (Ctrl+Z)",

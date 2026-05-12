@@ -115,9 +115,7 @@
   <div class="space-y-6">
     <h2 class="text-2xl font-bold leading-tight">{$t("settings.title")}</h2>
     <div class="grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-2">
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
-      >
+      <div class="workbench-card rounded-lg p-4">
         <h3 class="font-semibold mb-3">{$t("settings.general")}</h3>
         <div class="flex items-center justify-between gap-4 py-2">
           <span class="min-w-0 text-sm leading-5"
@@ -127,11 +125,10 @@
             type="button"
             aria-label={$t("settings.launchAtStartup")}
             onclick={handleAutoLaunchToggle}
-            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${displayedAutoLaunch ? "bg-blue-600" : "bg-theme-bg-tertiary"}`}
+            class="toggle-track shrink-0"
+            data-on={displayedAutoLaunch}
           >
-            <div
-              class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${displayedAutoLaunch ? "translate-x-5" : ""}`}
-            ></div>
+            <div class="toggle-thumb"></div>
           </button>
         </div>
         <div class="flex items-center justify-between gap-4 py-2">
@@ -144,26 +141,15 @@
             aria-checked={$settingsStore.settings.global.showTrayIcon}
             aria-label={$t("settings.showTrayIcon")}
             onclick={handleShowTrayIconToggle}
-            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${
-              $settingsStore.settings.global.showTrayIcon
-                ? "bg-blue-600"
-                : "bg-theme-bg-tertiary"
-            }`}
+            class="toggle-track shrink-0"
+            data-on={$settingsStore.settings.global.showTrayIcon}
           >
-            <div
-              class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${
-                $settingsStore.settings.global.showTrayIcon
-                  ? "translate-x-5"
-                  : ""
-              }`}
-            ></div>
+            <div class="toggle-thumb"></div>
           </button>
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
-      >
+      <div class="workbench-card rounded-lg p-4">
         <h3 class="font-semibold mb-3">{$t("settings.theme")}</h3>
         <div class="grid grid-cols-3 gap-2">
           {#each themeOptions as option (option.value)}
@@ -172,7 +158,7 @@
               onclick={() => handleThemeChange(option.value)}
               class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
                 $settingsStore.settings.global.theme === option.value
-                  ? "bg-blue-600 text-white"
+                  ? "bg-cyan-300/15 text-cyan-100 ring-1 ring-cyan-300/45"
                   : "bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary"
               }`}
             >
@@ -182,9 +168,7 @@
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4 lg:col-span-2"
-      >
+      <div class="workbench-card rounded-lg p-4 lg:col-span-2">
         <h3 class="font-semibold mb-3">{$t("settings.activation")}</h3>
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div
@@ -200,21 +184,11 @@
                 .suppressTriggerKeyInput}
               aria-label={$t("settings.suppressTriggerKeyInput")}
               onclick={handleSuppressTriggerKeyInputToggle}
-              class={`h-5 w-10 shrink-0 rounded-full transition-colors ${
-                $settingsStore.settings.global.menuActivation
-                  .suppressTriggerKeyInput
-                  ? "bg-blue-600"
-                  : "bg-theme-bg-tertiary"
-              }`}
+              class="toggle-track shrink-0"
+              data-on={$settingsStore.settings.global.menuActivation
+                .suppressTriggerKeyInput}
             >
-              <div
-                class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${
-                  $settingsStore.settings.global.menuActivation
-                    .suppressTriggerKeyInput
-                    ? "translate-x-5"
-                    : ""
-                }`}
-              ></div>
+              <div class="toggle-thumb"></div>
             </button>
           </div>
           <div class="min-w-0">
@@ -241,7 +215,7 @@
                   "quickTapThresholdMs",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
           <div class="min-w-0">
@@ -268,7 +242,7 @@
                   "submenuHoverDelayMs",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
           <div class="min-w-0">
@@ -294,15 +268,13 @@
                   "maxSubmenuDepth",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4 lg:col-span-2"
-      >
+      <div class="workbench-card rounded-lg p-4 lg:col-span-2">
         <h3 class="font-semibold mb-3">{$t("settings.defaultAppearance")}</h3>
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div class="min-w-0">
@@ -326,7 +298,7 @@
                   "innerRadius",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
           <div class="min-w-0">
@@ -350,7 +322,7 @@
                   "outerRadius",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
           <div class="min-w-0">
@@ -375,15 +347,13 @@
                   "opacity",
                   Number(event.currentTarget.value),
                 )}
-              class="w-full accent-blue-600"
+              class="w-full accent-cyan-300"
             />
           </div>
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
-      >
+      <div class="workbench-card rounded-lg p-4">
         <h3 class="font-semibold mb-3">{$t("settings.language")}</h3>
         <div class="grid grid-cols-2 gap-2">
           <button
@@ -391,7 +361,7 @@
             onclick={() => handleLanguageChange("en")}
             class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
               $language === "en"
-                ? "bg-blue-600 text-white"
+                ? "bg-cyan-300/15 text-cyan-100 ring-1 ring-cyan-300/45"
                 : "bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary"
             }`}
           >
@@ -402,7 +372,7 @@
             onclick={() => handleLanguageChange("ja")}
             class={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
               $language === "ja"
-                ? "bg-blue-600 text-white"
+                ? "bg-cyan-300/15 text-cyan-100 ring-1 ring-cyan-300/45"
                 : "bg-theme-bg-tertiary text-theme-text-secondary hover:text-theme-text-primary"
             }`}
           >
@@ -411,9 +381,7 @@
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
-      >
+      <div class="workbench-card rounded-lg p-4">
         <h3 class="font-semibold mb-3">{$t("settings.about")}</h3>
         <p class="text-sm leading-5 text-theme-text-secondary">
           radialsan {$t("settings.version")}

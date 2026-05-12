@@ -299,16 +299,10 @@
         {$t("profiles.title")}
       </h2>
       <div class="flex flex-wrap items-center justify-end gap-2">
-        <button
-          onclick={handleImportProfile}
-          class="rounded-lg bg-theme-bg-tertiary px-3 py-2 text-sm font-medium leading-none transition-colors hover:bg-theme-bg-tertiary/80"
-        >
+        <button onclick={handleImportProfile} class="secondary-command">
           {$t("profiles.importProfile")}
         </button>
-        <button
-          onclick={handleNewProfile}
-          class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium leading-none text-white transition-colors hover:bg-blue-500"
-        >
+        <button onclick={handleNewProfile} class="primary-command">
           {$t("profiles.newProfile")}
         </button>
       </div>
@@ -316,9 +310,7 @@
 
     <div class="space-y-3">
       {#each getProfilesForDisplay() as profile (profile.id)}
-        <div
-          class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
-        >
+        <div class="workbench-card min-w-0 rounded-lg p-4">
           {#if editingId === profile.id}
             <div class="space-y-3">
               <div>
@@ -330,7 +322,7 @@
                   id="profile-name"
                   type="text"
                   bind:value={editName}
-                  class="w-full bg-theme-bg-tertiary border border-theme-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                  class="workbench-field w-full rounded px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -356,7 +348,7 @@
                       <button
                         type="button"
                         onclick={handleAddRule}
-                        class="text-xs text-blue-400 hover:text-blue-300"
+                        class="text-xs text-cyan-200 hover:text-cyan-100"
                       >
                         {$t("profiles.addRule")}
                       </button>
@@ -369,7 +361,7 @@
                   </p>
                 {:else}
                   {#if windowCandidateError}
-                    <p class="mb-2 text-xs text-red-400">
+                    <p class="mb-2 text-xs text-[#FF6B7A]">
                       {#if windowCandidateError.kind === "unavailable"}
                         {$t("profiles.windowCandidatesUnavailable")}
                       {:else}
@@ -403,7 +395,7 @@
                             field: event.currentTarget
                               .value as MatchRule["field"],
                           })}
-                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-300"
                       >
                         <option value="processName"
                           >{$t("profiles.processName")}</option
@@ -419,7 +411,7 @@
                             matchMode: event.currentTarget
                               .value as MatchRule["matchMode"],
                           })}
-                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                        class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-300"
                       >
                         <option value="contains"
                           >{$t("profiles.contains")}</option
@@ -435,7 +427,7 @@
                             value: event.currentTarget.value,
                           })}
                         placeholder={$t("profiles.valuePlaceholder")}
-                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-300"
                       />
                       <select
                         value={candidateValues.includes(rule.value)
@@ -449,7 +441,7 @@
                           }
                         }}
                         disabled={candidateValues.length === 0}
-                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                        class="min-w-0 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-300 disabled:opacity-50"
                       >
                         <option value=""
                           >{$t("profiles.selectFromRunning")}</option
@@ -460,7 +452,7 @@
                       </select>
                       <button
                         onclick={() => handleRemoveRule(index)}
-                        class="justify-self-start text-xs text-theme-text-muted hover:text-red-400 xl:justify-self-end"
+                        class="justify-self-start text-xs text-theme-text-muted hover:text-[#FF6B7A] xl:justify-self-end"
                       >
                         {$t("profiles.removeHotkey")}
                       </button>
@@ -477,7 +469,7 @@
                   <button
                     type="button"
                     onclick={handleAddPieKey}
-                    class="text-xs text-blue-400 hover:text-blue-300"
+                    class="text-xs text-cyan-200 hover:text-cyan-100"
                   >
                     {$t("profiles.addHotkey")}
                   </button>
@@ -510,7 +502,7 @@
                                 checked={parsed.modifiers.includes(modifier)}
                                 onchange={() =>
                                   handleModifierToggle(pieKey, modifier)}
-                                class="rounded border-theme-border bg-theme-bg-tertiary text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                                class="rounded border-theme-border bg-theme-bg-tertiary text-cyan-300 focus:ring-cyan-300 focus:ring-offset-0"
                               />
                               <span class="text-theme-text-primary"
                                 >{modifier}</span
@@ -533,7 +525,7 @@
                                 pieKey,
                                 event.currentTarget.value,
                               )}
-                            class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 text-theme-text-primary"
+                            class="bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-300 text-theme-text-primary"
                           >
                             <option value="" disabled
                               >{$t("profiles.selectKey")}</option
@@ -549,7 +541,7 @@
                           disabled={recordingPieKeyId === pieKey.id}
                           class={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                             recordingPieKeyId === pieKey.id
-                              ? "bg-red-600/20 text-red-400 border border-red-600/50 animate-pulse"
+                              ? "bg-[#FF6B7A]/15 text-[#FF6B7A] border border-[#FF6B7A]/45 animate-pulse"
                               : "bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 text-theme-text-primary border border-theme-border"
                           }`}
                         >
@@ -559,7 +551,7 @@
                         </button>
 
                         <span
-                          class="rounded border border-theme-border bg-theme-bg-secondary px-2 py-1 font-mono text-xs text-theme-text-primary"
+                          class="rounded border border-theme-border bg-theme-bg-tertiary/70 px-2 py-1 font-mono text-xs text-theme-text-primary"
                         >
                           {pieKey.hotkey}
                         </span>
@@ -577,7 +569,7 @@
                               handleUpdatePieKey(pieKey.id, {
                                 menuId: event.currentTarget.value,
                               })}
-                            class="min-w-0 flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 text-theme-text-primary"
+                            class="min-w-0 flex-1 bg-theme-bg-tertiary border border-theme-border rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-300 text-theme-text-primary"
                           >
                             <option value="" disabled
                               >{$t("profiles.selectMenu")}</option
@@ -590,7 +582,7 @@
 
                         <button
                           onclick={() => handleRemovePieKey(pieKey.id)}
-                          class="text-xs text-theme-text-muted hover:text-red-400 transition-colors"
+                          class="text-xs text-theme-text-muted hover:text-[#FF6B7A] transition-colors"
                         >
                           {$t("profiles.removeHotkey")}
                         </button>
@@ -604,13 +596,13 @@
                 <button
                   onclick={() => handleSaveEdit(profile)}
                   disabled={!canSaveCurrentProfile(profile)}
-                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  class="primary-command px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {$t("common.save")}
                 </button>
                 <button
                   onclick={() => handleCancelEdit(profile)}
-                  class="px-3 py-1.5 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-xs font-medium transition-colors"
+                  class="secondary-command px-3 py-1.5 text-xs"
                 >
                   {$t("common.cancel")}
                 </button>
@@ -624,7 +616,7 @@
                 <h3 class="min-w-0 truncate font-semibold">{profile.name}</h3>
                 {#if profile.isDefault}
                   <span
-                    class="shrink-0 rounded bg-blue-600/20 px-2 py-0.5 text-xs text-blue-400"
+                    class="shrink-0 rounded bg-cyan-300/15 px-2 py-0.5 text-xs text-cyan-200"
                     >{$t("profiles.default")}</span
                   >
                 {/if}
@@ -646,7 +638,7 @@
                 {#if !profile.isDefault}
                   <button
                     onclick={() => handleDeleteProfile(profile.id)}
-                    class="text-xs text-theme-text-muted hover:text-red-400 transition-colors"
+                    class="text-xs text-theme-text-muted hover:text-[#FF6B7A] transition-colors"
                   >
                     {$t("common.delete")}
                   </button>
@@ -680,7 +672,7 @@
                     <span
                       class="inline-flex max-w-full items-center gap-1 rounded border border-theme-border bg-theme-bg-tertiary px-2 py-0.5 text-xs"
                     >
-                      <span class="font-mono text-blue-400"
+                      <span class="font-mono text-cyan-200"
                         >{pieKey.hotkey}</span
                       >
                       <span class="text-theme-text-muted">→</span>

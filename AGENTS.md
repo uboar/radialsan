@@ -17,6 +17,8 @@ rdev でホットキー検出 -> Tauri event -> Svelte Canvas 表示 -> release 
 
 ## 重要ファイル
 
+- `DESIGN.md`: フロントエンド/UI のデザイン方針とトークン。UI 変更時は先に読む。
+- `.agents/skills/frontend-design/SKILL.md`: repo-local のフロントエンドデザイン skill。UI/見た目/コンポーネント変更時に使う。
 - `src-tauri/src/settings.rs`: 設定型、JSON 永続化、プロファイル判定。
 - `src-tauri/src/input_listener.rs`: `rdev` の press/release 監視。
 - `src-tauri/src/actions.rs`: アクション実行ディスパッチ。

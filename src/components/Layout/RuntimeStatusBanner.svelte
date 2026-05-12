@@ -69,15 +69,15 @@
 
 {#if warnings.length > 0}
   <section
-    class="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4"
+    class="mb-4 rounded-[10px] border border-[#F6B95F]/40 bg-[#F6B95F]/10 p-4"
   >
-    <h2 class="text-sm font-semibold text-amber-200">
+    <h2 class="text-sm font-semibold text-[#F8C45D]">
       {$t("runtimeWarnings.title")}
     </h2>
     <div class="mt-3 space-y-3">
       {#each warnings as warning (warning.key)}
         <div
-          class="rounded-lg border border-amber-500/20 bg-theme-bg-secondary/70 p-3"
+          class="rounded-lg border border-[#F6B95F]/20 bg-theme-bg-tertiary/45 p-3"
         >
           <p class="text-sm font-medium text-theme-text-primary">
             {warning.title}
