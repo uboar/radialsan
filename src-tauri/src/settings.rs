@@ -350,6 +350,18 @@ fn make_send_key_slice(id: &str, label: &str, icon: &str, key: &str) -> Slice {
     }
 }
 
+fn make_send_key_menu(id: &str, name: &str, slices: &[(&str, &str, &str, &str)]) -> PieMenu {
+    PieMenu {
+        id: id.to_string(),
+        name: name.to_string(),
+        appearance_overrides: None,
+        slices: slices
+            .iter()
+            .map(|(slice_id, label, icon, key)| make_send_key_slice(slice_id, label, icon, key))
+            .collect(),
+    }
+}
+
 fn make_clipboard_slice(id: &str, label: &str, icon: &str, operation: &str) -> Slice {
     Slice {
         id: id.to_string(),
@@ -358,6 +370,24 @@ fn make_clipboard_slice(id: &str, label: &str, icon: &str, operation: &str) -> S
         actions: vec![Action {
             action_type: ActionType::Clipboard,
             params: serde_json::json!({ "operation": operation }),
+        }],
+    }
+}
+
+fn make_app_profile(id: &str, name: &str, process_pattern: &str, menu_id: &str) -> Profile {
+    Profile {
+        id: id.to_string(),
+        name: name.to_string(),
+        is_default: false,
+        match_rules: vec![MatchRule {
+            field: MatchField::ProcessName,
+            match_mode: MatchMode::Regex,
+            value: process_pattern.to_string(),
+        }],
+        pie_keys: vec![PieKey {
+            id: format!("piekey_{}", id),
+            hotkey: "CapsLock".to_string(),
+            menu_id: menu_id.to_string(),
         }],
     }
 }
@@ -388,6 +418,71 @@ impl Default for Settings {
             slices,
         };
 
+        let clip_studio_menu = make_send_key_menu(
+            "menu_clip_studio_paint",
+            "CLIP STUDIO PAINT",
+            &[
+                ("slice_csp_pen", "ペン", "lucide:pen-tool", "p"),
+                ("slice_csp_brush", "ブラシ", "lucide:brush", "b"),
+                ("slice_csp_eraser", "消しゴム", "lucide:eraser", "e"),
+                ("slice_csp_fill", "塗りつぶし", "lucide:palette", "g"),
+                ("slice_csp_selection", "選択範囲", "lucide:mouse", "m"),
+                ("slice_csp_eyedropper", "スポイト", "lucide:pipette", "i"),
+                ("slice_csp_hand", "手のひら", "lucide:move", "h"),
+                ("slice_csp_rotate", "回転", "lucide:rotate-cw", "r"),
+            ],
+        );
+
+        let photoshop_menu = make_send_key_menu(
+            "menu_adobe_photoshop",
+            "Adobe Photoshop",
+            &[
+                ("slice_ps_move", "移動", "lucide:move", "v"),
+                ("slice_ps_brush", "ブラシ", "lucide:brush", "b"),
+                ("slice_ps_eraser", "消しゴム", "lucide:eraser", "e"),
+                ("slice_ps_lasso", "なげなわ", "lucide:mouse", "l"),
+                ("slice_ps_crop", "切り抜き", "lucide:crop", "c"),
+                ("slice_ps_eyedropper", "スポイト", "lucide:pipette", "i"),
+                ("slice_ps_hand", "手のひら", "lucide:move", "h"),
+                ("slice_ps_zoom", "ズーム", "lucide:zoom-in", "z"),
+            ],
+        );
+
+        let illustrator_menu = make_send_key_menu(
+            "menu_adobe_illustrator",
+            "Adobe Illustrator",
+            &[
+                ("slice_ai_selection", "選択", "lucide:mouse", "v"),
+                (
+                    "slice_ai_direct_selection",
+                    "ダイレクト選択",
+                    "lucide:mouse",
+                    "a",
+                ),
+                ("slice_ai_pen", "ペン", "lucide:pen-tool", "p"),
+                ("slice_ai_type", "文字", "lucide:type", "t"),
+                ("slice_ai_rectangle", "長方形", "lucide:maximize-2", "m"),
+                ("slice_ai_ellipse", "楕円形", "lucide:minimize-2", "l"),
+                ("slice_ai_eyedropper", "スポイト", "lucide:pipette", "i"),
+                ("slice_ai_zoom", "ズーム", "lucide:zoom-in", "z"),
+            ],
+        );
+
+        let after_effects_menu = make_send_key_menu(
+            "menu_adobe_after_effects",
+            "Adobe After Effects",
+            &[
+                ("slice_ae_anchor", "アンカー", "lucide:flag", "a"),
+                ("slice_ae_position", "位置", "lucide:move", "p"),
+                ("slice_ae_scale", "スケール", "lucide:maximize-2", "s"),
+                ("slice_ae_rotation", "回転", "lucide:rotate-cw", "r"),
+                ("slice_ae_opacity", "不透明度", "lucide:eye", "t"),
+                ("slice_ae_effects", "エフェクト", "lucide:zap", "e"),
+                ("slice_ae_keyframes", "キーフレーム", "lucide:key", "u"),
+                ("slice_ae_preview", "プレビュー", "lucide:play", "space"),
+            ],
+        );
+
         let default_profile = Profile {
             id: "default".to_string(),
             name: "デフォルト".to_string(),
@@ -403,8 +498,40 @@ impl Default for Settings {
         Self {
             version: 1,
             global: GlobalSettings::default(),
-            profiles: vec![default_profile],
-            menus: vec![sample_menu],
+            profiles: vec![
+                default_profile,
+                make_app_profile(
+                    "clip_studio_paint",
+                    "CLIP STUDIO PAINT",
+                    "(?i)clip\\s*studio\\s*paint|clipstudiopaint",
+                    "menu_clip_studio_paint",
+                ),
+                make_app_profile(
+                    "adobe_photoshop",
+                    "Adobe Photoshop",
+                    "(?i)photoshop",
+                    "menu_adobe_photoshop",
+                ),
+                make_app_profile(
+                    "adobe_illustrator",
+                    "Adobe Illustrator",
+                    "(?i)illustrator",
+                    "menu_adobe_illustrator",
+                ),
+                make_app_profile(
+                    "adobe_after_effects",
+                    "Adobe After Effects",
+                    "(?i)after\\s*effects|afterfx|aerender",
+                    "menu_adobe_after_effects",
+                ),
+            ],
+            menus: vec![
+                sample_menu,
+                clip_studio_menu,
+                photoshop_menu,
+                illustrator_menu,
+                after_effects_menu,
+            ],
         }
     }
 }
@@ -552,9 +679,9 @@ mod tests {
         let restored: Settings = serde_json::from_str(&json).expect("deserialize failed");
 
         assert_eq!(restored.version, 1);
-        assert_eq!(restored.profiles.len(), 1);
+        assert_eq!(restored.profiles.len(), 5);
         assert_eq!(restored.profiles[0].id, "default");
-        assert_eq!(restored.menus.len(), 1);
+        assert_eq!(restored.menus.len(), 5);
         assert_eq!(restored.menus[0].id, "menu_1");
         assert_eq!(restored.menus[0].slices.len(), 4);
         assert_eq!(restored.profiles[0].pie_keys[0].hotkey, "CapsLock");
@@ -608,6 +735,46 @@ mod tests {
         assert_eq!(slices[1].actions[0].params["operation"], "paste");
         assert!(slices[2].actions[0].params.get("keys").is_some());
         assert!(slices[3].actions[0].params.get("keys").is_some());
+    }
+
+    #[test]
+    fn test_default_settings_include_app_presets() {
+        let settings = Settings::default();
+
+        let preset_menu_ids = [
+            "menu_clip_studio_paint",
+            "menu_adobe_photoshop",
+            "menu_adobe_illustrator",
+            "menu_adobe_after_effects",
+        ];
+        for menu_id in preset_menu_ids {
+            let menu = settings
+                .menus
+                .iter()
+                .find(|menu| menu.id == menu_id)
+                .expect("preset menu should exist");
+            assert_eq!(menu.slices.len(), 8);
+            assert!(menu.slices.iter().all(|slice| {
+                slice.actions.len() == 1 && slice.actions[0].action_type == ActionType::SendKey
+            }));
+        }
+
+        let preset_profiles = [
+            ("clip_studio_paint", "menu_clip_studio_paint"),
+            ("adobe_photoshop", "menu_adobe_photoshop"),
+            ("adobe_illustrator", "menu_adobe_illustrator"),
+            ("adobe_after_effects", "menu_adobe_after_effects"),
+        ];
+        for (profile_id, menu_id) in preset_profiles {
+            let profile = settings
+                .profiles
+                .iter()
+                .find(|profile| profile.id == profile_id)
+                .expect("preset profile should exist");
+            assert!(!profile.is_default);
+            assert_eq!(profile.pie_keys[0].hotkey, "CapsLock");
+            assert_eq!(profile.pie_keys[0].menu_id, menu_id);
+        }
     }
 
     #[test]
@@ -665,7 +832,6 @@ mod tests {
     #[test]
     fn test_profile_matching_fallback_to_default() {
         let settings = Settings::default();
-        // Default settings has only the default profile, so always returns it.
         let profile = settings.get_active_profile("anything", "anything");
         assert_eq!(profile.id, "default");
         assert!(profile.is_default);

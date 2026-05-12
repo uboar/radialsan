@@ -171,8 +171,114 @@ function getPrimaryModifier(): "meta" | "ctrl" {
   return /mac|iphone|ipad/i.test(platform) ? "meta" : "ctrl";
 }
 
+function makeSendKeySlice(
+  id: string,
+  label: string,
+  icon: string,
+  keys: string,
+) {
+  return {
+    id,
+    label,
+    icon,
+    actions: [{ type: "sendKey" as const, params: { keys } }],
+  };
+}
+
+function makeSendKeyMenu(
+  id: string,
+  name: string,
+  slices: Array<[string, string, string, string]>,
+): PieMenu {
+  return {
+    id,
+    name,
+    appearanceOverrides: null,
+    slices: slices.map(([sliceId, label, icon, keys]) =>
+      makeSendKeySlice(sliceId, label, icon, keys),
+    ),
+  };
+}
+
+function makeAppProfile(
+  id: string,
+  name: string,
+  processPattern: string,
+  menuId: string,
+): Profile {
+  return {
+    id,
+    name,
+    isDefault: false,
+    matchRules: [
+      {
+        field: "processName",
+        matchMode: "regex",
+        value: processPattern,
+      },
+    ],
+    pieKeys: [{ id: `piekey_${id}`, hotkey: "CapsLock", menuId }],
+  };
+}
+
 function getDefaultSettings(): Settings {
   const modifier = getPrimaryModifier();
+  const clipStudioMenu = makeSendKeyMenu(
+    "menu_clip_studio_paint",
+    "CLIP STUDIO PAINT",
+    [
+      ["slice_csp_pen", "ペン", "lucide:pen-tool", "p"],
+      ["slice_csp_brush", "ブラシ", "lucide:brush", "b"],
+      ["slice_csp_eraser", "消しゴム", "lucide:eraser", "e"],
+      ["slice_csp_fill", "塗りつぶし", "lucide:palette", "g"],
+      ["slice_csp_selection", "選択範囲", "lucide:mouse", "m"],
+      ["slice_csp_eyedropper", "スポイト", "lucide:pipette", "i"],
+      ["slice_csp_hand", "手のひら", "lucide:move", "h"],
+      ["slice_csp_rotate", "回転", "lucide:rotate-cw", "r"],
+    ],
+  );
+  const photoshopMenu = makeSendKeyMenu(
+    "menu_adobe_photoshop",
+    "Adobe Photoshop",
+    [
+      ["slice_ps_move", "移動", "lucide:move", "v"],
+      ["slice_ps_brush", "ブラシ", "lucide:brush", "b"],
+      ["slice_ps_eraser", "消しゴム", "lucide:eraser", "e"],
+      ["slice_ps_lasso", "なげなわ", "lucide:mouse", "l"],
+      ["slice_ps_crop", "切り抜き", "lucide:crop", "c"],
+      ["slice_ps_eyedropper", "スポイト", "lucide:pipette", "i"],
+      ["slice_ps_hand", "手のひら", "lucide:move", "h"],
+      ["slice_ps_zoom", "ズーム", "lucide:zoom-in", "z"],
+    ],
+  );
+  const illustratorMenu = makeSendKeyMenu(
+    "menu_adobe_illustrator",
+    "Adobe Illustrator",
+    [
+      ["slice_ai_selection", "選択", "lucide:mouse", "v"],
+      ["slice_ai_direct_selection", "ダイレクト選択", "lucide:mouse", "a"],
+      ["slice_ai_pen", "ペン", "lucide:pen-tool", "p"],
+      ["slice_ai_type", "文字", "lucide:type", "t"],
+      ["slice_ai_rectangle", "長方形", "lucide:maximize-2", "m"],
+      ["slice_ai_ellipse", "楕円形", "lucide:minimize-2", "l"],
+      ["slice_ai_eyedropper", "スポイト", "lucide:pipette", "i"],
+      ["slice_ai_zoom", "ズーム", "lucide:zoom-in", "z"],
+    ],
+  );
+  const afterEffectsMenu = makeSendKeyMenu(
+    "menu_adobe_after_effects",
+    "Adobe After Effects",
+    [
+      ["slice_ae_anchor", "アンカー", "lucide:flag", "a"],
+      ["slice_ae_position", "位置", "lucide:move", "p"],
+      ["slice_ae_scale", "スケール", "lucide:maximize-2", "s"],
+      ["slice_ae_rotation", "回転", "lucide:rotate-cw", "r"],
+      ["slice_ae_opacity", "不透明度", "lucide:eye", "t"],
+      ["slice_ae_effects", "エフェクト", "lucide:zap", "e"],
+      ["slice_ae_keyframes", "キーフレーム", "lucide:key", "u"],
+      ["slice_ae_preview", "プレビュー", "lucide:play", "space"],
+    ],
+  );
 
   return {
     version: 1,
@@ -214,6 +320,30 @@ function getDefaultSettings(): Settings {
         matchRules: [],
         pieKeys: [{ id: "pk_1", hotkey: "CapsLock", menuId: "menu_1" }],
       },
+      makeAppProfile(
+        "clip_studio_paint",
+        "CLIP STUDIO PAINT",
+        "(?i)clip\\s*studio\\s*paint|clipstudiopaint",
+        "menu_clip_studio_paint",
+      ),
+      makeAppProfile(
+        "adobe_photoshop",
+        "Adobe Photoshop",
+        "(?i)photoshop",
+        "menu_adobe_photoshop",
+      ),
+      makeAppProfile(
+        "adobe_illustrator",
+        "Adobe Illustrator",
+        "(?i)illustrator",
+        "menu_adobe_illustrator",
+      ),
+      makeAppProfile(
+        "adobe_after_effects",
+        "Adobe After Effects",
+        "(?i)after\\s*effects|afterfx|aerender",
+        "menu_adobe_after_effects",
+      ),
     ],
     menus: [
       {
@@ -249,6 +379,10 @@ function getDefaultSettings(): Settings {
           },
         ],
       },
+      clipStudioMenu,
+      photoshopMenu,
+      illustratorMenu,
+      afterEffectsMenu,
     ],
   };
 }
