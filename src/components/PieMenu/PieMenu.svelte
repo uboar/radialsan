@@ -12,7 +12,16 @@
     getSliceIndex,
   } from "./geometry";
   import { MenuAnimator } from "./animation";
-  import { canEnterSubmenu, getParentPopState } from "./submenuNavigation";
+  import {
+    DEFAULT_SUBMENU_ACTIVATION,
+    canEnterSubmenu,
+    getParentPopState,
+    normalizeSubmenuActivation,
+    shouldOpenSubmenuOnClick,
+    shouldOpenSubmenuOnHover,
+    shouldOpenSubmenuOnThreshold,
+    type SubmenuActivation,
+  } from "./submenuNavigation";
   import { mergeAppearance } from "../../types/settings";
   import type { Appearance, Settings } from "../../types/settings";
 
@@ -75,6 +84,9 @@
   let menuStack: MenuStackEntry[] = [];
   let parentPopArmed = false;
   let pendingSubmenu = false;
+  let submenuActivation: SubmenuActivation = DEFAULT_SUBMENU_ACTIVATION;
+  let submenuHoverTimer: number | null = null;
+  let submenuHoverTarget: string | null = null;
   let renderVersion = 0;
   let renderedVersion = -1;
   let mounted = false;
@@ -132,6 +144,9 @@
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const settings = await invoke<Settings>("get_settings");
+      submenuActivation = normalizeSubmenuActivation(
+        settings.global?.menuActivation,
+      );
       const menu = settings.menus?.find((m) => m.id === menuId);
       if (!menu) return null;
       const appearance = mergeAppearance(
@@ -152,9 +167,29 @@
     }
   }
 
+  async function refreshSubmenuActivation(): Promise<void> {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const settings = await invoke<Settings>("get_settings");
+      submenuActivation = normalizeSubmenuActivation(
+        settings.global?.menuActivation,
+      );
+    } catch {
+      submenuActivation = DEFAULT_SUBMENU_ACTIVATION;
+    }
+  }
+
   function setHoveredSlice(index: number | null): void {
     hoveredSlice = index;
     animator?.setHovered(index);
+  }
+
+  function clearSubmenuHoverTimer(): void {
+    if (submenuHoverTimer !== null) {
+      window.clearTimeout(submenuHoverTimer);
+      submenuHoverTimer = null;
+    }
+    submenuHoverTarget = null;
   }
 
   function resetMenu(): void {
@@ -162,6 +197,7 @@
     menuStack = [];
     parentPopArmed = false;
     pendingSubmenu = false;
+    clearSubmenuHoverTimer();
     setHoveredSlice(null);
     renderVersion += 1;
   }
@@ -262,7 +298,9 @@
     }
   }
 
-  function showMenu(payload: ShowMenuPayload): void {
+  async function showMenu(payload: ShowMenuPayload): Promise<void> {
+    await refreshSubmenuActivation();
+
     const rawSlices = payload.slices ?? [];
     const slices: SliceRenderData[] = rawSlices.map((s, i) => {
       const sliceActions = payload.actions?.[i] ?? s.actions ?? [];
@@ -340,6 +378,80 @@
     popToParent();
   }
 
+  function getSubmenuAction(
+    current: MenuState,
+    index: number | null,
+  ): MenuAction | null {
+    if (index === null || index < 0 || index >= current.actions.length) {
+      return null;
+    }
+
+    const submenuAction = current.actions[index]?.find(
+      (action) => action.type === "submenu",
+    );
+    return submenuAction?.params?.menuId ? submenuAction : null;
+  }
+
+  function canOpenAnotherSubmenu(): boolean {
+    return canEnterSubmenu(
+      pendingSubmenu,
+      menuStack.length,
+      submenuActivation.maxSubmenuDepth,
+    );
+  }
+
+  function openSubmenu(
+    submenuAction: MenuAction,
+    x: number,
+    y: number,
+    rawX?: number,
+    rawY?: number,
+  ): void {
+    if (!canOpenAnotherSubmenu()) return;
+    clearSubmenuHoverTimer();
+    void enterSubmenu(
+      submenuAction.params.menuId as string,
+      x,
+      y,
+      rawX ?? x,
+      rawY ?? y,
+    );
+  }
+
+  function updateSubmenuHoverTimer(
+    submenuAction: MenuAction | null,
+    x: number,
+    y: number,
+    rawX?: number,
+    rawY?: number,
+  ): void {
+    if (
+      !submenuAction ||
+      !shouldOpenSubmenuOnHover(submenuActivation.submenuOpenMode) ||
+      !canOpenAnotherSubmenu()
+    ) {
+      clearSubmenuHoverTimer();
+      return;
+    }
+
+    const target = `${menuState?.menuId ?? ""}:${hoveredSlice ?? ""}:${submenuAction.params.menuId}`;
+    if (submenuHoverTarget === target) return;
+
+    clearSubmenuHoverTimer();
+    submenuHoverTarget = target;
+    const delay = submenuActivation.submenuHoverDelayMs;
+    if (delay === 0) {
+      openSubmenu(submenuAction, x, y, rawX, rawY);
+      return;
+    }
+
+    submenuHoverTimer = window.setTimeout(() => {
+      submenuHoverTimer = null;
+      submenuHoverTarget = null;
+      openSubmenu(submenuAction, x, y, rawX, rawY);
+    }, delay);
+  }
+
   function updateHoveredSlice(
     x: number,
     y: number,
@@ -376,23 +488,20 @@
     setHoveredSlice(idx);
 
     const dist = distance(x, y, current.centerX, current.centerY);
-    if (dist > current.config.outerRadius) {
+    const hoverSubmenuAction = getSubmenuAction(current, idx);
+    updateSubmenuHoverTimer(hoverSubmenuAction, x, y, rawX, rawY);
+
+    if (
+      shouldOpenSubmenuOnThreshold(
+        submenuActivation.submenuOpenMode,
+        dist,
+        current.config.outerRadius,
+      )
+    ) {
       const angle = angleFromCenter(current.centerX, current.centerY, x, y);
       const directionIdx = idx ?? getSliceIndex(angle, current.slices.length);
-      const sliceActions = current.actions[directionIdx];
-      const submenuAction = sliceActions?.find((a) => a.type === "submenu");
-      if (submenuAction && submenuAction.params?.menuId) {
-        const maxDepth = 3;
-        if (canEnterSubmenu(pendingSubmenu, menuStack.length, maxDepth)) {
-          void enterSubmenu(
-            submenuAction.params.menuId as string,
-            x,
-            y,
-            rawX ?? x,
-            rawY ?? y,
-          );
-        }
-      }
+      const submenuAction = getSubmenuAction(current, directionIdx);
+      if (submenuAction) openSubmenu(submenuAction, x, y, rawX, rawY);
     }
 
     const parentPopState = getParentPopState(
@@ -444,6 +553,7 @@
     animator = null;
     renderer = null;
     renderedVersion = -1;
+    clearSubmenuHoverTimer();
   }
 
   onMount(() => {
@@ -463,8 +573,9 @@
       try {
         const { listen } = await import("@tauri-apps/api/event");
         addUnlistener(
-          await listen<ShowMenuPayload>("radialsan://show-menu", (event) =>
-            showMenu(event.payload),
+          await listen<ShowMenuPayload>(
+            "radialsan://show-menu",
+            (event) => void showMenu(event.payload),
           ),
         );
         addUnlistener(
@@ -504,16 +615,43 @@
     const handleMouseMove = (event: MouseEvent): void => {
       updateHoveredSlice(event.clientX, event.clientY);
     };
+    const handleClick = (event: MouseEvent): void => {
+      const current = menuState;
+      if (
+        !current?.visible ||
+        !shouldOpenSubmenuOnClick(submenuActivation.submenuOpenMode)
+      ) {
+        return;
+      }
+
+      const idx = getSliceAtPoint(
+        event.clientX,
+        event.clientY,
+        current.centerX,
+        current.centerY,
+        current.slices.length,
+        current.config.innerRadius,
+        current.config.outerRadius,
+        current.config.deadZoneRadius,
+      );
+      const submenuAction = getSubmenuAction(current, idx);
+      if (submenuAction) {
+        event.preventDefault();
+        openSubmenu(submenuAction, event.clientX, event.clientY);
+      }
+    };
 
     void setupTauriListeners();
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("click", handleClick);
 
     return () => {
       disposed = true;
       for (const unlisten of unlisteners) unlisten();
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("click", handleClick);
       destroyRenderer();
     };
   });

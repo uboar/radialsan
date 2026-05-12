@@ -46,7 +46,17 @@ export const settingsActions: SettingsActions = {
       const settings = await invoke<Settings>("get_settings");
       state.set({ settings, loading: false, error: null });
     } catch (e) {
-      console.warn("Failed to load settings from Tauri, using defaults", e);
+      if (isTauriRuntime()) {
+        console.error("Failed to load settings from Tauri", e);
+        state.update((current) => ({
+          ...current,
+          loading: false,
+          error: String(e),
+        }));
+        return;
+      }
+
+      console.warn("Tauri settings API unavailable, using dev defaults", e);
       state.set({
         settings: getDefaultSettings(),
         loading: false,
@@ -162,6 +172,13 @@ export const useSettingsStore = ((
 
 useSettingsStore.getState = getState;
 
+function isTauriRuntime(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+  );
+}
+
 function getPrimaryModifier(): "meta" | "ctrl" {
   if (typeof navigator === "undefined") {
     return "ctrl";
@@ -184,26 +201,26 @@ function getDefaultSettings(): Settings {
       menuActivation: {
         mode: "holdRelease",
         quickTapThresholdMs: 200,
-        submenuOpenMode: "onThreshold",
-        submenuHoverDelayMs: 300,
+        submenuOpenMode: "onHover",
+        submenuHoverDelayMs: 400,
         maxSubmenuDepth: 3,
         suppressTriggerKeyInput: true,
       },
       appearance: {
         innerRadius: 40,
-        outerRadius: 140,
-        deadZoneRadius: 20,
+        outerRadius: 120,
+        deadZoneRadius: 30,
         backgroundColor: "#00000080",
-        sliceFillColor: "#2a2a2aCC",
-        sliceHoverColor: "#4a9eff99",
-        sliceBorderColor: "#555555",
+        sliceFillColor: "#1e1e2e",
+        sliceHoverColor: "#313244",
+        sliceBorderColor: "#585b70",
         sliceBorderWidth: 1,
-        labelFont: "system-ui",
+        labelFont: "sans-serif",
         labelSize: 13,
-        labelColor: "#FFFFFF",
-        iconSize: 28,
-        animationDurationMs: 100,
-        opacity: 0.95,
+        labelColor: "#cdd6f4",
+        iconSize: 20,
+        animationDurationMs: 120,
+        opacity: 1,
       },
     },
     profiles: [
@@ -212,7 +229,7 @@ function getDefaultSettings(): Settings {
         name: "デフォルト",
         isDefault: true,
         matchRules: [],
-        pieKeys: [{ id: "pk_1", hotkey: "CapsLock", menuId: "menu_1" }],
+        pieKeys: [{ id: "piekey_1", hotkey: "CapsLock", menuId: "menu_1" }],
       },
     ],
     menus: [
@@ -222,27 +239,27 @@ function getDefaultSettings(): Settings {
         appearanceOverrides: null,
         slices: [
           {
-            id: "s1",
+            id: "slice_copy",
             label: "コピー",
-            icon: "📋",
+            icon: "copy",
             actions: [{ type: "clipboard", params: { operation: "copy" } }],
           },
           {
-            id: "s2",
+            id: "slice_paste",
             label: "貼り付け",
-            icon: "📌",
+            icon: "clipboard",
             actions: [{ type: "clipboard", params: { operation: "paste" } }],
           },
           {
-            id: "s3",
+            id: "slice_undo",
             label: "元に戻す",
-            icon: "↩️",
+            icon: "undo",
             actions: [{ type: "sendKey", params: { keys: `${modifier}+z` } }],
           },
           {
-            id: "s4",
+            id: "slice_redo",
             label: "やり直す",
-            icon: "↪️",
+            icon: "redo",
             actions: [
               { type: "sendKey", params: { keys: `${modifier}+shift+z` } },
             ],

@@ -126,7 +126,7 @@
     "matchRules": "マッチ条件",
     "defaultMatchRulesDisabled": "デフォルトプロファイルは他のプロファイルに一致しない場合に使われるため、マッチ条件は編集できません。",
     "addRule": "+ 条件追加",
-    "noRules": "条件なし - 全アプリケーションに適用",
+    "noRules": "保存する前にマッチ条件を追加してください。",
     "processName": "プロセス名",
     "windowTitle": "ウィンドウタイトル",
     "selectFromRunning": "起動中から選択",

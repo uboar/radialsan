@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { canEnterSubmenu, getParentPopState } from "../submenuNavigation";
+import {
+  canEnterSubmenu,
+  normalizeSubmenuActivation,
+  getParentPopState,
+  shouldOpenSubmenuOnClick,
+  shouldOpenSubmenuOnHover,
+  shouldOpenSubmenuOnThreshold,
+} from "../submenuNavigation";
 
 describe("submenu navigation", () => {
   it("does not pop to parent immediately after entering a submenu", () => {
@@ -27,5 +34,46 @@ describe("submenu navigation", () => {
     expect(canEnterSubmenu(true, 0, 3)).toBe(false);
     expect(canEnterSubmenu(false, 3, 3)).toBe(false);
     expect(canEnterSubmenu(false, 2, 3)).toBe(true);
+  });
+
+  it("normalizes submenu activation settings from persisted values", () => {
+    expect(
+      normalizeSubmenuActivation({
+        submenuOpenMode: "onThreshold",
+        submenuHoverDelayMs: 250.8,
+        maxSubmenuDepth: 4.2,
+      }),
+    ).toEqual({
+      submenuOpenMode: "onThreshold",
+      submenuHoverDelayMs: 250,
+      maxSubmenuDepth: 4,
+    });
+  });
+
+  it("falls back to safe defaults for invalid submenu activation values", () => {
+    expect(
+      normalizeSubmenuActivation({
+        submenuOpenMode: "invalid" as "onHover",
+        submenuHoverDelayMs: -1,
+        maxSubmenuDepth: Number.NaN,
+      }),
+    ).toEqual({
+      submenuOpenMode: "onHover",
+      submenuHoverDelayMs: 0,
+      maxSubmenuDepth: 3,
+    });
+  });
+
+  it("opens on threshold only after crossing the outer radius", () => {
+    expect(shouldOpenSubmenuOnThreshold("onThreshold", 141, 140)).toBe(true);
+    expect(shouldOpenSubmenuOnThreshold("onThreshold", 140, 140)).toBe(false);
+    expect(shouldOpenSubmenuOnThreshold("onHover", 141, 140)).toBe(false);
+  });
+
+  it("keeps hover and click open modes distinct", () => {
+    expect(shouldOpenSubmenuOnHover("onHover")).toBe(true);
+    expect(shouldOpenSubmenuOnHover("onClick")).toBe(false);
+    expect(shouldOpenSubmenuOnClick("onClick")).toBe(true);
+    expect(shouldOpenSubmenuOnClick("onHover")).toBe(false);
   });
 });

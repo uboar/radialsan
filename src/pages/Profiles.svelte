@@ -13,6 +13,10 @@
     parseRadialsanPackage,
     pickJsonFile,
   } from "../utils/sharing";
+  import {
+    canSaveProfileWithMatchRules,
+    sanitizeMatchRules,
+  } from "./profileValidation";
   import type {
     MatchRule,
     PieKey,
@@ -25,6 +29,7 @@
   let editName = "";
   let editRules: MatchRule[] = [];
   let editPieKeys: PieKey[] = [];
+  let draftProfile: Profile | null = null;
   let recordingPieKeyId: string | null = null;
   let windowCandidates: WindowCandidate[] = [];
   let isLoadingWindowCandidates = false;
@@ -59,14 +64,15 @@
   }
 
   function handleNewProfile() {
-    settingsStore.addProfile({
+    const profile: Profile = {
       id: `profile_${Date.now()}`,
       name: $t("profiles.newProfileName"),
       isDefault: false,
       matchRules: [],
       pieKeys: [],
-    });
-    void settingsStore.saveSettings();
+    };
+    draftProfile = profile;
+    handleStartEdit(profile);
   }
 
   async function handleExportProfile(profile: Profile) {
@@ -117,13 +123,41 @@
   }
 
   function handleSaveEdit(profile: Profile) {
-    settingsStore.updateProfile(profile.id, {
+    if (!canSaveProfileWithMatchRules(profile, editRules)) return;
+
+    const updates: Partial<Profile> = {
       name: editName,
-      ...(profile.isDefault ? {} : { matchRules: editRules }),
+      ...(profile.isDefault
+        ? {}
+        : { matchRules: sanitizeMatchRules(editRules) }),
       pieKeys: editPieKeys,
-    });
+    };
+
+    if (draftProfile?.id === profile.id) {
+      settingsStore.addProfile({ ...profile, ...updates });
+      draftProfile = null;
+    } else {
+      settingsStore.updateProfile(profile.id, updates);
+    }
+
     void settingsStore.saveSettings();
     editingId = null;
+  }
+
+  function handleCancelEdit(profile: Profile) {
+    if (draftProfile?.id === profile.id) {
+      draftProfile = null;
+    }
+    editingId = null;
+  }
+
+  function canSaveCurrentProfile(profile: Profile) {
+    return canSaveProfileWithMatchRules(profile, editRules);
+  }
+
+  function getProfilesForDisplay(): Profile[] {
+    const profiles = $settingsStore.settings?.profiles ?? [];
+    return draftProfile ? [...profiles, draftProfile] : profiles;
   }
 
   function handleDeleteProfile(profileId: string) {
@@ -281,7 +315,7 @@
     </div>
 
     <div class="space-y-3">
-      {#each $settingsStore.settings.profiles as profile (profile.id)}
+      {#each getProfilesForDisplay() as profile (profile.id)}
         <div
           class="min-w-0 rounded-lg border border-theme-border bg-theme-bg-secondary p-4"
         >
@@ -569,12 +603,13 @@
               <div class="flex gap-2">
                 <button
                   onclick={() => handleSaveEdit(profile)}
-                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium transition-colors"
+                  disabled={!canSaveCurrentProfile(profile)}
+                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {$t("common.save")}
                 </button>
                 <button
-                  onclick={() => (editingId = null)}
+                  onclick={() => handleCancelEdit(profile)}
                   class="px-3 py-1.5 bg-theme-bg-tertiary hover:bg-theme-bg-tertiary/80 rounded text-xs font-medium transition-colors"
                 >
                   {$t("common.cancel")}
@@ -622,7 +657,7 @@
               {profile.isDefault
                 ? $t("profiles.matchesAll")
                 : profile.matchRules.length === 0
-                  ? $t("profiles.matchesAll")
+                  ? $t("profiles.noRules")
                   : profile.matchRules
                       .map(
                         (rule) =>

@@ -91,6 +91,10 @@ fn load_initial_settings(app_data_dir: &Path) -> Settings {
     }
 }
 
+fn should_show_main_window_on_startup(settings: &Settings) -> bool {
+    !settings.global.show_tray_icon
+}
+
 pub fn run() {
     env_logger::init();
 
@@ -134,9 +138,15 @@ pub fn run() {
 
             if settings.global.show_tray_icon {
                 tray::setup_tray(app.handle())?;
+            } else if should_show_main_window_on_startup(&settings) {
+                if let Some(main_window) = app.get_webview_window("main") {
+                    main_window.show()?;
+                    let _ = main_window.set_focus();
+                }
             }
 
-            // Hide main window close button → minimize to tray
+            // When the tray is enabled, closing the main window keeps the app reachable there.
+            // Without a tray, closing the only settings window exits instead of hiding it.
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
                 let app_handle = app.handle().clone();
@@ -483,5 +493,16 @@ mod tests {
         );
 
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_should_show_main_window_on_startup_when_tray_disabled() {
+        let mut settings = Settings::default();
+
+        settings.global.show_tray_icon = true;
+        assert!(!should_show_main_window_on_startup(&settings));
+
+        settings.global.show_tray_icon = false;
+        assert!(should_show_main_window_on_startup(&settings));
     }
 }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fmt;
 use std::path::Path;
 
@@ -427,10 +428,12 @@ impl Settings {
 
         let content = std::fs::read_to_string(&path)?;
         let settings: Settings = serde_json::from_str(&content)?;
+        settings.validate()?;
         Ok(settings)
     }
 
     pub fn save(&self, app_data_dir: &Path) -> Result<(), SettingsError> {
+        self.validate()?;
         std::fs::create_dir_all(app_data_dir)?;
         let path = app_data_dir.join(SETTINGS_FILE);
         let content = serde_json::to_string_pretty(self)?;
@@ -467,23 +470,93 @@ impl Settings {
         self.menus.iter().find(|m| m.id == id)
     }
 
-    pub fn get_active_profile(&self, window_title: &str, process_name: &str) -> &Profile {
+    pub fn validate(&self) -> Result<(), SettingsError> {
+        if self.profiles.is_empty() {
+            return Err(SettingsError::InvalidSettings(
+                "at least one profile is required".to_string(),
+            ));
+        }
+
+        if self.menus.is_empty() {
+            return Err(SettingsError::InvalidSettings(
+                "at least one menu is required".to_string(),
+            ));
+        }
+
+        if self.global.default_profile_id.trim().is_empty() {
+            return Err(SettingsError::InvalidSettings(
+                "defaultProfileId is required".to_string(),
+            ));
+        }
+
+        let mut profile_ids = HashSet::new();
+        for profile in &self.profiles {
+            if profile.id.trim().is_empty() {
+                return Err(SettingsError::InvalidSettings(
+                    "profile id is required".to_string(),
+                ));
+            }
+            if !profile_ids.insert(profile.id.as_str()) {
+                return Err(SettingsError::InvalidSettings(format!(
+                    "duplicate profile id: {}",
+                    profile.id
+                )));
+            }
+        }
+
+        if !profile_ids.contains(self.global.default_profile_id.as_str()) {
+            return Err(SettingsError::InvalidSettings(format!(
+                "defaultProfileId references missing profile: {}",
+                self.global.default_profile_id
+            )));
+        }
+
+        let mut menu_ids = HashSet::new();
+        for menu in &self.menus {
+            if menu.id.trim().is_empty() {
+                return Err(SettingsError::InvalidSettings(
+                    "menu id is required".to_string(),
+                ));
+            }
+            if !menu_ids.insert(menu.id.as_str()) {
+                return Err(SettingsError::InvalidSettings(format!(
+                    "duplicate menu id: {}",
+                    menu.id
+                )));
+            }
+        }
+
+        for profile in &self.profiles {
+            for pie_key in &profile.pie_keys {
+                if !menu_ids.contains(pie_key.menu_id.as_str()) {
+                    return Err(SettingsError::InvalidSettings(format!(
+                        "pie key {} references missing menu: {}",
+                        pie_key.id, pie_key.menu_id
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn get_active_profile(&self, window_title: &str, process_name: &str) -> Option<&Profile> {
         // Try each non-default profile in order; return the first that matches.
         for profile in &self.profiles {
             if profile.is_default {
                 continue;
             }
             if profile_matches(profile, window_title, process_name) {
-                return profile;
+                return Some(profile);
             }
         }
 
-        // Fall back to the profile marked as default, or the first one.
+        // Fall back to the configured default, the profile marked as default, or the first one.
         self.profiles
             .iter()
-            .find(|p| p.is_default)
+            .find(|p| p.id == self.global.default_profile_id)
+            .or_else(|| self.profiles.iter().find(|p| p.is_default))
             .or_else(|| self.profiles.first())
-            .expect("settings must have at least one profile")
     }
 }
 
@@ -509,6 +582,10 @@ fn cleanup_old_backups(backup_dir: &Path, max_backups: usize) -> Result<(), Sett
 }
 
 fn profile_matches(profile: &Profile, window_title: &str, process_name: &str) -> bool {
+    if profile.match_rules.is_empty() {
+        return false;
+    }
+
     profile.match_rules.iter().all(|rule| {
         let haystack = match rule.field {
             MatchField::ProcessName => process_name,
@@ -598,6 +675,52 @@ mod tests {
     }
 
     #[test]
+    fn test_save_rejects_empty_profiles_without_writing() {
+        let dir = temp_dir();
+        let mut settings = Settings::default();
+        settings.profiles.clear();
+
+        let error = settings.save(&dir).expect_err("save should fail");
+        assert!(matches!(error, SettingsError::InvalidSettings(_)));
+        assert!(!dir.join("settings.json").exists());
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_load_rejects_invalid_settings() {
+        let dir = temp_dir();
+        let path = dir.join("settings.json");
+        let mut settings = Settings::default();
+        settings.menus.clear();
+        fs::write(&path, serde_json::to_string_pretty(&settings).unwrap()).unwrap();
+
+        let error = Settings::load(&dir).expect_err("load should fail");
+        assert!(matches!(error, SettingsError::InvalidSettings(_)));
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_get_active_profile_returns_none_without_profiles() {
+        let mut settings = Settings::default();
+        settings.profiles.clear();
+
+        assert!(settings
+            .get_active_profile("anything", "anything")
+            .is_none());
+    }
+
+    #[test]
+    fn test_validate_rejects_pie_key_referencing_missing_menu() {
+        let mut settings = Settings::default();
+        settings.profiles[0].pie_keys[0].menu_id = "missing_menu".to_string();
+
+        let error = settings.validate().expect_err("validation should fail");
+        assert!(matches!(error, SettingsError::InvalidSettings(_)));
+    }
+
+    #[test]
     fn test_default_menu_actions_use_current_schema() {
         let settings = Settings::default();
         let slices = &settings.menus[0].slices;
@@ -627,11 +750,13 @@ mod tests {
         };
         settings.profiles.insert(0, app_profile);
 
-        let matched = settings.get_active_profile("main.rs - VSCode", "code");
+        let matched = settings
+            .get_active_profile("main.rs - VSCode", "code")
+            .unwrap();
         assert_eq!(matched.id, "vscode");
 
         // Should fall back for a non-matching process
-        let fallback = settings.get_active_profile("Untitled", "firefox");
+        let fallback = settings.get_active_profile("Untitled", "firefox").unwrap();
         assert_eq!(fallback.id, "default");
     }
 
@@ -652,13 +777,13 @@ mod tests {
         };
         settings.profiles.insert(0, browser_profile);
 
-        let matched = settings.get_active_profile("GitHub", "firefox");
+        let matched = settings.get_active_profile("GitHub", "firefox").unwrap();
         assert_eq!(matched.id, "browsers");
 
-        let matched2 = settings.get_active_profile("Google", "chrome");
+        let matched2 = settings.get_active_profile("Google", "chrome").unwrap();
         assert_eq!(matched2.id, "browsers");
 
-        let no_match = settings.get_active_profile("Finder", "Finder");
+        let no_match = settings.get_active_profile("Finder", "Finder").unwrap();
         assert_eq!(no_match.id, "default");
     }
 
@@ -666,9 +791,27 @@ mod tests {
     fn test_profile_matching_fallback_to_default() {
         let settings = Settings::default();
         // Default settings has only the default profile, so always returns it.
-        let profile = settings.get_active_profile("anything", "anything");
+        let profile = settings.get_active_profile("anything", "anything").unwrap();
         assert_eq!(profile.id, "default");
         assert!(profile.is_default);
+    }
+
+    #[test]
+    fn test_non_default_profile_without_rules_does_not_match_everything() {
+        let mut settings = Settings::default();
+        settings.profiles.insert(
+            0,
+            Profile {
+                id: "empty_rules".to_string(),
+                name: "Empty Rules".to_string(),
+                is_default: false,
+                match_rules: vec![],
+                pie_keys: vec![],
+            },
+        );
+
+        let profile = settings.get_active_profile("anything", "anything").unwrap();
+        assert_eq!(profile.id, "default");
     }
 
     #[test]

@@ -162,6 +162,8 @@ pub fn save_settings(
     state: State<'_, AppState>,
     settings: Settings,
 ) -> Result<(), String> {
+    settings.validate().map_err(|e| e.to_string())?;
+
     // Create backup before saving
     if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
         let _ = Settings::backup(&app_data_dir); // Don't fail save if backup fails
@@ -190,7 +192,9 @@ pub fn save_settings(
     if let Some(listener) = listener {
         let active_profile =
             crate::profiles::get_active_profile_for_current_window(&app_handle, &settings);
-        let bindings = crate::profiles::build_bindings_for_profile(active_profile);
+        let bindings = active_profile
+            .map(crate::profiles::build_bindings_for_profile)
+            .unwrap_or_default();
         listener.update_runtime_settings(
             bindings,
             settings.global.menu_activation.quick_tap_threshold_ms,

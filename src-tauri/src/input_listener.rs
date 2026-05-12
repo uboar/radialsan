@@ -4,6 +4,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+#[cfg(not(target_os = "macos"))]
+use std::sync::OnceLock;
+
 #[derive(Clone, Debug)]
 pub struct HotkeyBinding {
     pub menu_id: String,
@@ -450,19 +453,163 @@ pub fn rdev_key_to_string(key: &rdev::Key) -> Option<String> {
 /// to ignore events so that key detection can work without conflicts.
 pub static DETECTING_KEY: AtomicBool = AtomicBool::new(false);
 
+#[cfg(not(target_os = "macos"))]
+static KEY_DETECTION_STATE: OnceLock<Arc<KeyDetectionState>> = OnceLock::new();
+
+#[cfg(not(target_os = "macos"))]
+struct KeyDetectionRequest {
+    tx: std::sync::mpsc::Sender<String>,
+    modifiers: HashSet<ModifierKey>,
+}
+
+#[cfg(not(target_os = "macos"))]
+#[derive(Default)]
+struct KeyDetectionState {
+    active_request: Mutex<Option<KeyDetectionRequest>>,
+    listener_started: AtomicBool,
+}
+
+#[cfg(not(target_os = "macos"))]
+impl KeyDetectionState {
+    fn begin_request(&self, tx: std::sync::mpsc::Sender<String>) -> bool {
+        let mut active_request = self.active_request.lock().unwrap();
+        if active_request.is_some() {
+            return false;
+        }
+
+        *active_request = Some(KeyDetectionRequest {
+            tx,
+            modifiers: HashSet::new(),
+        });
+        true
+    }
+
+    fn finish_request(&self) {
+        let mut active_request = self.active_request.lock().unwrap();
+        *active_request = None;
+    }
+
+    fn process_event(&self, event: rdev::Event) {
+        let detected_hotkey = {
+            let mut active_request = self.active_request.lock().unwrap();
+            let Some(request) = active_request.as_mut() else {
+                return;
+            };
+
+            match event.event_type {
+                EventType::KeyPress(key) => {
+                    if let Some(modifier) = key_to_modifier(&key) {
+                        request.modifiers.insert(modifier);
+                        return;
+                    }
+
+                    let Some(key_name) = rdev_key_to_string(&key) else {
+                        return;
+                    };
+
+                    let mut mod_list: Vec<ModifierKey> =
+                        request.modifiers.iter().copied().collect();
+                    mod_list.sort();
+
+                    let mut parts: Vec<String> = Vec::new();
+                    for m in &mod_list {
+                        parts.push(match m {
+                            ModifierKey::Ctrl => "Ctrl".into(),
+                            ModifierKey::Shift => "Shift".into(),
+                            ModifierKey::Alt => "Alt".into(),
+                            ModifierKey::Meta => "Meta".into(),
+                        });
+                    }
+                    parts.push(key_name);
+                    Some(parts.join("+"))
+                }
+                EventType::KeyRelease(key) => {
+                    if let Some(modifier) = key_to_modifier(&key) {
+                        request.modifiers.remove(&modifier);
+                    }
+                    None
+                }
+                _ => None,
+            }
+        };
+
+        if let Some(hotkey) = detected_hotkey {
+            let request = {
+                let mut active_request = self.active_request.lock().unwrap();
+                active_request.take()
+            };
+            if let Some(request) = request {
+                let _ = request.tx.send(hotkey);
+            }
+        }
+    }
+
+    fn ensure_listener_started(self: &Arc<Self>) {
+        if self
+            .listener_started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return;
+        }
+
+        let state = Arc::clone(self);
+        std::thread::spawn(move || {
+            let callback_state = Arc::clone(&state);
+            let process_event = move |event: rdev::Event| {
+                callback_state.process_event(event);
+            };
+            if let Err(e) = rdev::listen(process_event) {
+                eprintln!("rdev detect_next_key listen error: {:?}", e);
+                state.listener_started.store(false, Ordering::SeqCst);
+                state.finish_request();
+                DETECTING_KEY.store(false, Ordering::SeqCst);
+            }
+        });
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn key_detection_state() -> Arc<KeyDetectionState> {
+    Arc::clone(KEY_DETECTION_STATE.get_or_init(|| Arc::new(KeyDetectionState::default())))
+}
+
 /// Start a temporary listener that captures the next key press and
 /// emits the result as a `radialsan://key-detected` event on the given AppHandle.
 /// The listener stops after detecting one key.
 pub fn detect_next_key(app_handle: tauri::AppHandle) {
-    DETECTING_KEY.store(true, Ordering::SeqCst);
-
     std::thread::spawn(move || {
-        let modifiers: Arc<Mutex<HashSet<ModifierKey>>> = Arc::new(Mutex::new(HashSet::new()));
-        let modifiers_clone = Arc::clone(&modifiers);
-
         // Channel to signal completion
         let (tx, rx) = std::sync::mpsc::channel::<String>();
 
+        #[cfg(target_os = "macos")]
+        let modifiers: Arc<Mutex<HashSet<ModifierKey>>> = Arc::new(Mutex::new(HashSet::new()));
+        #[cfg(target_os = "macos")]
+        let modifiers_clone = Arc::clone(&modifiers);
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            let key_detection_state = key_detection_state();
+            if !key_detection_state.begin_request(tx) {
+                use tauri::Emitter;
+                let _ = app_handle.emit(
+                    "radialsan://key-detected",
+                    serde_json::json!({
+                        "hotkey": null,
+                        "error": "key detection already in progress"
+                    }),
+                );
+                return;
+            }
+
+            DETECTING_KEY.store(true, Ordering::SeqCst);
+            key_detection_state.ensure_listener_started();
+        }
+
+        #[cfg(target_os = "macos")]
+        DETECTING_KEY.store(true, Ordering::SeqCst);
+
+        #[cfg(target_os = "macos")]
         let process_event = move |event: rdev::Event| {
             match event.event_type {
                 EventType::KeyPress(key) => {
@@ -529,18 +676,12 @@ pub fn detect_next_key(app_handle: tauri::AppHandle) {
             }
         }
 
-        #[cfg(not(target_os = "macos"))]
-        {
-            std::thread::spawn(move || {
-                if let Err(e) = rdev::listen(process_event) {
-                    eprintln!("rdev detect_next_key listen error: {:?}", e);
-                }
-            });
-        }
-
         // Wait for detection (with a 10 second timeout)
         let result = rx.recv_timeout(std::time::Duration::from_secs(10));
         DETECTING_KEY.store(false, Ordering::SeqCst);
+
+        #[cfg(not(target_os = "macos"))]
+        key_detection_state().finish_request();
 
         // Clean up the CGEventTap on macOS
         #[cfg(target_os = "macos")]
@@ -746,5 +887,45 @@ mod tests {
             },
         );
         assert!(!release_suppressed);
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn test_event(event_type: EventType) -> rdev::Event {
+        rdev::Event {
+            time: std::time::SystemTime::now(),
+            name: None,
+            event_type,
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn test_key_detection_rejects_concurrent_request() {
+        let state = KeyDetectionState::default();
+        let (first_tx, _first_rx) = std::sync::mpsc::channel();
+        let (second_tx, _second_rx) = std::sync::mpsc::channel();
+
+        assert!(state.begin_request(first_tx));
+        assert!(!state.begin_request(second_tx));
+
+        state.finish_request();
+        let (third_tx, _third_rx) = std::sync::mpsc::channel();
+        assert!(state.begin_request(third_tx));
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn test_key_detection_completes_once_and_ignores_stale_events() {
+        let state = KeyDetectionState::default();
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        assert!(state.begin_request(tx));
+        state.process_event(test_event(EventType::KeyPress(rdev::Key::ControlLeft)));
+        state.process_event(test_event(EventType::KeyPress(rdev::Key::KeyA)));
+
+        assert_eq!(rx.try_recv().unwrap(), "Ctrl+A");
+
+        state.process_event(test_event(EventType::KeyPress(rdev::Key::KeyB)));
+        assert!(rx.try_recv().is_err());
     }
 }

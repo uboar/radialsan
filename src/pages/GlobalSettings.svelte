@@ -2,9 +2,17 @@
   import { onMount } from "svelte";
   import { changeLanguage, language, t } from "../i18n";
   import { settingsStore } from "../stores/settingsStore";
+  import {
+    getDisplayedAutoLaunch,
+    shouldSyncAutoLaunchSetting,
+  } from "./globalSettingsState";
   import type { AppTheme } from "../types/settings";
 
-  let autoLaunch = false;
+  let autoLaunch: boolean | null = null;
+  $: displayedAutoLaunch = getDisplayedAutoLaunch(
+    autoLaunch,
+    $settingsStore.settings,
+  );
 
   const themeOptions: Array<{ value: AppTheme; labelKey: string }> = [
     { value: "dark", labelKey: "settings.themeDark" },
@@ -19,21 +27,36 @@
   async function loadAutoLaunchState() {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      autoLaunch = await invoke<boolean>("get_auto_launch_enabled");
+      const enabled = await invoke<boolean>("get_auto_launch_enabled");
+      syncAutoLaunchSetting(enabled);
     } catch {
       // Not running in Tauri.
+      autoLaunch = null;
     }
   }
 
   async function handleAutoLaunchToggle() {
+    const settings = $settingsStore.settings;
+    if (!settings) return;
+
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const next = !autoLaunch;
+      const next = !displayedAutoLaunch;
       await invoke("set_auto_launch_enabled", { enabled: next });
-      autoLaunch = next;
+      syncAutoLaunchSetting(next);
     } catch (error) {
       console.error("Failed to set auto-launch", error);
     }
+  }
+
+  function syncAutoLaunchSetting(enabled: boolean) {
+    const settings = $settingsStore.settings;
+    autoLaunch = enabled;
+
+    if (!shouldSyncAutoLaunchSetting(settings, enabled)) return;
+
+    settingsStore.updateGlobalSettings({ launchAtStartup: enabled });
+    void settingsStore.saveSettings();
   }
 
   function handleLanguageChange(locale: "en" | "ja") {
@@ -104,10 +127,10 @@
             type="button"
             aria-label={$t("settings.launchAtStartup")}
             onclick={handleAutoLaunchToggle}
-            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${autoLaunch ? "bg-blue-600" : "bg-theme-bg-tertiary"}`}
+            class={`h-5 w-10 shrink-0 rounded-full transition-colors ${displayedAutoLaunch ? "bg-blue-600" : "bg-theme-bg-tertiary"}`}
           >
             <div
-              class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${autoLaunch ? "translate-x-5" : ""}`}
+              class={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${displayedAutoLaunch ? "translate-x-5" : ""}`}
             ></div>
           </button>
         </div>

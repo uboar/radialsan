@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSettingsStore } from "../settingsStore";
 import type { Settings } from "../../types/settings";
+
+const { invokeMock } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: invokeMock,
+}));
 
 const mockSettings = (): Settings => ({
   version: 1,
@@ -79,6 +87,17 @@ const mockSettings = (): Settings => ({
 });
 
 describe("settingsStore", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    delete (window as Window & { __TAURI_INTERNALS__?: unknown })
+      .__TAURI_INTERNALS__;
+    delete (window as Window & { __TAURI__?: unknown }).__TAURI__;
+    useSettingsStore.getState().setSettings(mockSettings());
+    useSettingsStore.getState().clearError();
+  });
+
   it("deleteMenu removes profile pieKeys that reference the deleted menu", () => {
     useSettingsStore.getState().setSettings(mockSettings());
 
@@ -100,5 +119,65 @@ describe("settingsStore", () => {
         profile.pieKeys.map((pieKey) => pieKey.menuId),
       ),
     ).not.toContain("menu_deleted");
+  });
+
+  it("keeps error state and does not replace settings with defaults when Tauri get_settings fails", async () => {
+    (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ =
+      {};
+    const existingSettings = mockSettings();
+    invokeMock.mockRejectedValueOnce(new Error("settings read failed"));
+    useSettingsStore.getState().setSettings(existingSettings);
+
+    await useSettingsStore.getState().loadSettings();
+
+    const state = useSettingsStore.getState();
+    expect(invokeMock).toHaveBeenCalledWith("get_settings");
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe("Error: settings read failed");
+    expect(state.settings).toBe(existingSettings);
+  });
+
+  it("uses explicit dev defaults when the Tauri settings API is unavailable outside Tauri", async () => {
+    invokeMock.mockRejectedValueOnce(new Error("not running in Tauri"));
+
+    await useSettingsStore.getState().loadSettings();
+
+    const state = useSettingsStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBeNull();
+    expect(state.settings).toMatchObject({
+      global: {
+        menuActivation: {
+          submenuOpenMode: "onHover",
+          submenuHoverDelayMs: 400,
+        },
+        appearance: {
+          outerRadius: 120,
+          deadZoneRadius: 30,
+          sliceFillColor: "#1e1e2e",
+          labelFont: "sans-serif",
+          iconSize: 20,
+          animationDurationMs: 120,
+          opacity: 1,
+        },
+      },
+      profiles: [
+        {
+          id: "default",
+          pieKeys: [{ id: "piekey_1", hotkey: "CapsLock", menuId: "menu_1" }],
+        },
+      ],
+      menus: [
+        {
+          id: "menu_1",
+          slices: [
+            { id: "slice_copy", icon: "copy" },
+            { id: "slice_paste", icon: "clipboard" },
+            { id: "slice_undo", icon: "undo" },
+            { id: "slice_redo", icon: "redo" },
+          ],
+        },
+      ],
+    });
   });
 });

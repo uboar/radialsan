@@ -21,7 +21,13 @@ pub fn start_profile_monitor(app_handle: AppHandle, listener: Arc<InputListener>
             // Get active profile from settings
             let state = app_handle.state::<AppState>();
             let settings = state.settings.lock().unwrap();
-            let active_profile = settings.get_active_profile(&window_title, &process_name);
+            let Some(active_profile) = settings.get_active_profile(&window_title, &process_name)
+            else {
+                listener.update_bindings(Vec::new());
+                current_profile_id.clear();
+                log::error!("Cannot update hotkey bindings: settings has no active profile");
+                continue;
+            };
 
             if active_profile.id != current_profile_id {
                 current_profile_id = active_profile.id.clone();
@@ -62,7 +68,7 @@ pub(crate) fn get_active_window_info(app_handle: &AppHandle) -> (String, String)
 pub(crate) fn get_active_profile_for_current_window<'a>(
     app_handle: &AppHandle,
     settings: &'a Settings,
-) -> &'a crate::settings::Profile {
+) -> Option<&'a crate::settings::Profile> {
     let (window_title, process_name) = get_active_window_info(app_handle);
     settings.get_active_profile(&window_title, &process_name)
 }
