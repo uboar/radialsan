@@ -1,18 +1,18 @@
 # radialsan 作業メモ
 
-radialsan は Tauri v2 + React/TypeScript のラジアルメニューアプリ。AutoHotPie 風に、ホットキーを押している間だけ overlay に Canvas メニューを表示し、離した時に選択アクションを実行する。
+radialsan は Tauri v2 + Svelte/TypeScript のラジアルメニューアプリ。AutoHotPie 風に、ホットキーを押している間だけ overlay に Canvas メニューを表示し、離した時に選択アクションを実行する。
 
 ## 構成
 
 - `src-tauri/src/`: Rust バックエンド。入力監視、アクション実行、設定保存、OS 連携。
-- `src/`: React フロントエンド。設定 UI、エディタ、overlay Canvas 描画。
-- `main`: `index.html` / `src/main.tsx`。設定・エディタ画面。
-- `overlay`: `overlay.html` / `src/overlay.tsx`。透明フルスクリーンのメニュー描画。
+- `src/`: Svelte フロントエンド。設定 UI、エディタ、overlay Canvas 描画。
+- `main`: `index.html` / `src/main.ts`。設定・エディタ画面。
+- `overlay`: `overlay.html` / `src/overlay.ts`。透明フルスクリーンのメニュー描画。
 
 主な流れ:
 
 ```text
-rdev でホットキー検出 -> Tauri event -> React Canvas 表示 -> release -> enigo 等でアクション実行
+rdev でホットキー検出 -> Tauri event -> Svelte Canvas 表示 -> release -> enigo 等でアクション実行
 ```
 
 ## 重要ファイル
@@ -23,7 +23,7 @@ rdev でホットキー検出 -> Tauri event -> React Canvas 表示 -> release -
 - `src-tauri/src/commands.rs`: Tauri IPC。
 - `src/components/PieMenu/`: Canvas メニューの geometry / renderer / animation。
 - `src/components/Editor/`: メニュー編集 UI。
-- `src/stores/`: Zustand ストア。
+- `src/stores/`: Svelte store ベースの状態管理。
 - `src/types/settings.ts`: フロントエンド設定型。Rust 側と同期する。
 - `src/i18n/locales/`: 静的 UI 文言。
 
@@ -43,7 +43,7 @@ cargo tauri build
 - Rust の設定構造体は `#[serde(rename_all = "camelCase")]` を使う。
 - TypeScript の設定型は `src/types/settings.ts` に集約し、Rust と整合させる。
 - 静的 UI テキストは `t()` と `src/i18n/locales/*.json` を使う。
-- グローバル状態は Zustand、局所状態は React state を使う。
+- グローバル状態は Svelte store、局所状態は Svelte コンポーネント state を使う。
 - 新機能には該当レイヤーのテストを追加する。
 - OS 権限が必要な `rdev` / `enigo` の実操作は直接テストせず、パースや純粋ロジックをテストする。
 
@@ -54,7 +54,7 @@ cargo tauri build
 1. `src-tauri/src/settings.rs` の `ActionType` を更新。
 2. `src-tauri/src/actions.rs` に dispatch と実装、テストを追加。
 3. `src/types/settings.ts` を更新。
-4. `src/components/Editor/ActionEditor.tsx` に UI を追加。
+4. `src/components/Editor/ActionEditor.svelte` に UI を追加。
 5. `src/i18n/locales/en.json` と `ja.json` にラベルを追加。
 
 新しい設定項目:
@@ -66,8 +66,8 @@ cargo tauri build
 新しいページ:
 
 1. `src/pages/` にページを追加。
-2. `src/App.tsx` に route を追加。
-3. `src/components/Layout/Sidebar.tsx` にナビを追加。
+2. `src/App.svelte` に route を追加。
+3. `src/components/Layout/Sidebar.svelte` にナビを追加。
 4. i18n を更新。
 
 新しい Rust モジュール:

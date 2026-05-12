@@ -4,7 +4,7 @@
 
 ### Step 1: プロジェクトスキャフォールド ✅
 
-- [x] Tauri v2 + React + TypeScript プロジェクト生成
+- [x] Tauri v2 + Svelte + TypeScript プロジェクト生成
 - [x] 2ウィンドウ構成 (main + overlay)
 - [x] Vite マルチページ設定、Vitest セットアップ
 
@@ -28,8 +28,8 @@
 
 - [x] geometry.ts: angleFromCenter, getSliceAtPoint, polarToCartesian 等
 - [x] PieMenuRenderer.ts: Canvas描画クラス (スライス, ラベル, ホバーハイライト)
-- [x] PieMenu.tsx: Tauriイベント連携 React コンポーネント
-- [x] Overlay.tsx, useTauriEvents.ts 更新
+- [x] PieMenu.svelte: Tauriイベント連携 Svelte コンポーネント
+- [x] Overlay.svelte 更新
 - [x] 26 Vitestユニットテスト
 
 ### Step 5: アクション実行エンジン ✅
@@ -60,15 +60,15 @@
 
 **作業内容**:
 
-- [ ] 依存追加: `react-router-dom`, `zustand`, `tailwindcss`, `@radix-ui/react-*` (shadcn/ui互換)
+- [ ] 依存追加: `svelte`, `tailwindcss`, `lucide-svelte`
 - [ ] Tailwind CSS セットアップ (postcss, tailwind.config)
-- [ ] React Router でページ構成:
+- [ ] Svelte コンポーネントと router store でページ構成:
   - `/` — ダッシュボード（メニュー一覧）
   - `/menu/:id` — メニューエディタ
   - `/profiles` — プロファイル管理
   - `/settings` — グローバル設定
 - [ ] サイドバーナビゲーション コンポーネント
-- [ ] Zustand ストア: `useSettingsStore` (Tauri IPC連携)
+- [ ] Svelte store: `settingsStore` (Tauri IPC連携)
   - `settings`, `loadSettings()`, `saveSettings()`, `updateMenu()`, `updateProfile()`
 - [ ] 設定ファイル永続化: Rust側 `save_settings` コマンドで `app_data_dir()` に書き込み
 - [ ] Tauri capabilities に `fs` パーミッション追加
@@ -78,17 +78,17 @@
 ```
 src/
   stores/
-    settingsStore.ts          # Zustand ストア
+    settingsStore.ts          # Svelte store
   components/
     Layout/
-      Sidebar.tsx             # サイドバーナビゲーション
-      Layout.tsx              # メインレイアウト
+      Sidebar.svelte          # サイドバーナビゲーション
+      Layout.svelte           # メインレイアウト
     ui/                       # 共通UIコンポーネント (Button, Input, Card等)
   pages/
-    Dashboard.tsx             # メニュー一覧
-    MenuEditor.tsx            # メニューエディタページ
-    Profiles.tsx              # プロファイル管理ページ
-    GlobalSettings.tsx        # グローバル設定ページ
+    Dashboard.svelte          # メニュー一覧
+    MenuEditor.svelte         # メニューエディタページ
+    Profiles.svelte           # プロファイル管理ページ
+    GlobalSettings.svelte     # グローバル設定ページ
 ```
 
 ---
@@ -99,11 +99,11 @@ src/
 
 **作業内容**:
 
-- [ ] メニュー一覧ページ (Dashboard.tsx)
+- [ ] メニュー一覧ページ (Dashboard.svelte)
   - カード形式でメニュー表示（名前、スライス数、プレビュー）
   - 「新規メニュー作成」ボタン → ID自動生成、デフォルト設定で作成
   - メニュー削除（確認ダイアログ付き）
-- [ ] メニューエディタページ (MenuEditor.tsx)
+- [ ] メニューエディタページ (MenuEditor.svelte)
   - 左パネル: Canvas メニュープレビュー（PieMenuRenderer再利用）
   - 右パネル: プロパティエディタ
 - [ ] スライスリスト コンポーネント
@@ -134,14 +134,14 @@ src/
 ```
 src/
   pages/
-    MenuEditor.tsx
+    MenuEditor.svelte
   components/
     Editor/
-      SliceList.tsx           # スライス一覧 + DnD
-      SliceEditor.tsx         # スライス詳細編集
-      ActionEditor.tsx        # アクション設定フォーム
-      AppearancePanel.tsx     # 外観カスタマイズ
-      MenuPreview.tsx         # Canvas プレビュー
+      SliceList.svelte        # スライス一覧 + DnD
+      SliceEditor.svelte      # スライス詳細編集
+      ActionEditor.svelte     # アクション設定フォーム
+      AppearancePanel.svelte  # 外観カスタマイズ
+      MenuPreview.svelte      # Canvas プレビュー
 ```
 
 ---
@@ -160,9 +160,9 @@ src/
   - ホットキーバインディングの動的更新 (`InputListener::update_bindings`)
 - [ ] `lib.rs` に profiles ポーリングスレッドを追加
 
-**React UI 側**:
+**Svelte UI 側**:
 
-- [ ] プロファイル管理ページ (Profiles.tsx)
+- [ ] プロファイル管理ページ (Profiles.svelte)
   - プロファイル一覧（名前、マッチルール、バインドされたホットキー）
   - プロファイル作成/編集/削除
   - プロファイル優先順位変更（上下ドラッグ）
@@ -178,13 +178,13 @@ src/
 ```
 src-tauri/src/profiles.rs
 src/
-  pages/Profiles.tsx
+  pages/Profiles.svelte
   components/
     Profiles/
-      ProfileList.tsx
-      ProfileEditor.tsx
-      HotkeyInput.tsx         # キー押下でホットキーキャプチャ
-      MatchRuleEditor.tsx
+      ProfileList.svelte
+      ProfileEditor.svelte
+      HotkeyInput.svelte      # キー押下でホットキーキャプチャ
+      MatchRuleEditor.svelte
 ```
 
 ---
@@ -195,7 +195,7 @@ src/
 
 **Canvas 側**:
 
-- [ ] PieMenu.tsx: サブメニュー遷移ロジック
+- [ ] PieMenu.svelte: サブメニュー遷移ロジック
   - submenuアクション持ちスライスにホバー + 外径超え → 子メニュー展開
   - メニュースタック管理 (親メニュー情報を保持)
   - 「戻る」: Escape or 中心方向マウス移動 → 親メニューに復帰
@@ -233,13 +233,13 @@ src/
 
 ### Step 14: アイコンシステム ✅
 
-- [x] lucide-react (90+アイコン) 統合
+- [x] lucide-svelte (90+アイコン) 統合
 - [x] IconPicker (emoji/Lucideモード, 検索, グリッド)
 - [x] PieMenuRenderer: Lucideアイコンプレースホルダー描画
 
 ### Step 15: エディタ拡張 ✅
 
-- [x] Undo/Redo (Zustand historyStore, 50スナップショット, Ctrl+Z/Ctrl+Shift+Z)
+- [x] Undo/Redo (Svelte historyStore, 50スナップショット, Ctrl+Z/Ctrl+Shift+Z)
 - [x] メニューJSON export (.radialsan.json) / import
 - [x] AutoHotPie設定インポート (AHKキー変換, プロファイル/メニュー変換)
 - [x] 10テスト (history 7 + autohotpie 3)
@@ -271,7 +271,7 @@ src/
 
 ### Step 19: i18n ✅
 
-- [x] react-i18next 導入
+- [x] i18next + Svelte store 連携を導入
 - [x] 英語/日本語翻訳ファイル
 - [x] 全ページ・コンポーネントのi18n化
 - [x] GlobalSettingsに言語切替UI (localStorage永続化)
@@ -283,13 +283,13 @@ src/
 | カテゴリ             | 選定                           | 理由                                            |
 | -------------------- | ------------------------------ | ----------------------------------------------- |
 | フレームワーク       | Tauri v2                       | 軽量、Rust バックエンド、マルチプラットフォーム |
-| フロントエンド       | React + TypeScript             | エコシステム充実、型安全                        |
+| フロントエンド       | Svelte + TypeScript            | 軽量、型安全                                    |
 | ビルド               | Vite                           | 高速 HMR、Tauri 公式サポート                    |
-| テスト (JS)          | Vitest + React Testing Library | Vite ネイティブ、高速                           |
+| テスト (JS)          | Vitest                         | Vite ネイティブ、高速                           |
 | テスト (Rust)        | `cargo test`                   | 標準ツールチェイン                              |
 | E2E                  | Playwright + Tauri driver      | クロスプラットフォーム E2E                      |
 | UI コンポーネント    | shadcn/ui (候補)               | カスタマイズ性、Tailwind CSS ベース             |
-| 状態管理             | Zustand (候補)                 | 軽量、React 向け                                |
+| 状態管理             | Svelte store                   | Svelte と統合しやすい軽量な状態管理             |
 | 入力リスニング       | rdev                           | press/release 対応、3OS 対応                    |
 | 入力シミュレーション | enigo v0.2+                    | 3OS 対応、統一 API                              |
 | ウィンドウ検出       | x-win                          | 3OS 対応、Wayland 部分対応                      |

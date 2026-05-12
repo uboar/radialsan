@@ -1,109 +1,117 @@
 # radialsan
 
-Cross-platform radial pie-menu launcher. Inspired by [AutoHotPie](https://github.com/dumbeau/AutoHotPie).
+クロスプラットフォームのラジアル式パイメニューランチャーです。[AutoHotPie](https://github.com/dumbeau/AutoHotPie) に着想を得ています。
 
-## Features
+## 機能
 
-- **Radial Menu** — Hold a hotkey to show a pie menu at your cursor, release to execute
-- **13+ Actions** — Send keys, open URLs, run commands, Lua scripts, clipboard, media control, and more
-- **Visual Editor** — WYSIWYG menu editor with live Canvas preview, drag-and-drop slice reordering
-- **App Profiles** — Automatic menu switching based on the active window (title / process name)
-- **Hierarchical Submenus** — Nest menus up to 3 levels deep
-- **Icon System** — Lucide Icons + emoji picker
-- **Lua Scripting** — Embedded Lua 5.4 for custom automation
-- **Import/Export** — `.radialsan.json` packages, AutoHotPie settings import
-- **i18n** — English and Japanese
-- **Cross-platform** — Windows, macOS, Linux
+- **ラジアルメニュー** - ホットキーを押している間だけカーソル位置にパイメニューを表示し、離すと選択した項目を実行
+- **13 種類以上のアクション** - キー送信、URL を開く、コマンド実行、Lua スクリプト、クリップボード、メディア制御など
+- **ビジュアルエディタ** - ライブ Canvas プレビュー付きの WYSIWYG メニューエディタ、ドラッグアンドドロップによるスライス並べ替え
+- **アプリプロファイル** - アクティブウィンドウのタイトルやプロセス名に応じてメニューを自動切り替え
+- **階層サブメニュー** - 最大 3 階層までメニューをネスト可能
+- **アイコンシステム** - Lucide Icons と絵文字ピッカー
+- **Lua スクリプト** - カスタム自動化向けに Lua 5.4 を組み込み
+- **インポート / エクスポート** - `.radialsan.json` パッケージと AutoHotPie 設定インポート
+- **i18n** - 英語と日本語
+- **クロスプラットフォーム** - Windows、macOS、Linux
 
-## Tech Stack
+## 技術スタック
 
-| Layer            | Technology                                                       |
-| ---------------- | ---------------------------------------------------------------- |
-| Framework        | [Tauri v2](https://v2.tauri.app/) (Rust)                         |
-| Frontend         | React + TypeScript + Vite                                        |
-| Styling          | Tailwind CSS                                                     |
-| Menu Rendering   | HTML5 Canvas                                                     |
-| Input Capture    | [rdev](https://crates.io/crates/rdev) (global key press/release) |
-| Input Simulation | [enigo](https://crates.io/crates/enigo)                          |
-| Window Detection | [x-win](https://crates.io/crates/x-win)                          |
-| Scripting        | [mlua](https://crates.io/crates/mlua) (Lua 5.4)                  |
+| レイヤー             | 技術                                                             |
+| -------------------- | ---------------------------------------------------------------- |
+| フレームワーク       | [Tauri v2](https://v2.tauri.app/) (Rust)                         |
+| フロントエンド       | Svelte + TypeScript + Vite                                       |
+| スタイリング         | Tailwind CSS                                                     |
+| メニュー描画         | HTML5 Canvas                                                     |
+| 入力キャプチャ       | [rdev](https://crates.io/crates/rdev) (global key press/release) |
+| 入力シミュレーション | [enigo](https://crates.io/crates/enigo)                          |
+| ウィンドウ検出       | [x-win](https://crates.io/crates/x-win)                          |
+| スクリプト           | [mlua](https://crates.io/crates/mlua) (Lua 5.4)                  |
 
-## Development
+## 開発
 
-### Prerequisites
+### 前提条件
 
 - [Node.js](https://nodejs.org/) 20+
+- [pnpm](https://pnpm.io/) 10+
 - [Rust](https://rustup.rs/) (stable)
-- Platform dependencies:
+- プラットフォーム別の依存関係:
   - **Linux**: `sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libx11-dev libxdo-dev libxcb-shape0-dev libxcb-xfixes0-dev`
-  - **macOS**: Xcode Command Line Tools, Accessibility permission for input capture
-  - **Windows**: WebView2 (included in Windows 10/11)
+  - **macOS**: Xcode Command Line Tools、入力キャプチャ用のアクセシビリティ権限
+  - **Windows**: WebView2 (Windows 10/11 には同梱)
 
-### Setup
+### セットアップ
 
 ```bash
 git clone https://github.com/uboar/radialsan.git
 cd radialsan
-npm install
+pnpm install
 ```
 
-### Run (development)
+### 実行 (開発)
 
 ```bash
-cargo tauri dev
+pnpm tauri dev
 ```
 
-### Test
+### テスト
 
 ```bash
-# Rust tests
+# Rust テスト
 cd src-tauri && cargo test
 
-# Frontend tests
-npx vitest run
+# フロントエンドテスト
+pnpm exec vitest run
 
-# TypeScript check
-npx tsc --noEmit
+# TypeScript チェック
+pnpm exec tsc --noEmit
+
+# Svelte チェック
+pnpm exec svelte-check
 ```
 
-### Build
+### ビルド
 
 ```bash
-cargo tauri build
+# フロントエンドビルド
+pnpm build
+
+# Tauri アプリビルド
+pnpm tauri build
 ```
 
-## Permissions
+## 権限
 
-| OS              | Permission       | Required For                      |
-| --------------- | ---------------- | --------------------------------- |
-| macOS           | Accessibility    | Global hotkey capture (rdev)      |
-| macOS           | Screen Recording | Window title detection (optional) |
-| Linux (Wayland) | `input` group    | Global input via `/dev/input`     |
+| OS              | 権限             | 必要な用途                                  |
+| --------------- | ---------------- | ------------------------------------------- |
+| macOS           | アクセシビリティ | グローバルホットキーのキャプチャ (rdev)     |
+| macOS           | 画面収録         | ウィンドウタイトル検出 (任意)               |
+| Linux (Wayland) | `input` グループ | `/dev/input` 経由のグローバル入力           |
 
-## Project Structure
+## プロジェクト構成
 
-```
-src/                    # React frontend
+```text
+src/                    # Svelte フロントエンド
   components/
-    PieMenu/            # Canvas rendering, geometry, animation
-    Editor/             # Visual editor components
-    Layout/             # Sidebar, layout
-  pages/                # Dashboard, MenuEditor, Profiles, Settings
-  stores/               # Zustand state management
-  i18n/                 # Translations (en, ja)
-  utils/                # Sharing, AutoHotPie import
+    PieMenu/            # Canvas 描画、geometry、animation
+    Editor/             # ビジュアルエディタコンポーネント
+    Layout/             # サイドバー、レイアウト
+  pages/                # Dashboard、MenuEditor、Profiles、GlobalSettings
+  stores/               # Svelte store ベースの状態管理
+  i18n/                 # 翻訳 (en, ja)
+  utils/                # 共有、AutoHotPie インポート
 
-src-tauri/              # Rust backend
+src-tauri/              # Rust バックエンド
   src/
-    actions.rs          # Action execution (sendKey, openUrl, Lua, etc.)
-    commands.rs         # Tauri IPC commands
-    input_listener.rs   # Global hotkey capture (rdev)
-    lua_engine.rs       # Embedded Lua scripting
-    profiles.rs         # Active window monitoring
-    settings.rs         # Settings persistence (JSON)
-    tray.rs             # System tray
+    actions.rs          # アクション実行 (sendKey、openUrl、Lua など)
+    commands.rs         # Tauri IPC コマンド
+    input_listener.rs   # グローバルホットキーキャプチャ (rdev)
+    lua_engine.rs       # 組み込み Lua スクリプト
+    profiles.rs         # アクティブウィンドウ監視
+    settings.rs         # 設定永続化 (JSON)
+    tray.rs             # システムトレイ
 ```
 
-## License
+## ライセンス
 
 [MIT](LICENSE)

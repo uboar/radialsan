@@ -3,21 +3,21 @@
 ## 概要
 
 radialsan は AutoHotPie の設計思想を引き継いだ、マルチプラットフォーム対応のラジアルメニューソフトウェア。
-Tauri v2 (Rust) + React (TypeScript) で構築。
+Tauri v2 (Rust) + Svelte (TypeScript) で構築。
 
 ## アーキテクチャ
 
 ### 2層構成
 
 - **Rust バックエンド** (`src-tauri/src/`): 入力キャプチャ、アクション実行、設定管理、システム連携
-- **React フロントエンド** (`src/`): メニュー描画 (Canvas)、設定UI、ビジュアルエディタ
+- **Svelte フロントエンド** (`src/`): メニュー描画 (Canvas)、設定UI、ビジュアルエディタ
 
 ### ウィンドウ構成
 
 | ウィンドウ | エントリポイント                   | 用途                                      |
 | ---------- | ---------------------------------- | ----------------------------------------- |
-| `main`     | `index.html` → `src/main.tsx`      | 設定・エディタUI (トレイから開く)         |
-| `overlay`  | `overlay.html` → `src/overlay.tsx` | ラジアルメニュー描画 (フルスクリーン透明) |
+| `main`     | `index.html` → `src/main.ts`      | 設定・エディタUI (トレイから開く)         |
+| `overlay`  | `overlay.html` → `src/overlay.ts` | ラジアルメニュー描画 (フルスクリーン透明) |
 
 ### イベントフロー
 
@@ -25,7 +25,7 @@ Tauri v2 (Rust) + React (TypeScript) で構築。
 ホットキー押下 → rdev検出 → Tauriイベント → Canvas描画 → ホットキー離す → アクション実行
 ```
 
-Rust (`rdev` スレッド) → `radialsan://show-menu` イベント → React (Canvas) → `radialsan://hide-menu` → Rust (`enigo` でキー送信等)
+Rust (`rdev` スレッド) → `radialsan://show-menu` イベント → Svelte (Canvas) → `radialsan://hide-menu` → Rust (`enigo` でキー送信等)
 
 ## ディレクトリ構造
 
@@ -46,7 +46,7 @@ src/
     Editor/           # ビジュアルエディタ (SliceList, ActionEditor, etc.)
     Layout/           # サイドバー、レイアウト
   pages/              # Dashboard, MenuEditor, Profiles, GlobalSettings
-  stores/             # Zustand (settingsStore, historyStore)
+  stores/             # Svelte store (settingsStore, historyStore)
   types/              # TypeScript型定義 (settings.ts)
   i18n/               # 翻訳 (en.json, ja.json)
   utils/              # sharing, autohotpieImport
@@ -165,7 +165,7 @@ git push origin main --tags
 1. `src-tauri/src/settings.rs`: `ActionType` enum にバリアント追加
 2. `src-tauri/src/actions.rs`: `execute_action` の match に追加 + 実装関数 + テスト
 3. `src/types/settings.ts`: `ActionType` に追加
-4. `src/components/Editor/ActionEditor.tsx`: `ACTION_TYPES` に追加 + UIフォーム
+4. `src/components/Editor/ActionEditor.svelte`: `ACTION_TYPES` に追加 + UIフォーム
 5. `src/i18n/locales/en.json` + `ja.json`: `actions` にラベル追加
 
 ### 新しい設定項目を追加する
@@ -173,13 +173,13 @@ git push origin main --tags
 1. `src-tauri/src/settings.rs`: 構造体にフィールド追加 (serde camelCase)
 2. `src/types/settings.ts`: 対応する型を追加
 3. `src/stores/settingsStore.ts`: 必要なら操作メソッド追加
-4. `src/pages/GlobalSettings.tsx`: UIコントロール追加
+4. `src/pages/GlobalSettings.svelte`: UIコントロール追加
 
 ### 新しいページを追加する
 
-1. `src/pages/NewPage.tsx` 作成
-2. `src/App.tsx`: `<Route>` 追加
-3. `src/components/Layout/Sidebar.tsx`: ナビゲーション項目追加
+1. `src/pages/NewPage.svelte` 作成
+2. `src/App.svelte`: ルート定義を追加
+3. `src/components/Layout/Sidebar.svelte`: ナビゲーション項目追加
 4. `src/i18n/locales/*.json`: 翻訳追加
 
 ### 新しい Rust モジュールを追加する
@@ -196,7 +196,7 @@ git push origin main --tags
 - **Rust**: serde の `#[serde(rename_all = "camelCase")]` を全構造体に適用
 - **TypeScript**: 型定義は `src/types/settings.ts` に集約し、Rust と同期を保つ
 - **i18n**: 静的UIテキストは必ず `t()` を使う。動的データ（メニュー名等）はそのまま
-- **状態管理**: グローバル状態は Zustand ストア (`src/stores/`)。コンポーネントローカル状態は useState
+- **状態管理**: グローバル状態は Svelte store (`src/stores/`)。コンポーネントローカル状態は Svelte の state を使う
 
 ### auto-launch の注意
 
