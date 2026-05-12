@@ -609,10 +609,15 @@ fn profile_matches(profile: &Profile, window_title: &str, process_name: &str) ->
 mod tests {
     use super::*;
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     fn temp_dir() -> std::path::PathBuf {
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+
         let dir = std::env::temp_dir().join(format!(
-            "radialsan_test_{}",
+            "radialsan_test_{}_{}_{}",
+            std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
