@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && svelte-check && vite build",
+    "icons": "node scripts/generate-icons.mjs",
     "format": "prettier --write . --ignore-unknown && cargo fmt --manifest-path src-tauri/Cargo.toml",
     "preview": "vite preview",
     "tauri": "tauri",

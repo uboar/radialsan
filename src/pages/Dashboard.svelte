@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import AppIcon from "../components/Brand/AppIcon.svelte";
   import { t } from "../i18n";
   import { handleLinkClick } from "../stores/router";
   import { settingsStore, useSettingsStore } from "../stores/settingsStore";
@@ -150,9 +151,14 @@
 {:else}
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <h2 class="shrink-0 text-2xl font-bold leading-tight">
-        {$t("dashboard.title")}
-      </h2>
+      <div class="flex min-w-0 shrink-0 items-center gap-3">
+        <AppIcon
+          class="h-11 w-11 shrink-0 drop-shadow-[0_0_18px_rgba(110,231,249,0.2)]"
+        />
+        <h2 class="min-w-0 text-2xl font-bold leading-tight">
+          {$t("dashboard.title")}
+        </h2>
+      </div>
       <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
         <button onclick={handleAutoHotPieImport} class="secondary-command">
           {$t("dashboard.importAutoHotPie")}
